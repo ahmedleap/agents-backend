@@ -1,0 +1,175 @@
+agents-backend/
+│
+├── src/main/java/com/neueda/leap/
+│   │
+│   ├── entity/
+│   │   ├── Client.java
+│   │   ├── Account.java
+│   │   ├── Order.java
+│   │   ├── Holding.java
+│   │   ├── Instrument.java
+│   │   ├── InstrumentPrice.java
+│   │   ├── Transaction.java
+│   │   ├── HistoricalSnapshot.java
+│   │   └── Admin.java
+│   │   └── [Purpose: Plain POJOs with getters/setters; NO JPA annotations]
+│   │
+│   ├── mapper/
+│   │   ├── ClientMapper.java            [@Select, @Insert, @Update, @Delete annotations; SQL inline]
+│   │   ├── AccountMapper.java           [Example: @Select("SELECT * FROM accounts WHERE account_id = #{id}")]
+│   │   ├── OrderMapper.java
+│   │   ├── HoldingMapper.java
+│   │   ├── InstrumentMapper.java
+│   │   ├── TransactionMapper.java
+│   │   ├── HistoricalSnapshotMapper.java
+│   │   └── AdminMapper.java
+│   │   └── [Purpose: MyBatis interfaces with annotations; SQL embedded]
+│   │
+│   ├── dto/
+│   │   ├── request/
+│   │   │   ├── CreateOrderRequest.java
+│   │   │   ├── CancelOrderRequest.java
+│   │   │   ├── CreateAccountRequest.java
+│   │   │   ├── DepositRequest.java
+│   │   │   └── ...
+│   │   ├── response/
+│   │   │   ├── OrderResponse.java
+│   │   │   ├── AccountResponse.java
+│   │   │   ├── PortfolioSummaryResponse.java
+│   │   │   └── ...
+│   │   └── [Purpose: API contracts; what client sends/receives]
+│   │
+│   ├── controller/
+│   │   ├── OrderController.java         [REST: @PostMapping, @GetMapping, etc.]
+│   │   ├── AccountController.java
+│   │   ├── ClientController.java
+│   │   ├── InstrumentController.java
+│   │   └── PortfolioController.java
+│   │   └── [Purpose: HTTP endpoints; receives DTOs, calls services, returns DTOs]
+│   │
+│   ├── service/
+│   │   ├── OrderService.java            [Business logic: orchestration + validation]
+│   │   ├── AccountService.java
+│   │   ├── PortfolioService.java
+│   │   ├── PricingService.java
+│   │   ├── HistoricalSnapshotService.java
+│   │   ├── AuthenticationService.java
+│   │   └── [Purpose: Business rules; calls mappers; publishes Kafka events]
+│   │
+│   ├── kafka/
+│   │   ├── event/
+│   │   │   ├── OrderFilledEvent.java
+│   │   │   ├── OrderCancelledEvent.java
+│   │   │   ├── AccountCreatedEvent.java
+│   │   │   ├── DepositMadeEvent.java
+│   │   │   ├── PriceUpdatedEvent.java
+│   │   │   └── [Purpose: Event DTOs; what gets published to Kafka topics]
+│   │   │
+│   │   ├── producer/
+│   │   │   ├── OrderEventProducer.java
+│   │   │   ├── AccountEventProducer.java
+│   │   │   ├── PriceEventProducer.java
+│   │   │   └── [Purpose: Send events to Kafka; called by services]
+│   │   │
+│   │   ├── consumer/
+│   │   │   ├── PriceUpdateConsumer.java
+│   │   │   ├── NotificationConsumer.java
+│   │   │   ├── AuditConsumer.java
+│   │   │   └── [Purpose: Listen to Kafka topics; react to external events]
+│   │   │
+│   │   ├── config/
+│   │   │   ├── KafkaProducerConfig.java
+│   │   │   ├── KafkaConsumerConfig.java
+│   │   │   └── [Purpose: Kafka bean setup; topic names, serialization]
+│   │   │
+│   │   └── topic/
+│   │       ├── Topics.java
+│   │       └── [Purpose: Centralized topic name constants]
+│   │
+│   ├── exception/
+│   │   ├── InsufficientFundsException.java
+│   │   ├── OrderValidationException.java
+│   │   ├── AccountNotFoundException.java
+│   │   ├── ClientNotFoundException.java
+│   │   ├── KafkaPublishException.java
+│   │   └── [Purpose: Domain-specific errors]
+│   │
+│   ├── enumeration/
+│   │   ├── AdminRole.java
+│   │   ├── AccountStatus.java
+│   │   ├── OrderStatus.java
+│   │   ├── OrderType.java
+│   │   ├── TransactionType.java
+│   │   ├── AssetClass.java
+│   │   ├── RiskTolerance.java
+│   │   └── PortfolioSizeRange.java
+│   │   └── [Purpose: Type-safe enum constants]
+│   │
+│   ├── config/
+│   │   ├── MyBatisConfig.java           [MyBatis: SqlSessionFactory, Mapper scanning]
+│   │   ├── DatabaseConfig.java          [Database: Connection pool, datasource]
+│   │   └── [Purpose: Framework configuration beans]
+│   │
+│   ├── util/
+│   │   ├── PricingCacheService.java     [Caching: in-memory price cache]
+│   │   ├── ValidationUtil.java          [Validation: reusable checks]
+│   │   ├── DateTimeUtil.java            [Utility: date/time helpers]
+│   │   └── [Purpose: Shared infrastructure]
+│   │
+│   ├── listener/
+│   │   ├── OrderAuditListener.java      [Event listener: react to service events]
+│   │   ├── AccountLifecycleListener.java
+│   │   └── [Purpose: Side effects; logging, notifications]
+│   │
+│   └── LeapApplication.java             [Entry point: @SpringBootApplication]
+│
+├── src/main/resources/
+│   │
+│   ├── application.properties           [Spring config: server port, DB credentials]
+│   ├── application-dev.properties       [Dev overrides]
+│   ├── application-prod.properties      [Production overrides]
+│   │
+│   └── db/
+│       ├── migration/                   [Flyway: DB schema migrations]
+│       │   ├── V1__init_schema.sql
+│       │   ├── V2__add_indexes.sql
+│       │   └── V3__seed_data.sql
+│       │
+│       └── init/
+│           ├── schema.sql               [Schema definition]
+│           └── sample_data.sql          [Test data]
+│
+├── src/test/java/com/neueda/leap/
+│   ├── entity/
+│   │   └── [Test entity annotations, relationships]
+│   ├── mapper/
+│   │   ├── ClientMapperTest.java        [Test: verify SQL queries work]
+│   │   ├── OrderMapperTest.java
+│   │   └── [Mock database tests]
+│   ├── service/
+│   │   ├── OrderServiceTest.java        [Test: business logic]
+│   │   ├── PortfolioServiceTest.java
+│   │   └── [Mock mapper/Kafka tests]
+│   ├── controller/
+│   │   ├── OrderControllerTest.java     [Test: HTTP endpoints]
+│   │   ├── AccountControllerTest.java
+│   │   └── [MockMvc tests]
+│   ├── kafka/
+│   │   ├── producer/
+│   │   │   └── OrderEventProducerTest.java
+│   │   └── consumer/
+│   │       └── PriceUpdateConsumerTest.java
+│   └── [All test cases]
+│
+├── src/test/resources/
+│   ├── application-test.properties      [Test config: in-memory DB]
+│   ├── test-data.sql                    [Test fixtures]
+│   └── [Test-specific configs]
+│
+├── pom.xml                              [Maven: dependencies, plugins]
+├── Dockerfile                           [Docker: containerization]
+├── docker-compose.yml                   [Docker: Postgres + Kafka setup]
+├── Jenkinsfile                          [CI/CD: build/test pipeline]
+├── README.md
+├── schema.sql
+└── sample_data.sql
