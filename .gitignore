@@ -12,3 +12,7 @@ target/
 
 .DS_Store
 Thumbs.db
+
+.env
+target
+src/main/resources
