@@ -1,10 +1,6 @@
 package com.agentsbackend.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.OrderStatus;
 import java.math.BigDecimal;
@@ -13,10 +9,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Order {
 
     @Id
@@ -53,4 +45,102 @@ public class Order {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    public Order() {
+    }
+
+    public Order(UUID orderId, Account account, Instrument instrument, OrderType orderType,
+                 BigDecimal quantity, BigDecimal limitPrice, OrderStatus status,
+                 LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt) {
+        this.orderId = orderId;
+        this.account = account;
+        this.instrument = instrument;
+        this.orderType = orderType;
+        this.quantity = quantity;
+        this.limitPrice = limitPrice;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.filledAt = filledAt;
+        this.cancelledAt = cancelledAt;
+    }
+
+    public UUID getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(UUID orderId) {
+        this.orderId = orderId;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public Instrument getInstrument() {
+        return instrument;
+    }
+
+    public void setInstrument(Instrument instrument) {
+        this.instrument = instrument;
+    }
+
+    public OrderType getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(OrderType orderType) {
+        this.orderType = orderType;
+    }
+
+    public BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getLimitPrice() {
+        return limitPrice;
+    }
+
+    public void setLimitPrice(BigDecimal limitPrice) {
+        this.limitPrice = limitPrice;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getFilledAt() {
+        return filledAt;
+    }
+
+    public void setFilledAt(LocalDateTime filledAt) {
+        this.filledAt = filledAt;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
 }

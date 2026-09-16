@@ -1,10 +1,6 @@
 package com.agentsbackend.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import com.agentsbackend.enums.AccountStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,10 +9,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "accounts")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Account {
 
     @Id
@@ -48,4 +40,93 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistoricalSnapshot> snapshots;
+
+    public Account() {
+    }
+
+    public Account(UUID accountId, Client client, BigDecimal cashBalance, AccountStatus status,
+                   LocalDateTime openDate, List<Order> orders, List<Holding> holdings,
+                   List<Transaction> transactions, List<HistoricalSnapshot> snapshots) {
+        this.accountId = accountId;
+        this.client = client;
+        this.cashBalance = cashBalance;
+        this.status = status;
+        this.openDate = openDate;
+        this.orders = orders;
+        this.holdings = holdings;
+        this.transactions = transactions;
+        this.snapshots = snapshots;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public BigDecimal getCashBalance() {
+        return cashBalance;
+    }
+
+    public void setCashBalance(BigDecimal cashBalance) {
+        this.cashBalance = cashBalance;
+    }
+
+    public AccountStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AccountStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getOpenDate() {
+        return openDate;
+    }
+
+    public void setOpenDate(LocalDateTime openDate) {
+        this.openDate = openDate;
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
+    public List<Holding> getHoldings() {
+        return holdings;
+    }
+
+    public void setHoldings(List<Holding> holdings) {
+        this.holdings = holdings;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
+    }
+
+    public List<HistoricalSnapshot> getSnapshots() {
+        return snapshots;
+    }
+
+    public void setSnapshots(List<HistoricalSnapshot> snapshots) {
+        this.snapshots = snapshots;
+    }
 }

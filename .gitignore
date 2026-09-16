@@ -1,6 +1,7 @@
 target/
 *.class
 *.jar
+*.jar.original
 *.log
 
 .idea/
@@ -16,3 +17,12 @@ Thumbs.db
 .env
 target
 src/main/resources
+
+# Build scripts
+build.ps1
+*.ps1
+
+# IDE
+.vscode/
+.vs/
+*.code-workspace
