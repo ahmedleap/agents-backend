@@ -1,6 +1,7 @@
 package com.agentsbackend.entities;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.agentsbackend.enums.AdminRole;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class Admin {
     private String email;
 
     @Column(name = "password_hash", length = 255, nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String passwordHash;
 
     @Column(name = "role", nullable = false)
