@@ -1,0 +1,28 @@
+target/
+*.class
+*.jar
+*.jar.original
+*.log
+
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+.DS_Store
+Thumbs.db
+
+.env
+target
+src/main/resources
+
+# Build scripts
+build.ps1
+*.ps1
+
+# IDE
+.vscode/
+.vs/
+*.code-workspace
