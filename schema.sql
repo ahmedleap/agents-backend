@@ -147,6 +147,7 @@ CREATE TABLE orders (
     order_type      order_type NOT NULL,
     quantity        NUMERIC(18,6) NOT NULL CHECK (quantity > 0),
     limit_price     NUMERIC(18,4) NOT NULL CHECK (limit_price > 0),
+    filled_price    NUMERIC(18,4) CHECK (filled_price > 0),
     status          order_status NOT NULL DEFAULT 'PENDING',
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     filled_at       TIMESTAMP,

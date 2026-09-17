@@ -17,6 +17,8 @@ public class AdminServiceImpl implements AdminService {
     public AdminServiceImpl(AdminRepository adminRepository) {
         this.adminRepository = adminRepository;
     }
+    
+    // Creates a new admin with auto-generated UUID and current timestamp if not provided
     @Override
     public Admin createAdmin(Admin admin) {
         if (admin.getAdminId() == null) {
