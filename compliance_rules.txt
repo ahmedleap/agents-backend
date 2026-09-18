@@ -5,15 +5,6 @@ TRADING WEB APP - COMPLIANCE RULES & CHECKS
 Section 1: CUSTOMER ACCOUNT & KNOW YOUR CUSTOMER(KYC) REQUIREMENTS
 ================================================================================
 
-1.1 ACCOUNT VERIFICATION - Customer Identity Verification
-Rule: All customer accounts must pass identity verification before trading access
-Checks:
-  - Account.verificationStatus must be "VERIFIED"
-  - Account.kycCompletedDate must not be null
-  - Account.kycCompletedDate must be <= current date
-  - Customer SSN/ID must be validated against identity verification service
-  - Account creation timestamp must exist
-Compliance: SEC Regulation S-P, FINRA Rule 4512
 
 1.2 ACCOUNT AGREEMENT ACCEPTANCE
 Rule: Customer must accept account agreement before trading
@@ -23,13 +14,6 @@ Checks:
   - Account.accountAgreementVersion must match current version
 Compliance: Securities Act of 1933
 
-
-1.3 RISK DISCLOSURE ACKNOWLEDGMENT
-Rule: Customer must acknowledge risk disclosures
-Checks:
-  - Account.riskDisclosureAcknowledged must be true
-  - Account.riskDisclosureAcknowledgedDate must not be null
-Compliance: Regulation Best Interest (Reg BI)
 
 1.4 ACCOUNT STATUS VALIDATION
 Rule: Only active accounts can trade
@@ -52,13 +36,6 @@ Checks:
   - If currentPosition + newOrderQuantity > 10,000, REJECT order
 Compliance: Risk Management, Market Manipulation Prevention
 
-2.2 POSITION LIMIT - Concentration Risk
-Rule: No single position can exceed 25% of total portfolio value
-Checks:
-  - Calculate totalPortfolioValue = sum of (each Holding.quantity * current_instrument_price)
-  - For each Holding: (Holding.quantity * Holding.currentPrice) / totalPortfolioValue <= 0.25
-  - If new order would violate this, REJECT order
-Compliance: Risk Management, Suitability
 
 2.3 PORTFOLIO VALUE VALIDATION
 Rule: Customer account balance must be sufficient for purchase
@@ -88,47 +65,32 @@ Compliance: Fraud Prevention, Market Manipulation Prevention
 Section 3: DAILY LOSS & RISK LIMITS
 ================================================================================
 
-3.1 DAILY LOSS LIMIT
-Rule: Customer losses on a single day cannot exceed 5% of account value
-Checks:
-  - Calculate: dailyLoss = sum of (Transaction.profit_loss for transactions on current date)
-  - Calculate: accountValue = Account.cashBalance + totalHoldingsValue
-  - If dailyLoss < 0 AND abs(dailyLoss) / accountValue > 0.05:
-      REJECT new orders and show warning
-Compliance: Risk Management, Account Protection
 
 3.2 ACCOUNT MINIMUM BALANCE
 Rule: Account must maintain minimum balance of $100
 Checks:
-  - Account.cashBalance must be >= 100 at all times
-  - If Account.cashBalance < 100, restrict new purchases (sales allowed)
-  - If Account.cashBalance < 50, suspend all trading activity
+  - Account.cashBalance must be >= 5 at all times
+  - If Account.cashBalance < 5, restrict new purchases (sales allowed)
+  - If Account.cashBalance < 0.1, suspend all trading activity
 Compliance: Risk Management
 
 3.3 ACCOUNT EQUITY CHECK
 Rule: Minimum account equity requirement
 Checks:
   - totalAccountEquity = Account.cashBalance + totalHoldingsValue
-  - totalAccountEquity must be >= $100
-  - If totalAccountEquity < $100, flag for manual review
+  - totalAccountEquity must be >= $5
+  - If totalAccountEquity < $5, flag for manual review
 Compliance: SEC Rule 15c3-1
 
 ================================================================================
 Section 4: TRANSACTION & TRADE VALIDATION
 ================================================================================
 
-4.1 ORDER EXECUTION TIME WINDOW
-Rule: Orders can only be placed during market hours
-Checks:
-  - Order.createdTime must be between 09:30 AM - 04:00 PM EST (market hours)
-  - OR Order.orderType must be "AFTER_HOURS" with explicit customer approval
-  - Reject orders outside market hours unless after-hours trading enabled
-Compliance: Market Practice, Operational Requirements
 
 4.2 ORDER TYPE RESTRICTIONS
 Rule: Only specific order types are allowed
 Checks:
-  - Order.orderType must be one of: "MARKET", "LIMIT", "STOP"
+  - Order.orderType must be one of: "MARKET", "LIMIT"
   - "MARKET" orders only for standard trading hours
   - REJECT unsupported order types like "OCO" or "CONDITIONAL"
 Compliance: System Design, Operational Rules
@@ -141,18 +103,11 @@ Checks:
   - If found, REJECT with "Duplicate order detected" message
 Compliance: Fraud Prevention, Market Integrity
 
-4.4 SETTLEMENT VALIDATION
-Rule: Transactions must settle within T+1 (1 business day)
-Checks:
-  - Transaction.executedDate + 1 business day = Transaction.settlementDate
-  - settlementDate must not be null
-  - settlementDate must be <= current date + 1 business day
-Compliance: SEC Regulation SHO, Settlement Requirements
 
 4.5 ORDER STATUS TRACKING
 Rule: All orders must have valid status progression
 Checks:
-  - Order.status must be one of: "PENDING", "EXECUTED", "CANCELLED", "REJECTED", "EXPIRED"
+  - Order.status must be one of: "PENDING", "FILLED", "CANCELLED", "REJECTED"
   - Order cannot move from "EXECUTED" back to "PENDING"
   - Order cannot move from "CANCELLED" to any other state
   - Order.statusChangedDate must not be null
@@ -169,9 +124,10 @@ Checks:
   - Account.investmentObjective must not be null
   - Account.riskTolerance must be one of: "CONSERVATIVE", "MODERATE", "AGGRESSIVE"
   - Account.informationLastUpdatedDate must exist
-  - If no update for > 365 days, flag for customer review
 Compliance: Reg BI, KYC Requirements
 
+
+--------FEATURE-----------
 5.2 SUITABILITY CHECK FOR STOCK RECOMMENDATIONS
 Rule: Recommended instruments must match customer risk profile
 Checks:
@@ -184,15 +140,7 @@ Checks:
       - All instruments allowed
 Compliance: Regulation Best Interest (Reg BI), Suitability Rule 2111
 
-5.3 PENNY STOCK RESTRICTIONS
-Rule: Restrictions on high-risk penny stocks
-Checks:
-  - If Instrument.price < $1.00 (penny stock):
-      - Require explicit written consent from customer
-      - Require separate risk acknowledgment
-      - Maximum position: 100 shares OR 5% of account value (whichever is smaller)
-      - Add warning message to order confirmation
-Compliance: Securities Fraud Prevention, Investor Protection
+
 
 ================================================================================
 Section 6: TRANSACTION & REPORTING REQUIREMENTS
@@ -234,48 +182,8 @@ Rule: Order execution details must be complete
 Checks:
   - Order.executionPrice must match Instrument.price at execution time
   - Order.executionTime must be logged
-  - Order.executionVenue must be recorded (e.g., "NASDAQ", "NYSE")
-  - Order.brokerCommission must be calculated and disclosed
 Compliance: Order Routing Disclosure Rules, Transparency
 
-================================================================================
-Section 7: ANTI-FRAUD & MANIPULATION PREVENTION
-================================================================================
-
-7.1 INSIDER TRADING PREVENTION
-Rule: Detect potential insider trading patterns
-Checks:
-  - Monitor for unusual trading volume before corporate announcements
-  - Flag accounts with high transaction frequency (> 100 trades/day)
-  - Require additional verification for accounts showing:
-      - Unusual profit patterns (> 95% win rate)
-      - Trading that precedes major news events
-Compliance: Securities Exchange Act Section 10(b), Rule 10b-5
-
-7.2 MARKET MANIPULATION PREVENTION - SPOOFING
-Rule: Detect and prevent spoofing (fake orders)
-Checks:
-  - Flag orders that are cancelled within < 5 seconds of placement
-  - Alert if customer places > 10 cancelled orders in 1 hour
-  - Alert if customer places orders far above/below market and then cancels
-Compliance: Dodd-Frank Act, Anti-Manipulation Rules
-
-7.3 MARKET MANIPULATION PREVENTION - WASH TRADING
-Rule: Detect potential wash trading
-Checks:
-  - Flag if same customer buys and sells same instrument within 30 days
-  - Flag if buy and sell at same price (no legitimate profit motive)
-  - Log all potential wash trade patterns for review
-Compliance: IRC Section 1092, Wash Sale Rules
-
-7.4 UNUSUAL ACTIVITY MONITORING
-Rule: Monitor for suspicious trading patterns
-Checks:
-  - Alert if single transaction exceeds 10% of daily market volume
-  - Alert if customer account shows sudden increase in activity (10x normal)
-  - Alert if multiple accounts from same IP execute related trades
-  - Alert if trading behavior contradicts stated investment objective
-Compliance: AML Requirements, Suspicious Activity Reporting
 
 ================================================================================
 Section 8: FINANCIAL RECORD & DATA INTEGRITY
@@ -322,17 +230,13 @@ Section 9: WITHDRAWAL & DEPOSIT REQUIREMENTS
 9.1 WITHDRAWAL RESTRICTIONS
 Rule: Withdrawals must follow settlement rules
 Checks:
-  - Can only withdraw settled cash (T+1 after transaction)
-  - Unsettled funds (pending settlement) cannot be withdrawn
-  - Pending withdrawal = Account.pendingWithdrawalAmount
-  - Account.availableForWithdrawal = cashBalance - pendingWithdrawalAmount
   - If withdrawal > availableForWithdrawal: REJECT
 Compliance: Settlement Requirements, Customer Protection
 
+--------PUT FAKE CHECK-----------
 9.2 DEPOSIT VERIFICATION
 Rule: Deposits must be verified before trading with funds
 Checks:
-  - New deposits require 1-2 business day hold before trading
   - Account.deposit[i].verificationStatus must be "VERIFIED"
   - Account.deposit[i].verificationDate must not be null
   - Can trade only with previously verified deposits
@@ -364,41 +268,14 @@ Compliance: Data Integrity, Customer Protection
 Rule: Customer accounts must be protected
 Checks:
   - Password must be minimum 8 characters, mixed case, numbers, special chars
-  - Sessions must timeout after 15 minutes of inactivity
-  - Failed login attempts > 5 = account locked for 30 minutes
-  - All login attempts must be logged with IP and timestamp
+  - Sessions must timeout after 30 minutes of inactivity
+  - Failed login attempts > 3 = account locked for 30 minutes
 Compliance: SEC Regulation S-P, Cybersecurity
 
-================================================================================
-Section 11: REPORTING & COMPLIANCE MONITORING
-================================================================================
-
-11.1 COMPLIANCE DASHBOARD MONITORING
-Rule: Compliance team must monitor all compliance rules in real-time
-Checks:
-  - Generate daily compliance report showing:
-      * All rule violations detected
-      * Flagged accounts or trades
-      * Unusual patterns detected
-      * Any system errors or failures
-  - Alert if any critical rule violations occur
-Compliance: FINRA Rule 4530, Internal Controls
-
-11.2 MANUAL REVIEW ESCALATION
-Rule: High-risk transactions require manual review
-Checks:
-  - Automatically escalate if:
-      * Single transaction > $100,000
-      * Customer new to platform (< 30 days) making high-volume trades
-      * Any fraud/manipulation alert triggered
-      * Suitability concern detected
-  - Manual review must be completed within 24 hours
-  - Review must be documented with approval/rejection reason
-Compliance: Risk Management, Compliance Controls
 
 ================================================================================
 END OF COMPLIANCE RULES
 ================================================================================
-Last Updated: 2026-09-17
-Version: 1.0
-Next Review: 2027-09-17
+Last Updated: 2026-09-18
+Version: 2.0
+Next Review: 2027-09-18
