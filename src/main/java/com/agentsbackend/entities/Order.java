@@ -33,6 +33,9 @@ public class Order {
     @Column(name = "limit_price", nullable = false, precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
     private BigDecimal limitPrice;
 
+    @Column(name = "filled_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (filled_price > 0)")
+    private BigDecimal filledPrice;
+
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
@@ -50,7 +53,7 @@ public class Order {
     }
 
     public Order(UUID orderId, Account account, Instrument instrument, OrderType orderType,
-                 BigDecimal quantity, BigDecimal limitPrice, OrderStatus status,
+                 BigDecimal quantity, BigDecimal limitPrice, BigDecimal filledPrice, OrderStatus status,
                  LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt) {
         this.orderId = orderId;
         this.account = account;
@@ -58,6 +61,7 @@ public class Order {
         this.orderType = orderType;
         this.quantity = quantity;
         this.limitPrice = limitPrice;
+        this.filledPrice = filledPrice;
         this.status = status;
         this.createdAt = createdAt;
         this.filledAt = filledAt;
@@ -110,6 +114,14 @@ public class Order {
 
     public void setLimitPrice(BigDecimal limitPrice) {
         this.limitPrice = limitPrice;
+    }
+
+    public BigDecimal getFilledPrice() {
+        return filledPrice;
+    }
+
+    public void setFilledPrice(BigDecimal filledPrice) {
+        this.filledPrice = filledPrice;
     }
 
     public OrderStatus getStatus() {

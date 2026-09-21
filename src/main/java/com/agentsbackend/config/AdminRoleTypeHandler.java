@@ -14,28 +14,40 @@ import java.sql.SQLException;
  */
 public class AdminRoleTypeHandler extends BaseTypeHandler<AdminRole> {
 
+    // Binds an AdminRole enum value to a PreparedStatement parameter
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, AdminRole parameter, JdbcType jdbcType) 
             throws SQLException {
-        // Cast to TEXT then to admin_role for PostgreSQL ENUM
         ps.setObject(i, parameter.name(), java.sql.Types.VARCHAR);
     }
 
+    // Retrieves an AdminRole enum value from a ResultSet column by name
     @Override
     public AdminRole getNullableResult(ResultSet rs, String columnName) throws SQLException {
         String value = rs.getString(columnName);
-        return value == null ? null : AdminRole.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return AdminRole.valueOf(value);
     }
 
+    // Retrieves an AdminRole enum value from a ResultSet column by index
     @Override
     public AdminRole getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
         String value = rs.getString(columnIndex);
-        return value == null ? null : AdminRole.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return AdminRole.valueOf(value);
     }
 
+    // Retrieves an AdminRole enum value from a CallableStatement column by index
     @Override
     public AdminRole getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
         String value = cs.getString(columnIndex);
-        return value == null ? null : AdminRole.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return AdminRole.valueOf(value);
     }
 }

@@ -73,6 +73,7 @@ CREATE TABLE clients (
     ssn_last4                CHAR(4), -- can be hashed but full for compliance
     portfolio_size_range     portfolio_size_range,
     risk_tolerance           risk_tolerance,
+    refresh_token            VARCHAR(500),
     CONSTRAINT chk_clients_ssn_last4
         CHECK (ssn_last4 IS NULL OR ssn_last4 ~ '^[0-9]{4}$')
 );
@@ -98,6 +99,7 @@ CREATE TABLE admin (
 CREATE TABLE accounts (
     account_id      UUID PRIMARY KEY,
     client_id       UUID NOT NULL,
+    name            VARCHAR(255) NOT NULL,
     cash_balance    NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (cash_balance >= 0),
     status          account_status NOT NULL DEFAULT 'ACTIVE',
     open_date       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -147,6 +149,7 @@ CREATE TABLE orders (
     order_type      order_type NOT NULL,
     quantity        NUMERIC(18,6) NOT NULL CHECK (quantity > 0),
     limit_price     NUMERIC(18,4) NOT NULL CHECK (limit_price > 0),
+    filled_price    NUMERIC(18,4) CHECK (filled_price > 0),
     status          order_status NOT NULL DEFAULT 'PENDING',
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     filled_at       TIMESTAMP,

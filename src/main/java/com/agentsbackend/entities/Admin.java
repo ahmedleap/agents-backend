@@ -46,6 +46,7 @@ public class Admin {
     }
 
     // Getters and Setters
+    // Retrieves the unique identifier of this admin
     public UUID getAdminId() {
         return adminId;
     }
@@ -54,50 +55,62 @@ public class Admin {
         this.adminId = adminId;
     }
 
+    // Retrieves the first name of this admin
     public String getFirstName() {
         return firstName;
     }
 
+    // Sets the first name of this admin
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
 
+    // Retrieves the last name of this admin
     public String getLastName() {
         return lastName;
     }
 
+    // Sets the last name of this admin
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
 
+    // Retrieves the email address of this admin
     public String getEmail() {
         return email;
     }
 
+    // Sets the email address of this admin
     public void setEmail(String email) {
         this.email = email;
     }
 
+    // Retrieves the hashed password of this admin
     public String getPasswordHash() {
         return passwordHash;
     }
 
+    // Sets the hashed password of this admin
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 
+    // Retrieves the role (ADMIN or ANALYST) of this admin
     public AdminRole getRole() {
         return role;
     }
 
+    // Sets the role (ADMIN or ANALYST) of this admin
     public void setRole(AdminRole role) {
         this.role = role;
     }
 
+    // Retrieves the creation timestamp of this admin record
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    // Sets the creation timestamp of this admin record
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }

@@ -102,33 +102,33 @@ INSERT INTO instrument_prices (price_id, instrument_id, price, as_of) VALUES
 -- 4. CLIENTS
 -- ============================================================
 
-INSERT INTO clients (client_id, first_name, middle_name, last_name, email, password_hash, date_of_birth, join_date, ssn_last4, portfolio_size_range, risk_tolerance) VALUES
-('850e8400-e29b-41d4-a716-446655770001', 'Alice', 'Marie', 'Johnson', 'alice.johnson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1985-03-15', '2024-01-10 08:30:00', '5432', 'BETWEEN_100K_200K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770002', 'Bob', 'David', 'Smith', 'bob.smith@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1990-07-22', '2024-02-15 10:15:00', '6789', 'BETWEEN_50K_100K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770003', 'Carol', 'Elizabeth', 'Williams', 'carol.williams@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1992-11-08', '2024-03-01 14:45:00', '2345', 'BETWEEN_200K_500K', 'AGGRESSIVE'),
-('850e8400-e29b-41d4-a716-446655770004', 'David', 'James', 'Brown', 'david.brown@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1988-05-30', '2024-04-12 09:20:00', '3456', 'BETWEEN_100K_200K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770005', 'Emma', 'Louise', 'Davis', 'emma.davis@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1995-09-12', '2024-05-20 11:30:00', '7890', 'UNDER_50K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770006', 'Frank', 'Michael', 'Miller', 'frank.miller@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1987-01-25', '2024-06-05 13:15:00', '1111', 'OVER_500K', 'AGGRESSIVE'),
-('850e8400-e29b-41d4-a716-446655770007', 'Grace', 'Ann', 'Wilson', 'grace.wilson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1993-08-18', '2024-07-10 15:45:00', '2222', 'BETWEEN_50K_100K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770008', 'Henry', 'Thomas', 'Moore', 'henry.moore@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1991-04-07', '2024-08-14 10:00:00', '3333', 'BETWEEN_100K_200K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770009', 'Ivy', 'Rebecca', 'Taylor', 'ivy.taylor@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1994-12-20', '2024-09-01 12:30:00', '4444', 'BETWEEN_200K_500K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770010', 'Jack', 'Robert', 'Anderson', 'jack.anderson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1989-06-14', '2024-09-05 08:45:00', '5555', 'BETWEEN_50K_100K', 'AGGRESSIVE');
+INSERT INTO clients (client_id, first_name, middle_name, last_name, email, password_hash, date_of_birth, join_date, ssn_last4, portfolio_size_range, risk_tolerance, refresh_token) VALUES
+('850e8400-e29b-41d4-a716-446655770001', 'Alice', 'Marie', 'Johnson', 'alice.johnson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1985-03-15', '2024-01-10 08:30:00', '5432', 'BETWEEN_100K_200K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDEiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_alice_1'),
+('850e8400-e29b-41d4-a716-446655770002', 'Bob', 'David', 'Smith', 'bob.smith@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1990-07-22', '2024-02-15 10:15:00', '6789', 'BETWEEN_50K_100K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDIiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_bob_2'),
+('850e8400-e29b-41d4-a716-446655770003', 'Carol', 'Elizabeth', 'Williams', 'carol.williams@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1992-11-08', '2024-03-01 14:45:00', '2345', 'BETWEEN_200K_500K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDMiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_carol_3'),
+('850e8400-e29b-41d4-a716-446655770004', 'David', 'James', 'Brown', 'david.brown@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1988-05-30', '2024-04-12 09:20:00', '3456', 'BETWEEN_100K_200K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDQiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_david_4'),
+('850e8400-e29b-41d4-a716-446655770005', 'Emma', 'Louise', 'Davis', 'emma.davis@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1995-09-12', '2024-05-20 11:30:00', '7890', 'UNDER_50K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDUiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_emma_5'),
+('850e8400-e29b-41d4-a716-446655770006', 'Frank', 'Michael', 'Miller', 'frank.miller@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1987-01-25', '2024-06-05 13:15:00', '1111', 'OVER_500K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDYiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_frank_6'),
+('850e8400-e29b-41d4-a716-446655770007', 'Grace', 'Ann', 'Wilson', 'grace.wilson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1993-08-18', '2024-07-10 15:45:00', '2222', 'BETWEEN_50K_100K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDciLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_grace_7'),
+('850e8400-e29b-41d4-a716-446655770008', 'Henry', 'Thomas', 'Moore', 'henry.moore@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1991-04-07', '2024-08-14 10:00:00', '3333', 'BETWEEN_100K_200K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDgiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_henry_8'),
+('850e8400-e29b-41d4-a716-446655770009', 'Ivy', 'Rebecca', 'Taylor', 'ivy.taylor@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1994-12-20', '2024-09-01 12:30:00', '4444', 'BETWEEN_200K_500K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDkiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_ivy_9'),
+('850e8400-e29b-41d4-a716-446655770010', 'Jack', 'Robert', 'Anderson', 'jack.anderson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1989-06-14', '2024-09-05 08:45:00', '5555', 'BETWEEN_50K_100K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMTAiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_jack_10');
 
 -- ============================================================
 -- 5. ACCOUNTS
 -- ============================================================
 
-INSERT INTO accounts (account_id, client_id, cash_balance, status, open_date) VALUES
-('950e8400-e29b-41d4-a716-446655880001', '850e8400-e29b-41d4-a716-446655770001', 75000.00, 'ACTIVE', '2024-01-10 08:30:00'),
-('950e8400-e29b-41d4-a716-446655880002', '850e8400-e29b-41d4-a716-446655770002', 45000.00, 'ACTIVE', '2024-02-15 10:15:00'),
-('950e8400-e29b-41d4-a716-446655880003', '850e8400-e29b-41d4-a716-446655770003', 180000.00, 'ACTIVE', '2024-03-01 14:45:00'),
-('950e8400-e29b-41d4-a716-446655880004', '850e8400-e29b-41d4-a716-446655770004', 65000.00, 'ACTIVE', '2024-04-12 09:20:00'),
-('950e8400-e29b-41d4-a716-446655880005', '850e8400-e29b-41d4-a716-446655770005', 25000.00, 'ACTIVE', '2024-05-20 11:30:00'),
-('950e8400-e29b-41d4-a716-446655880006', '850e8400-e29b-41d4-a716-446655770006', 450000.00, 'ACTIVE', '2024-06-05 13:15:00'),
-('950e8400-e29b-41d4-a716-446655880007', '850e8400-e29b-41d4-a716-446655770007', 55000.00, 'ACTIVE', '2024-07-10 15:45:00'),
-('950e8400-e29b-41d4-a716-446655880008', '850e8400-e29b-41d4-a716-446655770008', 85000.00, 'ACTIVE', '2024-08-14 10:00:00'),
-('950e8400-e29b-41d4-a716-446655880009', '850e8400-e29b-41d4-a716-446655770009', 250000.00, 'ACTIVE', '2024-09-01 12:30:00'),
-('950e8400-e29b-41d4-a716-446655880010', '850e8400-e29b-41d4-a716-446655770010', 48000.00, 'ACTIVE', '2024-09-05 08:45:00');
+INSERT INTO accounts (account_id, client_id, name, cash_balance, status, open_date) VALUES
+('950e8400-e29b-41d4-a716-446655880001', '850e8400-e29b-41d4-a716-446655770001', 'Primary Trading Account', 75000.00, 'ACTIVE', '2024-01-10 08:30:00'),
+('950e8400-e29b-41d4-a716-446655880002', '850e8400-e29b-41d4-a716-446655770002', 'Conservative Portfolio', 45000.00, 'ACTIVE', '2024-02-15 10:15:00'),
+('950e8400-e29b-41d4-a716-446655880003', '850e8400-e29b-41d4-a716-446655770003', 'Growth Portfolio', 180000.00, 'ACTIVE', '2024-03-01 14:45:00'),
+('950e8400-e29b-41d4-a716-446655880004', '850e8400-e29b-41d4-a716-446655770004', 'Balanced Account', 65000.00, 'ACTIVE', '2024-04-12 09:20:00'),
+('950e8400-e29b-41d4-a716-446655880005', '850e8400-e29b-41d4-a716-446655770005', 'Starter Account', 25000.00, 'ACTIVE', '2024-05-20 11:30:00'),
+('950e8400-e29b-41d4-a716-446655880006', '850e8400-e29b-41d4-a716-446655770006', 'Premium Portfolio', 450000.00, 'ACTIVE', '2024-06-05 13:15:00'),
+('950e8400-e29b-41d4-a716-446655880007', '850e8400-e29b-41d4-a716-446655770007', 'Income Account', 55000.00, 'ACTIVE', '2024-07-10 15:45:00'),
+('950e8400-e29b-41d4-a716-446655880008', '850e8400-e29b-41d4-a716-446655770008', 'Retirement Portfolio', 85000.00, 'ACTIVE', '2024-08-14 10:00:00'),
+('950e8400-e29b-41d4-a716-446655880009', '850e8400-e29b-41d4-a716-446655770009', 'Aggressive Growth Account', 250000.00, 'ACTIVE', '2024-09-01 12:30:00'),
+('950e8400-e29b-41d4-a716-446655880010', '850e8400-e29b-41d4-a716-446655770010', 'Diversified Portfolio', 48000.00, 'ACTIVE', '2024-09-05 08:45:00');
 
 -- ============================================================
 -- 6. TRANSACTIONS (Deposits & Withdrawals)
