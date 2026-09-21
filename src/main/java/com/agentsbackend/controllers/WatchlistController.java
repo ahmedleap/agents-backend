@@ -32,12 +32,13 @@ public class WatchlistController {
 	}
 
 	@GetMapping("/{clientId}")
-	public ResponseEntity<List<WatchlistResponse>> findByClientId(@PathVariable UUID clientId) {
+	public ResponseEntity<List<WatchlistResponse>> findByClientId(@PathVariable("clientId") UUID clientId) {
 		return ResponseEntity.ok(watchlistService.findByClientId(clientId));
 	}
 
 	@DeleteMapping("/{clientId}/{instrumentId}")
-	public ResponseEntity<Void> delete(@PathVariable UUID clientId, @PathVariable UUID instrumentId) {
+	public ResponseEntity<Void> delete(@PathVariable("clientId") UUID clientId,
+									   @PathVariable("instrumentId") UUID instrumentId) {
 		if (!watchlistService.delete(clientId, instrumentId)) {
 			return ResponseEntity.notFound().build();
 		}

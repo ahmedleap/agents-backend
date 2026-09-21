@@ -16,7 +16,6 @@ Thumbs.db
 
 .env
 target
-src/main/resources
 
 # Build scripts
 build.ps1
