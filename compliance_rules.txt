@@ -1,0 +1,281 @@
+================================================================================
+TRADING WEB APP - COMPLIANCE RULES & CHECKS
+================================================================================
+
+Section 1: CUSTOMER ACCOUNT & KNOW YOUR CUSTOMER(KYC) REQUIREMENTS
+================================================================================
+
+
+1.2 ACCOUNT AGREEMENT ACCEPTANCE
+Rule: Customer must accept account agreement before trading
+Checks:
+  - Account.accountAgreementAccepted must be true
+  - Account.accountAgreementAcceptedDate must not be null
+  - Account.accountAgreementVersion must match current version
+Compliance: Securities Act of 1933
+
+
+1.4 ACCOUNT STATUS VALIDATION
+Rule: Only active accounts can trade
+Checks:
+  - Account.status must be "ACTIVE"
+  - Account.status must NOT be "SUSPENDED", "CLOSED", or "RESTRICTED"
+  - Account.suspensionReason must be null if status is ACTIVE
+  - Account.suspensionDate must be null if status is ACTIVE
+Compliance: FINRA Rules
+
+================================================================================
+Section 2: POSITION & ORDER VALIDATION
+================================================================================
+
+2.1 POSITION LIMIT - Single Instrument Maximum
+Rule: Customer cannot hold more than 10,000 shares of any single instrument
+Checks:
+  - For each Holding: Holding.quantity <= 10,000
+  - Check against CURRENT holdings before allowing new order
+  - If currentPosition + newOrderQuantity > 10,000, REJECT order
+Compliance: Risk Management, Market Manipulation Prevention
+
+
+2.3 PORTFOLIO VALUE VALIDATION
+Rule: Customer account balance must be sufficient for purchase
+Checks:
+  - Account.cashBalance must be >= (Order.quantity * Order.unitPrice)
+  - After order execution: Account.cashBalance must remain >= 0
+  - No negative cash balances allowed
+Compliance: Settlement and Clearing Requirements
+
+2.4 ORDER QUANTITY VALIDATION
+Rule: Order quantities must be valid and reasonable
+Checks:
+  - Order.quantity must be > 0
+  - Order.quantity must be an integer (no fractional shares)
+  - Order.quantity must be <= 1,000,000 (maximum per order)
+Compliance: Market Practice, System Integrity
+
+2.5 ORDER PRICE VALIDATION
+Rule: Order prices must be reasonable and within market bounds
+Checks:
+  - Order.price must be > 0
+  - Order.price must not be more than 50% above last known market price
+  - Order.price must not be less than 50% below last known market price
+Compliance: Fraud Prevention, Market Manipulation Prevention
+
+================================================================================
+Section 3: DAILY LOSS & RISK LIMITS
+================================================================================
+
+
+3.2 ACCOUNT MINIMUM BALANCE
+Rule: Account must maintain minimum balance of $100
+Checks:
+  - Account.cashBalance must be >= 5 at all times
+  - If Account.cashBalance < 5, restrict new purchases (sales allowed)
+  - If Account.cashBalance < 0.1, suspend all trading activity
+Compliance: Risk Management
+
+3.3 ACCOUNT EQUITY CHECK
+Rule: Minimum account equity requirement
+Checks:
+  - totalAccountEquity = Account.cashBalance + totalHoldingsValue
+  - totalAccountEquity must be >= $5
+  - If totalAccountEquity < $5, flag for manual review
+Compliance: SEC Rule 15c3-1
+
+================================================================================
+Section 4: TRANSACTION & TRADE VALIDATION
+================================================================================
+
+
+4.2 ORDER TYPE RESTRICTIONS
+Rule: Only specific order types are allowed
+Checks:
+  - Order.orderType must be one of: "MARKET", "LIMIT"
+  - "MARKET" orders only for standard trading hours
+  - REJECT unsupported order types like "OCO" or "CONDITIONAL"
+Compliance: System Design, Operational Rules
+
+4.3 DUPLICATE ORDER PREVENTION
+Rule: Prevent duplicate orders within 60 seconds
+Checks:
+  - Check if order with same Account.id, Instrument.id, quantity, price exists
+  - Within last 60 seconds
+  - If found, REJECT with "Duplicate order detected" message
+Compliance: Fraud Prevention, Market Integrity
+
+
+4.5 ORDER STATUS TRACKING
+Rule: All orders must have valid status progression
+Checks:
+  - Order.status must be one of: "PENDING", "FILLED", "CANCELLED", "REJECTED"
+  - Order cannot move from "EXECUTED" back to "PENDING"
+  - Order cannot move from "CANCELLED" to any other state
+  - Order.statusChangedDate must not be null
+Compliance: Audit Trail Requirements
+
+================================================================================
+Section 5: SUITABILITY & DISCLOSURE REQUIREMENTS
+================================================================================
+
+5.1 CUSTOMER INFORMATION ACCURACY
+Rule: Customer account information must be current and accurate
+Checks:
+  - Account.email must be valid email format
+  - Account.investmentObjective must not be null
+  - Account.riskTolerance must be one of: "CONSERVATIVE", "MODERATE", "AGGRESSIVE"
+  - Account.informationLastUpdatedDate must exist
+Compliance: Reg BI, KYC Requirements
+
+
+--------FEATURE-----------
+5.2 SUITABILITY CHECK FOR STOCK RECOMMENDATIONS
+Rule: Recommended instruments must match customer risk profile
+Checks:
+  - If Account.riskTolerance = "CONSERVATIVE":
+      - Recommended instruments must have: avgDailyVolume > 1,000,000
+      - Recommended instruments must NOT be penny stocks (price >= $1)
+  - If Account.riskTolerance = "MODERATE":
+      - Recommended instruments may include mid-cap stocks
+  - If Account.riskTolerance = "AGGRESSIVE":
+      - All instruments allowed
+Compliance: Regulation Best Interest (Reg BI), Suitability Rule 2111
+
+
+
+================================================================================
+Section 6: TRANSACTION & REPORTING REQUIREMENTS
+================================================================================
+
+6.1 TRADE CONFIRMATION
+Rule: Every executed trade must have a confirmation
+Checks:
+  - Transaction.confirmationNumber must not be null
+  - Transaction.confirmationNumber must be unique
+  - Transaction.confirmationSentDate must not be null
+  - Transaction must be delivered to customer within 1 business day
+Compliance: SEC Rule 15c2-3, Trade Confirmation Rules
+
+6.2 PROFIT & LOSS CALCULATION
+Rule: All gains/losses must be accurately calculated
+Checks:
+  - For SELL transactions:
+      - profitLoss = (sellingPrice - costBasis) * quantity
+      - profitLoss calculation must be mathematically correct
+      - costBasis must reference original purchase price
+  - All P&L values must match calculated values
+Compliance: Tax Compliance, Audit Trail
+
+6.3 TRANSACTION AUDIT TRAIL
+Rule: All transactions must be logged for compliance audit
+Checks:
+  - Transaction.createdDate must exist
+  - Transaction.executedDate must not be null (after execution)
+  - Transaction.userId must not be null
+  - Transaction.ipAddress must be logged
+  - Transaction.deviceId must be logged
+  - Transaction.orderType must be recorded
+  - Transaction.executionPrice must be logged
+Compliance: SEC Regulation S-P, FINRA Rules, Audit Requirements
+
+6.4 ORDER EXECUTION REPORTING
+Rule: Order execution details must be complete
+Checks:
+  - Order.executionPrice must match Instrument.price at execution time
+  - Order.executionTime must be logged
+Compliance: Order Routing Disclosure Rules, Transparency
+
+
+================================================================================
+Section 8: FINANCIAL RECORD & DATA INTEGRITY
+================================================================================
+
+8.1 ACCOUNT BALANCE INTEGRITY
+Rule: Account balances must always be mathematically consistent
+Checks:
+  - Account.cashBalance = InitialDeposit + (sum of deposits) - (sum of withdrawals) - (sum of purchases) + (sum of sales)
+  - If calculated != recorded: ALERT and HALT all trading
+  - Perform daily reconciliation check
+Compliance: SEC Regulation 17a-3, Recordkeeping
+
+8.2 HOLDING QUANTITY CONSISTENCY
+Rule: Holdings must match transaction history
+Checks:
+  - For each Instrument:
+      - Holding.quantity = sum(buy transactions) - sum(sell transactions)
+      - If calculated != recorded: ALERT and HALT trading for that holding
+  - Holdings.lastUpdatedDate must not be null
+Compliance: Recordkeeping Requirements
+
+8.3 TRANSACTION IMMUTABILITY
+Rule: Executed transactions cannot be modified
+Checks:
+  - Transaction cannot be deleted once status = "EXECUTED"
+  - Transaction.executedPrice cannot be changed
+  - Transaction.executedDate cannot be changed
+  - Only corrections with audit trail allowed
+Compliance: SEC Regulation S-P, Audit Trail
+
+8.4 HISTORICAL DATA RETENTION
+Rule: All transaction history must be retained
+Checks:
+  - Transaction records must be retained for minimum 6 years
+  - Account history must be accessible for past 10 years
+  - Deleted accounts must have archived transaction records
+Compliance: SEC Rule 17a-3, FINRA Rule 4530
+
+================================================================================
+Section 9: WITHDRAWAL & DEPOSIT REQUIREMENTS
+================================================================================
+
+9.1 WITHDRAWAL RESTRICTIONS
+Rule: Withdrawals must follow settlement rules
+Checks:
+  - If withdrawal > availableForWithdrawal: REJECT
+Compliance: Settlement Requirements, Customer Protection
+
+--------PUT FAKE CHECK-----------
+9.2 DEPOSIT VERIFICATION
+Rule: Deposits must be verified before trading with funds
+Checks:
+  - Account.deposit[i].verificationStatus must be "VERIFIED"
+  - Account.deposit[i].verificationDate must not be null
+  - Can trade only with previously verified deposits
+Compliance: Anti-Money Laundering, Funds Availability
+
+================================================================================
+Section 10: SYSTEM & OPERATIONAL COMPLIANCE
+================================================================================
+
+10.1 SYSTEM DOWNTIME & SERVICE INTERRUPTION
+Rule: System availability and failover requirements
+Checks:
+  - System uptime target: 99.5% during market hours
+  - If system down > 5 minutes, alert compliance team
+  - All pending orders must be queued and executed when system restarts
+  - Order queue must persist across system restarts
+Compliance: Operational Rules, Customer Protection
+
+10.2 ERROR HANDLING & ROLLBACK
+Rule: System errors must not result in incorrect transactions
+Checks:
+  - If transaction fails mid-process, entire transaction must rollback
+  - No partial executions allowed
+  - Customer must be notified of failed orders immediately
+  - Failed orders must have clear error message logged
+Compliance: Data Integrity, Customer Protection
+
+10.3 PASSWORD & SESSION SECURITY
+Rule: Customer accounts must be protected
+Checks:
+  - Password must be minimum 8 characters, mixed case, numbers, special chars
+  - Sessions must timeout after 30 minutes of inactivity
+  - Failed login attempts > 3 = account locked for 30 minutes
+Compliance: SEC Regulation S-P, Cybersecurity
+
+
+================================================================================
+END OF COMPLIANCE RULES
+================================================================================
+Last Updated: 2026-09-18
+Version: 2.0
+Next Review: 2027-09-18
