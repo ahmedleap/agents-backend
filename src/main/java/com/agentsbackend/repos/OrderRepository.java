@@ -2,6 +2,7 @@ package com.agentsbackend.repos;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import com.agentsbackend.entities.Order;
 import java.util.List;
@@ -21,4 +22,8 @@ public interface OrderRepository {
 
     @Update("UPDATE orders SET status = #{status}, updated_at = NOW() WHERE id = #{id}")
     void updateOrder(Order order);
+
+    @Insert("INSERT INTO orders (id, account_id, instrument_id, quantity, price, order_type, status, created_at, updated_at) " +
+            "VALUES (#{orderId}, #{accountId}, #{instrumentId}, #{quantity}, #{price}, #{orderType}, #{status}, #{createdAt}, #{updatedAt})")
+    void save(Order order);
 }

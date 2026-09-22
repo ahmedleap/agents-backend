@@ -2,6 +2,7 @@ package com.agentsbackend.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,11 +13,14 @@ import java.util.UUID;
 import com.agentsbackend.services.OrderService;
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.DTO.requests.CancelOrderRequest;
+import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.DTO.requests.GetPendingOrdersRequest;
 import com.agentsbackend.DTO.response.CancelOrderResponse;
+import com.agentsbackend.DTO.response.CreateOrderResponse;
+import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/api/v1/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -47,6 +51,13 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    // HTTP POST endpoint for creating a new order
+    @PostMapping
+    public ResponseEntity<CreateOrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        CreateOrderResponse response = orderService.createOrder(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     
 }
 
@@ -54,4 +65,3 @@ public class OrderController {
 // - post order preview
 // - get orders (history)
 // - get specific order information
-// - cancel orders
