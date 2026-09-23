@@ -16,8 +16,8 @@ import java.util.UUID;
 @Mapper
 public interface WatchlistRepository {
 
-    @Insert("INSERT INTO watchlists (watchlist_id, client_id, instrument_id) " +
-            "VALUES (#{watchlistId}, #{clientId}, #{instrumentId}) " +
+    @Insert("INSERT INTO watchlists (client_id, instrument_id) " +
+            "VALUES (#{clientId}, #{instrumentId}) " +
             "ON CONFLICT (client_id, instrument_id) DO NOTHING")
     int add(Watchlist watchlist);
 
@@ -32,7 +32,7 @@ public interface WatchlistRepository {
             @Result(property = "instrumentName", column = "instrument_name"),
             @Result(property = "addedAt", column = "added_at")
     })
-    List<Watchlist> findByClientId(@Param("clientId") UUID clientId);
+        List<Watchlist> findByClientId(@Param("clientId") UUID clientId);
 
     @Select("SELECT w.watchlist_id, w.client_id, w.instrument_id, i.ticker, i.name AS instrument_name, w.added_at " +
             "FROM watchlists w JOIN instruments i ON i.instrument_id = w.instrument_id " +
@@ -45,9 +45,9 @@ public interface WatchlistRepository {
             @Result(property = "instrumentName", column = "instrument_name"),
             @Result(property = "addedAt", column = "added_at")
     })
-    Optional<Watchlist> findByClientAndInstrument(@Param("clientId") UUID clientId,
-                                                   @Param("instrumentId") UUID instrumentId);
+        Optional<Watchlist> findByClientAndInstrument(@Param("clientId") UUID clientId,
+                                                                                                   @Param("instrumentId") UUID instrumentId);
 
     @Delete("DELETE FROM watchlists WHERE client_id = #{clientId} AND instrument_id = #{instrumentId}")
-    int delete(@Param("clientId") UUID clientId, @Param("instrumentId") UUID instrumentId);
+        int delete(@Param("clientId") UUID clientId, @Param("instrumentId") UUID instrumentId);
 }

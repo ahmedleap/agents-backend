@@ -23,7 +23,6 @@ public class WatchlistServiceImpl implements WatchlistService {
     @Override
     public WatchlistResponse add(AddWatchlistRequest request) {
         Watchlist watchlist = new Watchlist();
-        watchlist.setWatchlistId(UUID.randomUUID());
         watchlist.setClientId(request.clientId());
         watchlist.setInstrumentId(request.instrumentId());
         watchlistRepository.add(watchlist);

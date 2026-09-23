@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,8 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class WatchlistControllerTest {
 
-    private static final UUID CLIENT_ID = UUID.fromString("850e8400-e29b-41d4-a716-446655770001");
-    private static final UUID INSTRUMENT_ID = UUID.fromString("650e8400-e29b-41d4-a716-446655550001");
+    private static final Integer CLIENT_ID = 1;
+    private static final Integer INSTRUMENT_ID = 4;
 
     private MockMvc mockMvc;
 
@@ -44,7 +43,7 @@ class WatchlistControllerTest {
     @Test
     void addReturnsCreatedWatchlistEntry() throws Exception {
         WatchlistResponse response = new WatchlistResponse(
-                UUID.fromString("750e8400-e29b-41d4-a716-446655660001"),
+                1,
                 CLIENT_ID,
                 INSTRUMENT_ID,
                 "AAPL",
@@ -56,14 +55,14 @@ class WatchlistControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "clientId": "850e8400-e29b-41d4-a716-446655770001",
-                                  "instrumentId": "650e8400-e29b-41d4-a716-446655550001"
+                                  "clientId": 1,
+                                  "instrumentId": 4
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.clientId").value(CLIENT_ID.toString()))
-                .andExpect(jsonPath("$.instrumentId").value(INSTRUMENT_ID.toString()))
+                .andExpect(jsonPath("$.clientId").value(CLIENT_ID))
+                .andExpect(jsonPath("$.instrumentId").value(INSTRUMENT_ID))
                 .andExpect(jsonPath("$.ticker").value("AAPL"));
     }
 
@@ -71,7 +70,7 @@ class WatchlistControllerTest {
     void findByClientIdReturnsWatchlistEntries() throws Exception {
         when(watchlistService.findByClientId(CLIENT_ID)).thenReturn(List.of(
                 new WatchlistResponse(
-                        UUID.fromString("750e8400-e29b-41d4-a716-446655660001"),
+                        1,
                         CLIENT_ID,
                         INSTRUMENT_ID,
                         "AAPL",
