@@ -17,6 +17,7 @@ import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.DTO.requests.GetPendingOrdersRequest;
 import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
+import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -57,6 +58,25 @@ public class OrderController {
         CreateOrderResponse response = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    // HTTP GET endpoint for retrieving order history for an account
+    @GetMapping
+    public ResponseEntity<List<OrderSummaryResponse>> getOrderHistory(
+            @RequestParam(value = "accountId") UUID accountId) {
+           
+        List<OrderSummaryResponse> orders = orderService.getOrderHistory(accountId);
+        return ResponseEntity.ok(orders);
+    }
+
+    // HTTP GET endpoint for retrieving a specific order by ID
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Order> getOrderById(@PathVariable UUID orderId) {
+        Order order = orderService.getOrderById(orderId);
+        
+        
+        return ResponseEntity.ok(order);
+    }
+
 
     
 }

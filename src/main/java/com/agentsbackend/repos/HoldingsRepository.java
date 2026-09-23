@@ -5,11 +5,14 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Param;
 import com.agentsbackend.entities.Holding;
 import java.util.UUID;
-import java.util.Optional;
+import java.util.List;
 
 @Mapper
 public interface HoldingsRepository {
     
     @Select("SELECT * FROM holdings WHERE account_id = #{accountId} AND instrument_id = #{instrumentId}")
     Holding findByAccountAndInstrument(@Param("accountId") UUID accountId, @Param("instrumentId") UUID instrumentId);
+
+    @Select("SELECT * FROM holdings WHERE account_id = #{accountId}")
+    List<Holding> findAllByAccount(@Param("accountId") UUID accountId);
 }

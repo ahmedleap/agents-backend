@@ -7,6 +7,7 @@ import com.agentsbackend.enums.OrderType;
 
 /**
  * Request DTO for creating a new order.
+ * Price is optional: if provided, creates a LIMIT order; if omitted, creates a MARKET order
  */
 public class CreateOrderRequest {
 
@@ -19,8 +20,7 @@ public class CreateOrderRequest {
     @NotNull(message = "Quantity cannot be null")
     private Integer quantity;
 
-    @NotNull(message = "Price cannot be null")
-    private BigDecimal price;
+    private BigDecimal price;  // Optional: null = MARKET order, value = LIMIT order
 
     @NotNull(message = "Order type cannot be null")
     private OrderType orderType;

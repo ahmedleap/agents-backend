@@ -5,7 +5,9 @@ import com.agentsbackend.DTO.requests.CancelOrderRequest;
 import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
+import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import java.util.List;
+import java.util.UUID;
 
 public interface OrderService {
 
@@ -17,4 +19,10 @@ public interface OrderService {
 
     // Cancels an existing order
     CancelOrderResponse cancelOrder(CancelOrderRequest request);
+
+    // Returns concise order history for a specific account
+    List<OrderSummaryResponse> getOrderHistory(UUID accountId);
+
+    // Returns a specific order by ID
+    Order getOrderById(UUID orderId);
 }
