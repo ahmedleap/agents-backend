@@ -181,7 +181,7 @@ public interface AccountRepository {
      * @param date Date to get portfolio value for
      * @return Portfolio value at the specified date, or null if no data
      */
-    @Select("SELECT portfolio_value FROM historical_snapshot " +
+    @Select("SELECT total_value FROM historical_snapshot " +
             "WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND snapshot_date <= #{date,jdbcType=DATE} " +
             "ORDER BY snapshot_date DESC LIMIT 1")
@@ -196,7 +196,7 @@ public interface AccountRepository {
      * @return Realized gains/losses, or null if no completed trades
      */
     @Select("SELECT COALESCE(SUM(CASE WHEN o.order_type = 'SELL' " +
-            "THEN (o.quantity * o.limit_price) - (h.quantity * h.average_cost) ELSE 0 END), 0) " +
+            "THEN (o.quantity * o.limit_price) - (h.quantity * h.average_cost_basis) ELSE 0 END), 0) " +
             "FROM orders o LEFT JOIN holdings h ON o.instrument_id = h.instrument_id " +
             "WHERE o.account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND o.status = 'FILLED' AND o.created_at >= #{startDate,jdbcType=TIMESTAMP}")
@@ -209,7 +209,7 @@ public interface AccountRepository {
      * @param accountId UUID of the account
      * @return Total cost basis of holdings, or null if no holdings
      */
-    @Select("SELECT COALESCE(SUM(quantity * average_cost), 0) FROM holdings " +
+    @Select("SELECT COALESCE(SUM(quantity * average_cost_basis), 0) FROM holdings " +
             "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     BigDecimal getHoldingsCostBasis(@Param("accountId") UUID accountId);
 
