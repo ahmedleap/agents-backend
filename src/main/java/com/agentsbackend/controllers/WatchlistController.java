@@ -35,7 +35,7 @@ public class WatchlistController {
 	public ResponseEntity<List<WatchlistResponse>> findByClientId(@PathVariable("clientId") UUID clientId) {
 		return ResponseEntity.ok(watchlistService.findByClientId(clientId));
 	}
-    
+
 @DeleteMapping("/{clientId}/{instrumentId}")
 public ResponseEntity<Void> delete(@PathVariable("clientId") UUID clientId,
                                    @PathVariable("instrumentId") UUID instrumentId) {
@@ -43,4 +43,5 @@ public ResponseEntity<Void> delete(@PathVariable("clientId") UUID clientId,
         return ResponseEntity.notFound().build();
     }
     return ResponseEntity.noContent().build();
+}
 }

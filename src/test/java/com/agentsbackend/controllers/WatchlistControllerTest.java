@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class WatchlistControllerTest {
 
-    private static final Integer CLIENT_ID = 1;
-    private static final Integer INSTRUMENT_ID = 4;
+    private static final UUID CLIENT_ID = UUID.fromString("850e8400-e29b-41d4-a716-446655770001");
+    private static final UUID INSTRUMENT_ID = UUID.fromString("650e8400-e29b-41d4-a716-446655550001");
 
     private MockMvc mockMvc;
 
@@ -43,7 +44,7 @@ class WatchlistControllerTest {
     @Test
     void addReturnsCreatedWatchlistEntry() throws Exception {
         WatchlistResponse response = new WatchlistResponse(
-                1,
+                UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001"),
                 CLIENT_ID,
                 INSTRUMENT_ID,
                 "AAPL",
@@ -70,7 +71,7 @@ class WatchlistControllerTest {
     void findByClientIdReturnsWatchlistEntries() throws Exception {
         when(watchlistService.findByClientId(CLIENT_ID)).thenReturn(List.of(
                 new WatchlistResponse(
-                        1,
+                        UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001"),
                         CLIENT_ID,
                         INSTRUMENT_ID,
                         "AAPL",
