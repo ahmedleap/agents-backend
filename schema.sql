@@ -122,6 +122,27 @@ CREATE TABLE instruments (
 );
 
 -- ============================================================
+-- WATCHLISTS
+-- ============================================================
+
+CREATE TABLE watchlists (
+    watchlist_id    UUID PRIMARY KEY,
+    client_id       UUID NOT NULL,
+    instrument_id   UUID NOT NULL,
+    added_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_watchlists_client
+        FOREIGN KEY (client_id)
+        REFERENCES clients (client_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_watchlists_instrument
+        FOREIGN KEY (instrument_id)
+        REFERENCES instruments (instrument_id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_watchlists_client_instrument
+        UNIQUE (client_id, instrument_id)
+);
+
+-- ============================================================
 -- INSTRUMENT_PRICES (periodic pricing-API pulls, ~15 min cadence)
 -- ============================================================
 
@@ -233,6 +254,8 @@ CREATE INDEX idx_orders_account_status ON orders (account_id, status);
 CREATE INDEX idx_orders_status ON orders (status);
 
 CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
+
+CREATE INDEX idx_watchlists_client ON watchlists (client_id);
 
 CREATE INDEX idx_transactions_account_created ON transactions (account_id, created_at);
 
