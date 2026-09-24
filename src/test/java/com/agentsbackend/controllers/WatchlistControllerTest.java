@@ -13,6 +13,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,8 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class WatchlistControllerTest {
 
-    private static final Integer CLIENT_ID = 1;
-    private static final Integer INSTRUMENT_ID = 4;
+    private static final UUID CLIENT_ID = UUID.fromString("850e8400-e29b-41d4-a716-446655770001");
+    private static final UUID INSTRUMENT_ID = UUID.fromString("650e8400-e29b-41d4-a716-446655550001");
 
     private MockMvc mockMvc;
 
@@ -43,7 +48,7 @@ class WatchlistControllerTest {
     @Test
     void addReturnsCreatedWatchlistEntry() throws Exception {
         WatchlistResponse response = new WatchlistResponse(
-                1,
+                UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001"),
                 CLIENT_ID,
                 INSTRUMENT_ID,
                 "AAPL",
@@ -55,22 +60,45 @@ class WatchlistControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "clientId": 1,
-                                  "instrumentId": 4
+                                  "clientId": "850e8400-e29b-41d4-a716-446655770001",
+                                  "instrumentId": "650e8400-e29b-41d4-a716-446655550001"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.clientId").value(CLIENT_ID))
-                .andExpect(jsonPath("$.instrumentId").value(INSTRUMENT_ID))
+                .andExpect(jsonPath("$.clientId").value(CLIENT_ID.toString()))
+                .andExpect(jsonPath("$.instrumentId").value(INSTRUMENT_ID.toString()))
                 .andExpect(jsonPath("$.ticker").value("AAPL"));
     }
+
+            @Test
+            void watchlistResponseExposesAllFieldsAndValueMethods() {
+            UUID watchlistId = UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001");
+            LocalDateTime addedAt = LocalDateTime.parse("2026-09-21T12:00:00");
+            WatchlistResponse response = new WatchlistResponse(
+                watchlistId, CLIENT_ID, INSTRUMENT_ID, "AAPL", "Apple Inc.", addedAt);
+            WatchlistResponse equalResponse = new WatchlistResponse(
+                watchlistId, CLIENT_ID, INSTRUMENT_ID, "AAPL", "Apple Inc.", addedAt);
+            WatchlistResponse differentResponse = new WatchlistResponse(
+                watchlistId, CLIENT_ID, INSTRUMENT_ID, "MSFT", "Microsoft", addedAt);
+
+            assertEquals(watchlistId, response.watchlistId());
+            assertEquals(CLIENT_ID, response.clientId());
+            assertEquals(INSTRUMENT_ID, response.instrumentId());
+            assertEquals("AAPL", response.ticker());
+            assertEquals("Apple Inc.", response.instrumentName());
+            assertEquals(addedAt, response.addedAt());
+            assertEquals(response, equalResponse);
+            assertEquals(response.hashCode(), equalResponse.hashCode());
+            assertNotEquals(response, differentResponse);
+            assertTrue(response.toString().contains("AAPL"));
+            }
 
     @Test
     void findByClientIdReturnsWatchlistEntries() throws Exception {
         when(watchlistService.findByClientId(CLIENT_ID)).thenReturn(List.of(
                 new WatchlistResponse(
-                        1,
+                        UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001"),
                         CLIENT_ID,
                         INSTRUMENT_ID,
                         "AAPL",
