@@ -1,6 +1,7 @@
 package com.agentsbackend.DTO.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Max;
 import java.math.BigDecimal;
@@ -12,13 +13,13 @@ public class CreateHoldingRequestDTO{
     @NotBlank (message = "Instrument requires Id")
     private String instrumentId;
 
-    @NotBlank (message = "Holding requires quantity")
+    @NotNull (message = "Holding requires quantity")
     @Positive (message = "Quantity must be greater than 0")
     @Max(value = 1000000, message = "Quantity cannot exceed 1,000,000 shares")
     private BigDecimal quantity;
 
-    @NotBlank (message = "Holding requires average cost basis")
-    @Positive (message = "Avergae cost must be greater than 0")
+    @NotNull (message = "Holding requires average cost basis")
+    @Positive (message = "Average cost must be greater than 0")
     private BigDecimal averageCostBasis;
 
     //constructor

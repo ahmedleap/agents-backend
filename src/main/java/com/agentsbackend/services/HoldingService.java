@@ -1,14 +1,10 @@
 package com.agentsbackend.services;
 
+import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
 import com.agentsbackend.entities.Holding;
-//import com.agentsbackend.repos.HoldingRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+public interface HoldingService {
 
-import java.util.UUID;
-
-@Service 
-public class HoldingService {
-    //service method will go here
+    Holding createHoldingFromDTO(CreateHoldingRequestDTO request);
+    Holding createHolding(Holding holding);
 }
