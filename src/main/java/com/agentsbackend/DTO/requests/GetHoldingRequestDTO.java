@@ -4,13 +4,13 @@ import jakarta.validation.constraints.NotBlank;
 
 
 public class GetHoldingRequestDTO {
-    @NotBlank(message = "Holding ID required")
-    private String holdingId;
+    @NotBlank(message = "Account ID required")
+    private String accountId;
 
-    public GetHoldingRequestDTO(String holdingId){
-        this.holdingId = holdingId;
+    public GetHoldingRequestDTO(String accountId){
+        this.accountId = accountId;
     }
 
-    public String getHoldingId(){ return holdingId; }
-    public void setHoldingId( String holdingId ){ this.holdingId = holdingId; }
+    public String getAccountId(){ return accountId; }
+    public void setAccountId( String accountId ){ this.accountId = accountId; }
 }

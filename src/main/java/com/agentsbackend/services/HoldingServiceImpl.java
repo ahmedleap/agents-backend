@@ -6,6 +6,8 @@ import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.repos.HoldingRepository;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
+import com.agentsbackend.repos.InstrumentPriceRepository;
+import java.math.BigDecimal;
 import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
 import com.agentsbackend.exceptions.AccountNotFoundException;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
@@ -23,13 +25,16 @@ public class HoldingServiceImpl implements HoldingService {
     private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
+    private final InstrumentPriceRepository instrumentPriceRepository;
 
     public HoldingServiceImpl(HoldingRepository holdingRepository,
                              AccountRepository accountRepository,
-                             InstrumentRepository instrumentRepository) {
+                             InstrumentRepository instrumentRepository,
+                             InstrumentPriceRepository instrumentPriceRepository) {
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
+        this.instrumentPriceRepository = instrumentPriceRepository;
     }
     
     // Creates a new admin with auto-generated UUID and current timestamp if not provided
@@ -60,9 +65,14 @@ public class HoldingServiceImpl implements HoldingService {
     }
 
     @Override
-    public Holding getHolding(UUID holdingId){
-        return holdingRepository.findById(holdingId)
-            .orElseThrow(() -> new HoldingNotFoundException(holdingId));
+    public java.util.List<Holding> getHoldingsByAccountId(UUID accountId){
+        return holdingRepository.findByAccountId(accountId);
+    }
+
+    @Override
+    public BigDecimal getCurrentPrice(UUID instrumentId){
+        return instrumentPriceRepository.getLatestPrice(instrumentId)
+            .orElse(BigDecimal.ZERO);
     }
 }
 

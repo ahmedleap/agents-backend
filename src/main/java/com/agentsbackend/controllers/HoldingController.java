@@ -36,26 +36,29 @@ public class HoldingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{holdingId}")
-    public ResponseEntity <GetHoldingResponseDTO> getHolding(
-            @PathVariable UUID holdingId) {
+    @GetMapping("/{accountId}")
+    public ResponseEntity<java.util.List<GetHoldingResponseDTO>> getHoldings(
+            @PathVariable UUID accountId) {
         
-        Holding holding = holdingService.getHolding(holdingId);
+        java.util.List<Holding> holdings = holdingService.getHoldingsByAccountId(accountId);
 
-        // TODO: Verify current user owns this holding
-        // if (!holding.getAccount().getOwnerId().equals(getCurrentUserId())) {
-        //     throw new AccessDeniedException("You don't own this holding");
-        // }
-        
-        GetHoldingResponseDTO response = new GetHoldingResponseDTO(
-            holding.getHoldingId().toString(),
-            holding.getAccount().getAccountId().toString(),
-            holding.getInstrument().getInstrumentId().toString(),
-            holding.getQuantity(),
-            holding.getAverageCostBasis()
-        );
+        java.util.List<GetHoldingResponseDTO> response = holdings.stream()
+            .map(holding -> {
+                java.math.BigDecimal currentPrice = holdingService.getCurrentPrice(holding.getInstrument().getInstrumentId());
+                return new GetHoldingResponseDTO(
+                    holding.getHoldingId().toString(),
+                    holding.getAccount().getAccountId().toString(),
+                    holding.getInstrument().getInstrumentId().toString(),
+                    holding.getInstrument().getTicker(),
+                    holding.getInstrument().getName(),
+                    holding.getQuantity(),
+                    holding.getAverageCostBasis(),
+                    currentPrice
+                );
+            })
+            .toList();
 
-    return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
     
     

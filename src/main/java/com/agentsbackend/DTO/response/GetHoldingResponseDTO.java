@@ -6,16 +6,39 @@ public class GetHoldingResponseDTO {
     private String holdingId;
     private String accountId;
     private String instrumentId;
+    private String ticker;
+    private String name;
     private BigDecimal quantity;
     private BigDecimal averageCostBasis;
+    private BigDecimal currentPrice;
+    private BigDecimal currentValue;
+    private BigDecimal gainLossDollars;
+    private BigDecimal gainLossPercent;
 
     //constructor
-    public GetHoldingResponseDTO(String holdingId,String accountId, String instrumentId, BigDecimal quantity, BigDecimal averageCostBasis){
+    public GetHoldingResponseDTO(String holdingId, String accountId, String instrumentId, 
+                                 String ticker, String name, BigDecimal quantity, 
+                                 BigDecimal averageCostBasis, BigDecimal currentPrice){
         this.holdingId = holdingId;
         this.accountId = accountId;
         this.instrumentId = instrumentId;
+        this.ticker = ticker;
+        this.name = name;
         this.quantity = quantity;
         this.averageCostBasis = averageCostBasis;
+        this.currentPrice = currentPrice;
+        
+        // Calculate derived values
+        this.currentValue = quantity.multiply(currentPrice);
+        BigDecimal totalCostBasis = quantity.multiply(averageCostBasis);
+        this.gainLossDollars = currentValue.subtract(totalCostBasis);
+        
+        if (totalCostBasis.compareTo(BigDecimal.ZERO) > 0) {
+            this.gainLossPercent = gainLossDollars.divide(totalCostBasis, 4, java.math.RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"));
+        } else {
+            this.gainLossPercent = BigDecimal.ZERO;
+        }
     }
 
     //Getters and Setters
@@ -28,9 +51,27 @@ public class GetHoldingResponseDTO {
     public String getInstrumentId() {return instrumentId;}
     public void setInstrumentId(String instrumentId){this.instrumentId = instrumentId;}
 
+    public String getTicker() {return ticker;}
+    public void setTicker(String ticker){this.ticker = ticker;}
+
+    public String getName() {return name;}
+    public void setName(String name){this.name = name;}
+
     public BigDecimal getQuantity() { return quantity; }
     public void setQuantity( BigDecimal quantity ) { this.quantity = quantity; }
 
     public BigDecimal getAverageCostBasis() { return averageCostBasis; }
     public void setAverageCostBasis( BigDecimal averageCostBasis ) { this.averageCostBasis = averageCostBasis; }
+
+    public BigDecimal getCurrentPrice() {return currentPrice;}
+    public void setCurrentPrice(BigDecimal currentPrice){this.currentPrice = currentPrice;}
+
+    public BigDecimal getCurrentValue() {return currentValue;}
+    public void setCurrentValue(BigDecimal currentValue){this.currentValue = currentValue;}
+
+    public BigDecimal getGainLossDollars() {return gainLossDollars;}
+    public void setGainLossDollars(BigDecimal gainLossDollars){this.gainLossDollars = gainLossDollars;}
+
+    public BigDecimal getGainLossPercent() {return gainLossPercent;}
+    public void setGainLossPercent(BigDecimal gainLossPercent){this.gainLossPercent = gainLossPercent;}
 }

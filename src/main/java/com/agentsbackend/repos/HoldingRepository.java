@@ -19,7 +19,7 @@ public interface HoldingRepository {
         "VALUES (#{holdingId,jdbcType=VARCHAR}, #{account.accountId,jdbcType=VARCHAR}, #{instrument.instrumentId,jdbcType=VARCHAR}, #{quantity}, #{averageCostBasis})")
     void createHolding(Holding holding);
 
-    @Select("SELECT * FROM holdings WHERE holding_id = #{holdingId}")
+    @Select("SELECT * FROM holdings WHERE account_id = #{accountId}")
     @Results({
         @Result(property = "holdingId", column = "holding_id"),
         @Result(property = "account", column = "account_id", 
@@ -27,5 +27,5 @@ public interface HoldingRepository {
         @Result(property = "instrument", column = "instrument_id",
             one = @One(select = "com.agentsbackend.repos.InstrumentRepository.findById"))
     })
-    Optional<Holding> findById(UUID holdingId);
+    java.util.List<Holding> findByAccountId(UUID accountId);
 }
