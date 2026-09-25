@@ -96,19 +96,6 @@ public class AccountController {
     }
 
     /**
-     * Retrieve all accounts for a specific client.
-     * GET /api/accounts/client/{clientId}
-     *
-     * @param clientId UUID of the client
-     * @return ResponseEntity with list of AccountsResponse.Account objects (HTTP 200)
-     */
-    @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<AccountsResponse.Account>> getAccountsByClient(@PathVariable UUID clientId) {
-        List<AccountsResponse.Account> accounts = accountService.getAccountsByClient(clientId);
-        return ResponseEntity.ok(accounts);
-    }
-
-    /**
      * Update account details (name and/or status).
      * PUT /api/accounts/{accountId}
      *

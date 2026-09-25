@@ -60,15 +60,6 @@ public interface AccountService {
     AccountsResponse.Performance getAccountPerformance(UUID accountId, String period);
 
     /**
-     * Retrieve all accounts belonging to a specific client.
-     *
-     * @param clientId UUID of the client
-     * @return List of AccountsResponse.Account objects for the client
-     * @throws IllegalArgumentException if client not found
-     */
-    List<AccountsResponse.Account> getAccountsByClient(UUID clientId);
-
-    /**
      * Update account name and/or status.
      * Validates account status transitions.
      *

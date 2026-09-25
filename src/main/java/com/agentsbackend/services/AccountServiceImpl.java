@@ -200,23 +200,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     /**
-     * Retrieve all accounts for a client.
-     * Returns empty list if client has no accounts.
-     */
-    @Override
-    public List<AccountsResponse.Account> getAccountsByClient(UUID clientId) {
-        // Validate client exists
-        if (!accountRepository.clientExists(clientId)) {
-            throw new IllegalArgumentException("Client not found: " + clientId);
-        }
-
-        List<Account> accounts = accountRepository.findByClientId(clientId);
-        return accounts.stream()
-                .map(this::entityToResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Update account name and/or status.
      * If status is being updated, validates valid transitions.
      */
