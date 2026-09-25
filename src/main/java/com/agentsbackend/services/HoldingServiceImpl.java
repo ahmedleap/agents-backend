@@ -8,7 +8,9 @@ import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
 import com.agentsbackend.repos.InstrumentPriceRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
+import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.exceptions.AccountNotFoundException;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.exceptions.InstrumentNotFoundException;
@@ -73,6 +75,51 @@ public class HoldingServiceImpl implements HoldingService {
     public BigDecimal getCurrentPrice(UUID instrumentId){
         return instrumentPriceRepository.getLatestPrice(instrumentId)
             .orElse(BigDecimal.ZERO);
+    }
+
+    @Override
+    public java.util.List<GetHoldingResponseDTO> getHoldingsDTOByAccountId(UUID accountId){
+        java.util.List<Holding> holdings = holdingRepository.findByAccountId(accountId);
+        return holdings.stream()
+            .map(this::holdingToDTO)
+            .toList();
+    }
+
+    @Override
+    public GetHoldingResponseDTO getOneHoldingDTO(UUID accountId, UUID holdingId){
+        Holding holding = holdingRepository.findOneHolding(holdingId, accountId)
+            .orElseThrow(() -> new HoldingNotFoundException(holdingId));
+        return holdingToDTO(holding);
+    }
+
+    private GetHoldingResponseDTO holdingToDTO(Holding holding){
+        BigDecimal currentPrice = getCurrentPrice(holding.getInstrument().getInstrumentId());
+        BigDecimal currentValue = holding.getQuantity().multiply(currentPrice);
+        BigDecimal totalCostBasis = holding.getQuantity().multiply(holding.getAverageCostBasis());
+        BigDecimal gainLossDollars = currentValue.subtract(totalCostBasis);
+        BigDecimal gainLossPercent = calculateGainLossPercent(gainLossDollars, totalCostBasis);
+
+        return new GetHoldingResponseDTO(
+            holding.getHoldingId().toString(),
+            holding.getAccount().getAccountId().toString(),
+            holding.getInstrument().getInstrumentId().toString(),
+            holding.getInstrument().getTicker(),
+            holding.getInstrument().getName(),
+            holding.getQuantity(),
+            holding.getAverageCostBasis(),
+            currentPrice,
+            currentValue,
+            gainLossDollars,
+            gainLossPercent
+        );
+    }
+
+    private BigDecimal calculateGainLossPercent(BigDecimal gainLossDollars, BigDecimal totalCostBasis){
+        if (totalCostBasis.compareTo(BigDecimal.ZERO) > 0) {
+            return gainLossDollars.divide(totalCostBasis, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"));
+        }
+        return BigDecimal.ZERO;
     }
 }
 

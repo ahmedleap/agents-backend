@@ -15,10 +15,12 @@ public class GetHoldingResponseDTO {
     private BigDecimal gainLossDollars;
     private BigDecimal gainLossPercent;
 
-    //constructor
+    //constructor - data container only, no calculations
     public GetHoldingResponseDTO(String holdingId, String accountId, String instrumentId, 
                                  String ticker, String name, BigDecimal quantity, 
-                                 BigDecimal averageCostBasis, BigDecimal currentPrice){
+                                 BigDecimal averageCostBasis, BigDecimal currentPrice,
+                                 BigDecimal currentValue, BigDecimal gainLossDollars,
+                                 BigDecimal gainLossPercent){
         this.holdingId = holdingId;
         this.accountId = accountId;
         this.instrumentId = instrumentId;
@@ -27,18 +29,9 @@ public class GetHoldingResponseDTO {
         this.quantity = quantity;
         this.averageCostBasis = averageCostBasis;
         this.currentPrice = currentPrice;
-        
-        // Calculate derived values
-        this.currentValue = quantity.multiply(currentPrice);
-        BigDecimal totalCostBasis = quantity.multiply(averageCostBasis);
-        this.gainLossDollars = currentValue.subtract(totalCostBasis);
-        
-        if (totalCostBasis.compareTo(BigDecimal.ZERO) > 0) {
-            this.gainLossPercent = gainLossDollars.divide(totalCostBasis, 4, java.math.RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"));
-        } else {
-            this.gainLossPercent = BigDecimal.ZERO;
-        }
+        this.currentValue = currentValue;
+        this.gainLossDollars = gainLossDollars;
+        this.gainLossPercent = gainLossPercent;
     }
 
     //Getters and Setters

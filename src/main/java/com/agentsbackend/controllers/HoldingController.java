@@ -1,7 +1,6 @@
 package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
-import com.agentsbackend.DTO.requests.GetHoldingRequestDTO;
 import com.agentsbackend.DTO.response.CreateHoldingResponseDTO;
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.entities.Holding;
@@ -11,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -39,25 +40,15 @@ public class HoldingController {
     @GetMapping("/{accountId}")
     public ResponseEntity<java.util.List<GetHoldingResponseDTO>> getHoldings(
             @PathVariable UUID accountId) {
-        
-        java.util.List<Holding> holdings = holdingService.getHoldingsByAccountId(accountId);
+        java.util.List<GetHoldingResponseDTO> response = holdingService.getHoldingsDTOByAccountId(accountId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 
-        java.util.List<GetHoldingResponseDTO> response = holdings.stream()
-            .map(holding -> {
-                java.math.BigDecimal currentPrice = holdingService.getCurrentPrice(holding.getInstrument().getInstrumentId());
-                return new GetHoldingResponseDTO(
-                    holding.getHoldingId().toString(),
-                    holding.getAccount().getAccountId().toString(),
-                    holding.getInstrument().getInstrumentId().toString(),
-                    holding.getInstrument().getTicker(),
-                    holding.getInstrument().getName(),
-                    holding.getQuantity(),
-                    holding.getAverageCostBasis(),
-                    currentPrice
-                );
-            })
-            .toList();
-
+    @GetMapping("/{accountId}/{holdingId}")
+    public ResponseEntity<GetHoldingResponseDTO> getOneHolding(
+            @PathVariable UUID accountId, 
+            @PathVariable UUID holdingId){
+        GetHoldingResponseDTO response = holdingService.getOneHoldingDTO(accountId, holdingId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
     
