@@ -31,24 +31,30 @@ import com.agentsbackend.repos.InstrumentPriceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     private final OrderRepository orderRepository;
     private final HoldingsRepository holdingsRepository;
     private final AccountRepository accountRepository;
     private final InstrumentPriceRepository instrumentPriceRepository;
     private final OrderQueue orderQueue;
+    private final AuditTrailService auditTrailService;
 
     public OrderServiceImpl(OrderRepository orderRepository, HoldingsRepository holdingsRepository, 
                           AccountRepository accountRepository, InstrumentPriceRepository instrumentPriceRepository,
-                          OrderQueue orderQueue) {
+                          OrderQueue orderQueue, AuditTrailService auditTrailService) {
         this.orderRepository = orderRepository;
         this.holdingsRepository = holdingsRepository;
         this.accountRepository = accountRepository;
         this.instrumentPriceRepository = instrumentPriceRepository;
         this.orderQueue = orderQueue;
+        this.auditTrailService = auditTrailService;
     }
 
     // Returns a list of pending orders based on filter criteria (accountId, limit, offset)
@@ -68,8 +74,11 @@ public class OrderServiceImpl implements OrderService {
         LocalDateTime now = LocalDateTime.now();
         
         try {
-            validateOrderQuantity(request);
+            // validateOrderQuantity() is now handled by @Valid @Min @Max on DTO
+            // validateOrderPrice() basic validation (>0) is now handled by @Valid @DecimalMin on DTO
+            // Still need to validate market price exists and ±50% range for limit orders
             validateOrderPrice(request);
+            validateClientAge(request);
             validateDuplicateOrder(request);
             
             // Order type-specific validations
@@ -108,11 +117,34 @@ public class OrderServiceImpl implements OrderService {
             // Add order to queue for fulfillment processing
             orderQueue.enqueue(order);
             
-            // For response, use the limitPrice (which is null for market orders)
+            // Log order creation to audit trail
+            Account fullAccount = accountRepository.findById(request.getAccountId());
+            if (fullAccount != null && fullAccount.getClientId() != null) {
+                auditTrailService.logOrderCreated(
+                    orderId,
+                    request.getAccountId(),
+                    fullAccount.getClientId(),
+                    request.getOrderType(),
+                    request.getQuantity(),
+                    request.getPrice()
+                );
+            } else {
+                logger.warn("Could not log order creation for order {}: Account or clientId not found", orderId);
+            }
+            
+            // For response, calculate totalValue
             BigDecimal priceForResponse = request.getPrice();
             BigDecimal totalValue = BigDecimal.ZERO;
+            
             if (priceForResponse != null) {
+                // Limit order - use the provided price
                 totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
+            } else {
+                // Market order - fetch current market price for estimated value
+                InstrumentPrice currentPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
+                if (currentPrice != null && currentPrice.getPrice() != null) {
+                    totalValue = currentPrice.getPrice().multiply(new BigDecimal(request.getQuantity()));
+                }
             }
             
             CreateOrderResponse response = new CreateOrderResponse(
@@ -129,29 +161,52 @@ public class OrderServiceImpl implements OrderService {
             );
             
             return response;
-        } catch (Exception e) {
-            // Validation failed - persist rejected order to database
-            Order rejectedOrder = new Order();
-            rejectedOrder.setOrderId(orderId);
+        } catch (InvalidOrderParametersException | InsufficientFundsException | InvalidAccountException e) {
+            // Expected validation exceptions - persist rejected order and re-throw with orderId
+            try {
+                // Since @Valid on controller ensures quantity and price are valid,
+                // rejected orders due to business logic (cash balance, position limit, etc)
+                // can safely be persisted
+                Order rejectedOrder = new Order();
+                rejectedOrder.setOrderId(orderId);
+                
+                Account account = new Account();
+                account.setAccountId(request.getAccountId());
+                rejectedOrder.setAccount(account);
+                
+                Instrument instrument = new Instrument();
+                instrument.setInstrumentId(request.getInstrumentId());
+                rejectedOrder.setInstrument(instrument);
+                
+                rejectedOrder.setQuantity(new BigDecimal(request.getQuantity()));
+                rejectedOrder.setLimitPrice(request.getPrice());
+                rejectedOrder.setOrderType(request.getOrderType());
+                rejectedOrder.setStatus(OrderStatus.REJECTED);
+                rejectedOrder.setCreatedAt(now);
+                
+                // Save rejected order to database
+                orderRepository.save(rejectedOrder);
+                
+                // Log rejection to audit trail
+                Account fullAccount = accountRepository.findById(request.getAccountId());
+                if (fullAccount != null && fullAccount.getClientId() != null) {
+                    auditTrailService.logOrderRejected(
+                        orderId,
+                        request.getAccountId(),
+                        fullAccount.getClientId(),
+                        e.getMessage(),
+                        request.getOrderType(),
+                        request.getQuantity(),
+                        request.getPrice()
+                    );
+                } else {
+                    logger.warn("Could not log rejection for order {}: Account or clientId not found", orderId);
+                }
+            } catch (Exception logException) {
+                logger.error("Error persisting rejected order {}: {}", orderId, logException.getMessage(), logException);
+            }
             
-            Account account = new Account();
-            account.setAccountId(request.getAccountId());
-            rejectedOrder.setAccount(account);
-            
-            Instrument instrument = new Instrument();
-            instrument.setInstrumentId(request.getInstrumentId());
-            rejectedOrder.setInstrument(instrument);
-            
-            rejectedOrder.setQuantity(new BigDecimal(request.getQuantity()));
-            rejectedOrder.setLimitPrice(request.getPrice());
-            rejectedOrder.setOrderType(request.getOrderType());
-            rejectedOrder.setStatus(OrderStatus.REJECTED);
-            rejectedOrder.setCreatedAt(now);
-            
-            // Save rejected order to database
-            orderRepository.save(rejectedOrder);
-            
-            // Attach orderId to exception so client can track rejected order
+            // Attach orderId to the validation exception before re-throwing
             if (e instanceof InvalidOrderParametersException) {
                 ((InvalidOrderParametersException) e).setOrderId(orderId);
             } else if (e instanceof InsufficientFundsException) {
@@ -159,33 +214,20 @@ public class OrderServiceImpl implements OrderService {
             } else if (e instanceof InvalidAccountException) {
                 ((InvalidAccountException) e).setOrderId(orderId);
             }
-            
-            // Re-throw the validation exception so client gets proper error response
             throw e;
-        }
-    }
-
-    // Validates order quantity is within acceptable limits
-    private void validateOrderQuantity(CreateOrderRequest request) {
-        int quantity = request.getQuantity();
-        
-        if (quantity <= 0) {
+        } catch (Exception unexpectedException) {
+            // Unexpected exceptions - log and wrap as validation error
+            logger.error("Unexpected error creating order: {}", unexpectedException.getMessage(), unexpectedException);
             throw new InvalidOrderParametersException(
-                "Order quantity must be greater than 0. Provided: " + quantity
-            );
-        }
-        
-        if (quantity > 1_000_000) {
-            throw new InvalidOrderParametersException(
-                "Order quantity exceeds maximum. Provided: " + quantity + 
-                ", Maximum: 1,000,000"
+                "Error processing order: " + unexpectedException.getMessage()
             );
         }
     }
 
     // Validates/fetches order price
-    //  For LIMIT orders (price provided): validates price is reasonable (> 0, within ±50% of market)
-    //  For MARKET orders (price omitted): fetches latest market price for validation only (NOT stored in limit_price)
+    //  For LIMIT orders (price provided): validates price is reasonable (within ±50% of market)
+    //    Basic price > 0 validation is handled by @DecimalMin on DTO
+    //  For MARKET orders (price omitted): validates that market price exists
      
     private void validateOrderPrice(CreateOrderRequest request) {
         BigDecimal price = request.getPrice();
@@ -193,24 +235,16 @@ public class OrderServiceImpl implements OrderService {
         InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
         
         if (price == null) {
-            // MARKET ORDER - validate market price exists, but don't store it in request
+            // MARKET ORDER - validate market price exists
             if (latestPrice == null) {
                 throw new InvalidOrderParametersException(
                     "Market order cannot be executed. No market price available for instrument: " + 
                     request.getInstrumentId()
                 );
             }
-            // Don't set price in request - keep it null to indicate market order
-            // The actual fill price will be determined by fulfillment service
         } else {
-            // LIMIT ORDER
-            if (price.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new InvalidOrderParametersException(
-                    "Order price must be greater than 0. Provided: $" + price
-                );
-            }
-            
-            
+            // LIMIT ORDER - price > 0 already validated by @DecimalMin on DTO
+            // Now validate it's within ±50% of market price
             if (latestPrice != null) {
                 BigDecimal marketPrice = latestPrice.getPrice();
                 BigDecimal upperBound = marketPrice.multiply(new BigDecimal("1.50"));
@@ -230,6 +264,33 @@ public class OrderServiceImpl implements OrderService {
                     );
                 }
             }
+        }
+    }
+
+    // Validates that the client is at least 18 years old
+    private void validateClientAge(CreateOrderRequest request) {
+        // Fetch client's date of birth directly via query to avoid lazy-loading issues
+        java.time.LocalDate dateOfBirth = accountRepository.findClientDateOfBirthByAccountId(request.getAccountId());
+        
+        if (dateOfBirth == null) {
+            throw new InvalidAccountException("Account not found or client date of birth not available");
+        }
+        
+        // Calculate age
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int age = today.getYear() - dateOfBirth.getYear();
+        
+        // Adjust if birthday hasn't occurred this year yet
+        if (today.getMonthValue() < dateOfBirth.getMonthValue() ||
+            (today.getMonthValue() == dateOfBirth.getMonthValue() && 
+             today.getDayOfMonth() < dateOfBirth.getDayOfMonth())) {
+            age--;
+        }
+        
+        if (age < 18) {
+            throw new InvalidOrderParametersException(
+                "Client must be at least 18 years old to place trades. Current age: " + age
+            );
         }
     }
 
@@ -437,6 +498,22 @@ public class OrderServiceImpl implements OrderService {
 
         order.setCancelledAt(LocalDateTime.now());
         orderRepository.updateOrder(order);
+        
+        // Log order cancellation to audit trail
+        Account fullAccount = accountRepository.findById(order.getAccount().getAccountId());
+        if (fullAccount != null && fullAccount.getClientId() != null) {
+            auditTrailService.logOrderCancelled(
+                order.getOrderId(),
+                order.getAccount().getAccountId(),
+                fullAccount.getClientId(),
+                order.getOrderType(),
+                order.getQuantity().intValue(),
+                order.getLimitPrice(),
+                "Order cancelled by user"
+            );
+        } else {
+            logger.warn("Could not log order cancellation for order {}: Account or clientId not found", order.getOrderId());
+        }
         
         return new CancelOrderResponse(
             order.getOrderId(),

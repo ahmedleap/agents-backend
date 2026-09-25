@@ -202,6 +202,34 @@ CREATE TABLE transactions (
 );
 
 -- ============================================================
+-- AUDIT_LOGS (compliance trail for order lifecycle events)
+-- ============================================================
+
+CREATE TABLE audit_logs (
+    audit_log_id    UUID PRIMARY KEY,
+    client_id       UUID NOT NULL,
+    account_id      UUID NOT NULL,
+    order_id        UUID NOT NULL,
+    event_type      VARCHAR(20) NOT NULL,
+    event_time      TIMESTAMP NOT NULL,
+    reason          TEXT,
+    details         JSONB,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_logs_client
+        FOREIGN KEY (client_id)
+        REFERENCES clients (client_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_audit_logs_account
+        FOREIGN KEY (account_id)
+        REFERENCES accounts (account_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_audit_logs_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders (order_id)
+        ON DELETE CASCADE
+);
+
+-- ============================================================
 -- HISTORICAL_SNAPSHOT (EOD job: one row per account per date)
 -- ============================================================
 
@@ -232,6 +260,12 @@ CREATE INDEX idx_orders_instrument ON orders (instrument_id);
 CREATE INDEX idx_orders_account_status ON orders (account_id, status);
 -- Supports EOD/matching jobs scanning all open orders system-wide.
 CREATE INDEX idx_orders_status ON orders (status);
+
+CREATE INDEX idx_audit_logs_account ON audit_logs (account_id);
+CREATE INDEX idx_audit_logs_order ON audit_logs (order_id);
+CREATE INDEX idx_audit_logs_event_type ON audit_logs (event_type);
+CREATE INDEX idx_audit_logs_account_event_time ON audit_logs (account_id, event_time DESC);
+CREATE INDEX idx_audit_logs_client_event_time ON audit_logs (client_id, event_time DESC);
 
 CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
 

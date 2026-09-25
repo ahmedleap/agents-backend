@@ -34,16 +34,19 @@ public class OrderFulfillmentService {
     private final InstrumentPriceRepository instrumentPriceRepository;
     private final HoldingsRepository holdingsRepository;
     private final AccountRepository accountRepository;
+    private final AuditTrailService auditTrailService;
     
     public OrderFulfillmentService(OrderQueue orderQueue, OrderRepository orderRepository, 
                                   InstrumentPriceRepository instrumentPriceRepository,
                                   HoldingsRepository holdingsRepository,
-                                  AccountRepository accountRepository) {
+                                  AccountRepository accountRepository,
+                                  AuditTrailService auditTrailService) {
         this.orderQueue = orderQueue;
         this.orderRepository = orderRepository;
         this.instrumentPriceRepository = instrumentPriceRepository;
         this.holdingsRepository = holdingsRepository;
         this.accountRepository = accountRepository;
+        this.auditTrailService = auditTrailService;
     }
     
     /**
@@ -138,6 +141,21 @@ public class OrderFulfillmentService {
         } else if (order.getOrderType().equals(OrderType.SELL)) {
             updateHoldingsForSell(order);
             updateCashForSell(order, filledPrice);
+        }
+        
+        // Log order fill to audit trail
+        Account fullAccount = accountRepository.findById(order.getAccount().getAccountId());
+        if (fullAccount != null && fullAccount.getClientId() != null) {
+            auditTrailService.logOrderFilled(
+                order.getOrderId(),
+                order.getAccount().getAccountId(),
+                fullAccount.getClientId(),
+                order.getOrderType(),
+                order.getQuantity().intValue(),
+                filledPrice
+            );
+        } else {
+            logger.warn("Could not log order fill for order {}: Account or clientId not found", order.getOrderId());
         }
         
         logger.info("Order {} filled at price {}", order.getOrderId(), filledPrice);

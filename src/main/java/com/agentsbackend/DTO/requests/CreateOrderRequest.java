@@ -1,6 +1,10 @@
 package com.agentsbackend.DTO.requests;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Positive;
 import java.util.UUID;
 import java.math.BigDecimal;
 import com.agentsbackend.enums.OrderType;
@@ -18,8 +22,11 @@ public class CreateOrderRequest {
     private UUID instrumentId;
 
     @NotNull(message = "Quantity cannot be null")
+    @Min(value = 1, message = "Quantity must be greater than 0")
+    @Max(value = 1_000_000, message = "Quantity cannot exceed 1,000,000")
     private Integer quantity;
 
+    @DecimalMin(value = "0.01", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;  // Optional: null = MARKET order, value = LIMIT order
 
     @NotNull(message = "Order type cannot be null")

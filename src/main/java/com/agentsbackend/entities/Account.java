@@ -19,6 +19,9 @@ public class Account {
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
+    @Column(name = "client_id", insertable = false, updatable = false, columnDefinition = "UUID")
+    private UUID clientId;
+
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
@@ -76,6 +79,14 @@ public class Account {
 
     public void setClient(Client client) {
         this.client = client;
+    }
+
+    public UUID getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(UUID clientId) {
+        this.clientId = clientId;
     }
 
     // Retrieves the user-friendly name of this account
