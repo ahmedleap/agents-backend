@@ -1,9 +1,10 @@
 -- Design notes:
--- * Orders are always LIMIT orders for now, so reserved funds = quantity * limit_price;
---   no live pricing lookup is needed at order time. Available balance is computed
---   dynamically (cash_balance minus the sum of open BUY orders) rather than stored, so the
---   same query path can later absorb other checks (e.g. trade limits) without a denormalized
---   column to keep in sync.
+-- * Orders can be LIMIT (limit_price provided) or MARKET (limit_price = NULL).
+--   For LIMIT orders: reserved funds = quantity * limit_price.
+--   For MARKET orders: uses current market price when filled.
+--   Available balance is computed dynamically (cash_balance minus the sum of open BUY orders)
+--   rather than stored, so the same query path can later absorb other checks
+--   (e.g. trade limits) without a denormalized column to keep in sync.
 -- * instrument_prices holds periodic (~15 min) pulls from the pricing API. It's only consumed
 --   by the EOD historical_snapshot job and portfolio valuation reads — never by order placement.
 -- * orders never need created_by/approved_by: the client is always both creator and submitter.
@@ -148,7 +149,7 @@ CREATE TABLE orders (
     instrument_id   UUID NOT NULL,
     order_type      order_type NOT NULL,
     quantity        NUMERIC(18,6) NOT NULL CHECK (quantity > 0),
-    limit_price     NUMERIC(18,4) NOT NULL CHECK (limit_price > 0),
+    limit_price     NUMERIC(18,4) CHECK (limit_price > 0),
     filled_price    NUMERIC(18,4) CHECK (filled_price > 0),
     status          order_status NOT NULL DEFAULT 'PENDING',
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

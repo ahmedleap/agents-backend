@@ -22,6 +22,9 @@ public class Holding {
     @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;
 
+    @Column(name = "instrument_id", nullable = false, insertable = false, updatable = false, columnDefinition = "UUID")
+    private UUID instrumentId;
+
     @Column(name = "quantity", nullable = false, precision = 18, scale = 6, columnDefinition = "NUMERIC(18,6) CHECK (quantity >= 0)")
     private BigDecimal quantity;
 
@@ -62,6 +65,14 @@ public class Holding {
 
     public void setInstrument(Instrument instrument) {
         this.instrument = instrument;
+    }
+
+    public UUID getInstrumentId() {
+        return instrumentId;
+    }
+
+    public void setInstrumentId(UUID instrumentId) {
+        this.instrumentId = instrumentId;
     }
 
     public BigDecimal getQuantity() {

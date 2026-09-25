@@ -30,7 +30,7 @@ public class Order {
     @Column(name = "quantity", nullable = false, precision = 18, scale = 6, columnDefinition = "NUMERIC(18,6) CHECK (quantity > 0)")
     private BigDecimal quantity;
 
-    @Column(name = "limit_price", nullable = false, precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
+    @Column(name = "limit_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
     private BigDecimal limitPrice;
 
     @Column(name = "filled_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (filled_price > 0)")

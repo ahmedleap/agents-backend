@@ -17,10 +17,13 @@ public class GlobalExceptionHandler {
             InvalidOrderParametersException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", java.time.LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InvalidOrderParametersException");
         body.put("message", ex.getMessage());
+        if (ex.getOrderId() != null) {
+            body.put("orderId", ex.getOrderId());
+        }
         body.put("path", request.getDescription(false).replace("uri=", ""));
         
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
@@ -59,10 +62,13 @@ public class GlobalExceptionHandler {
             InsufficientFundsException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", java.time.LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InsufficientFundsException");
         body.put("message", ex.getMessage());
+        if (ex.getOrderId() != null) {
+            body.put("orderId", ex.getOrderId());
+        }
         body.put("path", request.getDescription(false).replace("uri=", ""));
         
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
@@ -73,10 +79,13 @@ public class GlobalExceptionHandler {
             InvalidAccountException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", java.time.LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InvalidAccountException");
         body.put("message", ex.getMessage());
+        if (ex.getOrderId() != null) {
+            body.put("orderId", ex.getOrderId());
+        }
         body.put("path", request.getDescription(false).replace("uri=", ""));
         
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);

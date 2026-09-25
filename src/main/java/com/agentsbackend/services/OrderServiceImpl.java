@@ -13,6 +13,7 @@ import com.agentsbackend.exceptions.InvalidOrderStatusException;
 import com.agentsbackend.exceptions.InvalidOrderParametersException;
 import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
+import com.agentsbackend.queue.OrderQueue;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,13 +39,16 @@ public class OrderServiceImpl implements OrderService {
     private final HoldingsRepository holdingsRepository;
     private final AccountRepository accountRepository;
     private final InstrumentPriceRepository instrumentPriceRepository;
+    private final OrderQueue orderQueue;
 
     public OrderServiceImpl(OrderRepository orderRepository, HoldingsRepository holdingsRepository, 
-                          AccountRepository accountRepository, InstrumentPriceRepository instrumentPriceRepository) {
+                          AccountRepository accountRepository, InstrumentPriceRepository instrumentPriceRepository,
+                          OrderQueue orderQueue) {
         this.orderRepository = orderRepository;
         this.holdingsRepository = holdingsRepository;
         this.accountRepository = accountRepository;
         this.instrumentPriceRepository = instrumentPriceRepository;
+        this.orderQueue = orderQueue;
     }
 
     // Returns a list of pending orders based on filter criteria (accountId, limit, offset)
@@ -60,51 +64,105 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public CreateOrderResponse createOrder(CreateOrderRequest request) {
-        validateOrderQuantity(request);
-        validateOrderPrice(request);
-        validateDuplicateOrder(request);
-        validatePositionLimit(request);
-        validateCashBalance(request);
-        validateMinimumBalance(request);
-
-        // All validations passed - create and persist the order
         UUID orderId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
         
-        Order order = new Order();
-        order.setOrderId(orderId);
-        
-        Account account = new Account();
-        account.setAccountId(request.getAccountId());
-        order.setAccount(account);
-        
-        Instrument instrument = new Instrument();
-        instrument.setInstrumentId(request.getInstrumentId());
-        order.setInstrument(instrument);
-        
-        order.setQuantity(new BigDecimal(request.getQuantity()));
-        order.setLimitPrice(request.getPrice());
-        order.setOrderType(request.getOrderType());
-        order.setStatus(OrderStatus.PENDING);
-        order.setCreatedAt(now);
-        
-        orderRepository.save(order);
-        
-        BigDecimal totalValue = request.getPrice().multiply(new BigDecimal(request.getQuantity()));
-        CreateOrderResponse response = new CreateOrderResponse(
-            orderId,
-            request.getAccountId(),
-            request.getInstrumentId(),
-            request.getQuantity(),
-            request.getPrice(),
-            totalValue,
-            request.getOrderType(),
-            OrderStatus.PENDING,
-            now,
-            "Order created successfully"
-        );
-        
-        return response;
+        try {
+            validateOrderQuantity(request);
+            validateOrderPrice(request);
+            validateDuplicateOrder(request);
+            
+            // Order type-specific validations
+            if (request.getOrderType().equals(OrderType.BUY)) {
+                validatePositionLimit(request);
+                validateCashBalance(request);
+            } else if (request.getOrderType().equals(OrderType.SELL)) {
+                validateSellingHoldings(request);
+            }
+            
+            validateMinimumBalance(request);
+
+            // All validations passed - create and persist the order
+            Order order = new Order();
+            order.setOrderId(orderId);
+            
+            Account account = new Account();
+            account.setAccountId(request.getAccountId());
+            order.setAccount(account);
+            
+            Instrument instrument = new Instrument();
+            instrument.setInstrumentId(request.getInstrumentId());
+            order.setInstrument(instrument);
+            
+            order.setQuantity(new BigDecimal(request.getQuantity()));
+            // Only set limitPrice for LIMIT orders (when price was provided by client)
+            // For MARKET orders, limitPrice stays null
+            order.setLimitPrice(request.getPrice());
+            order.setOrderType(request.getOrderType());
+            order.setStatus(OrderStatus.PENDING);
+            order.setCreatedAt(now);
+            
+            // Save order to database
+            orderRepository.save(order);
+            
+            // Add order to queue for fulfillment processing
+            orderQueue.enqueue(order);
+            
+            // For response, use the limitPrice (which is null for market orders)
+            BigDecimal priceForResponse = request.getPrice();
+            BigDecimal totalValue = BigDecimal.ZERO;
+            if (priceForResponse != null) {
+                totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
+            }
+            
+            CreateOrderResponse response = new CreateOrderResponse(
+                orderId,
+                request.getAccountId(),
+                request.getInstrumentId(),
+                request.getQuantity(),
+                priceForResponse,  // null for market orders
+                totalValue,
+                request.getOrderType(),
+                OrderStatus.PENDING,
+                now,
+                "Order created successfully"
+            );
+            
+            return response;
+        } catch (Exception e) {
+            // Validation failed - persist rejected order to database
+            Order rejectedOrder = new Order();
+            rejectedOrder.setOrderId(orderId);
+            
+            Account account = new Account();
+            account.setAccountId(request.getAccountId());
+            rejectedOrder.setAccount(account);
+            
+            Instrument instrument = new Instrument();
+            instrument.setInstrumentId(request.getInstrumentId());
+            rejectedOrder.setInstrument(instrument);
+            
+            rejectedOrder.setQuantity(new BigDecimal(request.getQuantity()));
+            rejectedOrder.setLimitPrice(request.getPrice());
+            rejectedOrder.setOrderType(request.getOrderType());
+            rejectedOrder.setStatus(OrderStatus.REJECTED);
+            rejectedOrder.setCreatedAt(now);
+            
+            // Save rejected order to database
+            orderRepository.save(rejectedOrder);
+            
+            // Attach orderId to exception so client can track rejected order
+            if (e instanceof InvalidOrderParametersException) {
+                ((InvalidOrderParametersException) e).setOrderId(orderId);
+            } else if (e instanceof InsufficientFundsException) {
+                ((InsufficientFundsException) e).setOrderId(orderId);
+            } else if (e instanceof InvalidAccountException) {
+                ((InvalidAccountException) e).setOrderId(orderId);
+            }
+            
+            // Re-throw the validation exception so client gets proper error response
+            throw e;
+        }
     }
 
     // Validates order quantity is within acceptable limits
@@ -127,7 +185,7 @@ public class OrderServiceImpl implements OrderService {
 
     // Validates/fetches order price
     //  For LIMIT orders (price provided): validates price is reasonable (> 0, within ±50% of market)
-    //  For MARKET orders (price omitted): fetches latest market price and updates request
+    //  For MARKET orders (price omitted): fetches latest market price for validation only (NOT stored in limit_price)
      
     private void validateOrderPrice(CreateOrderRequest request) {
         BigDecimal price = request.getPrice();
@@ -135,14 +193,15 @@ public class OrderServiceImpl implements OrderService {
         InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
         
         if (price == null) {
-            // MARKET ORDER
+            // MARKET ORDER - validate market price exists, but don't store it in request
             if (latestPrice == null) {
                 throw new InvalidOrderParametersException(
                     "Market order cannot be executed. No market price available for instrument: " + 
                     request.getInstrumentId()
                 );
             }
-            request.setPrice(latestPrice.getPrice());
+            // Don't set price in request - keep it null to indicate market order
+            // The actual fill price will be determined by fulfillment service
         } else {
             // LIMIT ORDER
             if (price.compareTo(BigDecimal.ZERO) <= 0) {
@@ -214,6 +273,30 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    // Validates that account has sufficient shares to sell
+    private void validateSellingHoldings(CreateOrderRequest request) {
+        Holding currentHolding = holdingsRepository.findByAccountAndInstrument(
+            request.getAccountId(), 
+            request.getInstrumentId()
+        );
+        
+        if (currentHolding == null) {
+            throw new InvalidOrderParametersException(
+                "You do not own any shares of this instrument. Cannot place a SELL order."
+            );
+        }
+        
+        int quantityToSell = request.getQuantity();
+        int quantityOwned = currentHolding.getQuantity().intValue();
+        
+        if (quantityOwned < quantityToSell) {
+            throw new InvalidOrderParametersException(
+                "Insufficient shares to sell. You own: " + quantityOwned + 
+                " shares, trying to sell: " + quantityToSell + " shares"
+            );
+        }
+    }
+
     // Validates that account has sufficient cash balance for the order
     // Also checks that post-fill cash balance meets minimum balance requirements
     private void validateCashBalance(CreateOrderRequest request) {
@@ -223,7 +306,22 @@ public class OrderServiceImpl implements OrderService {
             throw new InvalidAccountException("Account not found");
         }
         
-        BigDecimal requiredFunds = request.getPrice().multiply(new BigDecimal(request.getQuantity()));
+        // For market orders (price == null), we need to fetch market price for validation
+        BigDecimal priceForValidation = request.getPrice();
+        if (priceForValidation == null) {
+            InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
+            if (latestPrice != null) {
+                priceForValidation = latestPrice.getPrice();
+            }
+        }
+        
+        if (priceForValidation == null) {
+            throw new InvalidOrderParametersException(
+                "Order price not available. Market price may not be available."
+            );
+        }
+        
+        BigDecimal requiredFunds = priceForValidation.multiply(new BigDecimal(request.getQuantity()));
         BigDecimal currentCash = account.getCashBalance();
         
         if (currentCash.compareTo(requiredFunds) < 0) {
@@ -307,7 +405,7 @@ public class OrderServiceImpl implements OrderService {
         
         // Calculate value of each holding using current market price
         for (Holding holding : holdings) {
-            InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(holding.getInstrument().getInstrumentId());
+            InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(holding.getInstrumentId());
             if (latestPrice != null) {
                 BigDecimal holdingValue = holding.getQuantity().multiply(latestPrice.getPrice());
                 holdingsValue = holdingsValue.add(holdingValue);
