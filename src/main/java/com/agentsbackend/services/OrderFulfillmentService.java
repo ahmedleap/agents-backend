@@ -3,6 +3,7 @@ package com.agentsbackend.services;
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.Account;
+import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
@@ -155,8 +156,16 @@ public class OrderFulfillmentService {
             // Create new holding
             holding = new Holding();
             holding.setHoldingId(UUID.randomUUID());
-            holding.setAccount(order.getAccount());
-            holding.setInstrument(order.getInstrument());
+            
+            // Ensure Account and Instrument objects have their IDs properly set
+            Account account = new Account();
+            account.setAccountId(order.getAccount().getAccountId());
+            holding.setAccount(account);
+            
+            Instrument instrument = new Instrument();
+            instrument.setInstrumentId(order.getInstrument().getInstrumentId());
+            holding.setInstrument(instrument);
+            
             holding.setQuantity(order.getQuantity());
             // Set average cost basis for new holding
             holding.setAverageCostBasis(filledPrice);
@@ -169,6 +178,15 @@ public class OrderFulfillmentService {
             
             holding.setQuantity(totalQuantity);
             holding.setAverageCostBasis(totalValue.divide(totalQuantity, 4, java.math.RoundingMode.HALF_UP));
+            
+            // Ensure Account and Instrument IDs are properly set before saving
+            Account account = new Account();
+            account.setAccountId(order.getAccount().getAccountId());
+            holding.setAccount(account);
+            
+            Instrument instrument = new Instrument();
+            instrument.setInstrumentId(order.getInstrument().getInstrumentId());
+            holding.setInstrument(instrument);
         }
         
         holdingsRepository.save(holding);
@@ -195,8 +213,17 @@ public class OrderFulfillmentService {
                 logger.debug("Holding deleted for account {} instrument {} (quantity 0)", 
                     order.getAccount().getAccountId(), order.getInstrument().getInstrumentId());
             } else {
-                // Update quantity
+                // Update quantity - ensure Account and Instrument IDs are properly set
                 holding.setQuantity(newQuantity);
+                
+                Account account = new Account();
+                account.setAccountId(order.getAccount().getAccountId());
+                holding.setAccount(account);
+                
+                Instrument instrument = new Instrument();
+                instrument.setInstrumentId(order.getInstrument().getInstrumentId());
+                holding.setInstrument(instrument);
+                
                 holdingsRepository.save(holding);
             }
         }
