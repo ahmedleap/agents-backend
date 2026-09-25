@@ -8,6 +8,7 @@ import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
 import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
 import com.agentsbackend.exceptions.AccountNotFoundException;
+import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.exceptions.InstrumentNotFoundException;
 import com.agentsbackend.services.HoldingService;
 import org.springframework.stereotype.Service;
@@ -49,12 +50,19 @@ public class HoldingServiceImpl implements HoldingService {
         return createHolding(holding);
     }
 
+    @Override
     public Holding createHolding(Holding holding){
         if (holding.getHoldingId() == null){
             holding.setHoldingId(UUID.randomUUID());
         }
         holdingRepository.createHolding(holding);
         return holding;
+    }
+
+    @Override
+    public Holding getHolding(UUID holdingId){
+        return holdingRepository.findById(holdingId)
+            .orElseThrow(() -> new HoldingNotFoundException(holdingId));
     }
 }
 
