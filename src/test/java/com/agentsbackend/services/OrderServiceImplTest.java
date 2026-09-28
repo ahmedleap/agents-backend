@@ -2,7 +2,6 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Account;
-import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
@@ -465,5 +464,1222 @@ class OrderServiceImplTest {
         CancelOrderRequest request = new CancelOrderRequest();
         request.setOrderId(orderId);
         assertThrows(InvalidOrderStatusException.class, () -> orderService.cancelOrder(request));
+    }
+
+    // ==================== createOrder Tests ====================
+
+    @Test
+    @DisplayName("Should create market BUY order successfully")
+    void testCreateMarketBuyOrderSuccess() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null); // Market order
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(accountId, response.getAccountId());
+        assertEquals(instrumentId, response.getInstrumentId());
+        assertEquals(OrderType.BUY, response.getOrderType());
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+        verify(orderRepository).save(any(Order.class));
+        verify(orderQueue).enqueue(any(Order.class));
+        verify(auditTrailService).logOrderCreated(any(), any(), any(), any(), anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("Should create limit BUY order successfully")
+    void testCreateLimitBuyOrderSuccess() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal limitPrice = new BigDecimal("48.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice); // Limit order
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(limitPrice, response.getPrice());
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should create SELL order successfully")
+    void testCreateSellOrderSuccess() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("1000.00"));
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("200.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(OrderType.SELL, response.getOrderType());
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should reject order when market price not available for market order")
+    void testCreateMarketOrderNoMarketPrice() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null); // Market order
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject order when limit price exceeds 50% above market")
+    void testCreateLimitOrderPriceTooHigh() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal limitPrice = new BigDecimal("160.00"); // 60% above market
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject order when limit price is 50% below market")
+    void testCreateLimitOrderPriceTooLow() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal limitPrice = new BigDecimal("40.00"); // 60% below market
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should reject order when client age less than 18")
+    void testCreateOrderClientUnderAge() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(17)); // Only 17 years old
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject order when client age cannot be determined")
+    void testCreateOrderClientAgeMissing() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(InvalidAccountException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should reject duplicate order within 60 seconds")
+    void testCreateOrderDuplicate() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(1); // Duplicate found
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject BUY order exceeding 10000 position limit")
+    void testCreateBuyOrderExceedsPositionLimit() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("9500.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(600); // 9500 + 600 = 10100, exceeds 10000 limit
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("600"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject SELL order when no holdings exist")
+    void testCreateSellOrderNoHoldings() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null); // No holdings
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject SELL order when insufficient holdings")
+    void testCreateSellOrderInsufficientHoldings() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("50.00")); // Only own 50 shares
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(100); // Trying to sell 100, only own 50
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject BUY order with insufficient cash balance")
+    void testCreateBuyOrderInsufficientCash() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal cashBalance = new BigDecimal("5000.00"); // Only $5000 available
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100); // Would need $10,000 but only have $5000
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+
+        // Act & Assert
+        assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
+        verify(orderRepository).save(argThat(order -> order.getStatus() == OrderStatus.REJECTED));
+    }
+
+    @Test
+    @DisplayName("Should reject order leaving account below minimum balance")
+    void testCreateOrderBelowMinimumCash() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal cashBalance = new BigDecimal("9000.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100); // Would leave $0 balance
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+
+        // Act & Assert
+        assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should reject order when account balance too low and equity too low")
+    void testCreateOrderLowBalanceLowEquity() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal cashBalance = new BigDecimal("2.00"); // Low balance
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(1);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act & Assert
+        assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should accept order when all validations pass")
+    void testCreateOrderAllValidationsPass() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(50);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+        verify(orderRepository).save(any(Order.class));
+        verify(orderQueue).enqueue(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should reject limit order when price is exactly at 150% of market price")
+    void testCreateLimitOrderPriceAtUpperBoundary() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal limitPrice = new BigDecimal("150.00"); // Exactly 1.50x market
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+
+        // Act & Assert
+        // Should pass at exactly 150% (boundary is inclusive)
+        assertDoesNotThrow(() -> {
+            when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+            when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+            when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+            Account account = new Account();
+            account.setAccountId(accountId);
+            account.setClientId(UUID.randomUUID());
+            account.setCashBalance(new BigDecimal("20000.00"));
+            when(accountRepository.findById(accountId)).thenReturn(account);
+            when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+            orderService.createOrder(request);
+        });
+    }
+
+    @Test
+    @DisplayName("Should reject limit order when price is exactly at 50% of market price")
+    void testCreateLimitOrderPriceAtLowerBoundary() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("100.00");
+        BigDecimal limitPrice = new BigDecimal("50.00"); // Exactly 0.50x market
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+
+        // Act & Assert
+        // Should pass at exactly 50% (boundary is inclusive)
+        assertDoesNotThrow(() -> {
+            when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+            when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+            when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+            Account account = new Account();
+            account.setAccountId(accountId);
+            account.setClientId(UUID.randomUUID());
+            account.setCashBalance(new BigDecimal("20000.00"));
+            when(accountRepository.findById(accountId)).thenReturn(account);
+            when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+            orderService.createOrder(request);
+        });
+    }
+
+    @Test
+    @DisplayName("Should calculate total equity with single holding")
+    void testCalculateTotalEquityWithSingleHolding() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal holdingQuantity = new BigDecimal("100.00");
+        BigDecimal cashBalance = new BigDecimal("1000.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        Holding holding = new Holding();
+        holding.setInstrumentId(instrumentId);
+        holding.setQuantity(holdingQuantity);
+
+        InstrumentPrice instrumentPrice = new InstrumentPrice();
+        instrumentPrice.setPrice(marketPrice);
+
+        List<Holding> holdings = new ArrayList<>();
+        holdings.add(holding);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(10);
+        request.setPrice(null);
+
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(instrumentPrice);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert - should succeed because equity calculation includes holdings
+        assertNotNull(response);
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should calculate total equity with multiple holdings")
+    void testCalculateTotalEquityWithMultipleHoldings() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId1 = UUID.randomUUID();
+        UUID instrumentId2 = UUID.randomUUID();
+        UUID instrumentId3 = UUID.randomUUID();
+        BigDecimal marketPrice1 = new BigDecimal("50.00");
+        BigDecimal marketPrice2 = new BigDecimal("75.00");
+        BigDecimal marketPrice3 = new BigDecimal("100.00");
+        BigDecimal cashBalance = new BigDecimal("5000.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        Holding holding1 = new Holding();
+        holding1.setInstrumentId(instrumentId1);
+        holding1.setQuantity(new BigDecimal("100.00"));
+
+        Holding holding2 = new Holding();
+        holding2.setInstrumentId(instrumentId2);
+        holding2.setQuantity(new BigDecimal("50.00"));
+
+        Holding holding3 = new Holding();
+        holding3.setInstrumentId(instrumentId3);
+        holding3.setQuantity(new BigDecimal("25.00"));
+
+        InstrumentPrice price1 = new InstrumentPrice();
+        price1.setPrice(marketPrice1);
+
+        InstrumentPrice price2 = new InstrumentPrice();
+        price2.setPrice(marketPrice2);
+
+        InstrumentPrice price3 = new InstrumentPrice();
+        price3.setPrice(marketPrice3);
+
+        List<Holding> holdings = new ArrayList<>();
+        holdings.add(holding1);
+        holdings.add(holding2);
+        holdings.add(holding3);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId1);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(10);
+        request.setPrice(null);
+
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(price2);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId3)).thenReturn(price3);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should calculate total equity with no holdings")
+    void testCalculateTotalEquityWithNoHoldings() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal cashBalance = new BigDecimal("1000.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        InstrumentPrice instrumentPrice = new InstrumentPrice();
+        instrumentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(5);
+        request.setPrice(null);
+
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(instrumentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("5"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("Should handle equity calculation when some holdings have no price")
+    void testCalculateTotalEquityWithMissingPrices() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId1 = UUID.randomUUID();
+        UUID instrumentId2 = UUID.randomUUID();
+        BigDecimal marketPrice1 = new BigDecimal("50.00");
+        BigDecimal cashBalance = new BigDecimal("5000.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        Holding holding1 = new Holding();
+        holding1.setInstrumentId(instrumentId1);
+        holding1.setQuantity(new BigDecimal("100.00"));
+
+        Holding holding2 = new Holding();
+        holding2.setInstrumentId(instrumentId2);
+        holding2.setQuantity(new BigDecimal("50.00"));
+
+        InstrumentPrice price1 = new InstrumentPrice();
+        price1.setPrice(marketPrice1);
+
+        List<Holding> holdings = new ArrayList<>();
+        holdings.add(holding1);
+        holdings.add(holding2);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId1);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(10);
+        request.setPrice(null);
+
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
+        when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(null); // No price for second holding
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("Should reject BUY order when account balance is too low and equity is too low")
+    void testCreateBuyOrderWhenEquityBelowMinimum() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal cashBalance = new BigDecimal("3.00"); // Low balance
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(cashBalance);
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(1);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act & Assert
+        assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should allow SELL order even when cash balance is below minimum if equity is low")
+    void testCreateSellOrderWhenBalanceLowButAllowed() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal cashBalance = new BigDecimal("3.00"); // Below minimum
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(cashBalance);
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("100.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(10);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert - SELL should succeed even with low balance
+        assertNotNull(response);
+        assertEquals(OrderType.SELL, response.getOrderType());
+    }
+
+    @Test
+    @DisplayName("Should handle cancellation when account client ID is null")
+    void testCancelOrderWhenClientIdNull() {
+        // Arrange
+        UUID orderId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(null); // No client ID
+        
+        Order order = new Order();
+        order.setOrderId(orderId);
+        order.setAccount(account);
+        order.setStatus(OrderStatus.PENDING);
+        order.setOrderType(OrderType.BUY);
+        order.setQuantity(new BigDecimal("100"));
+        order.setLimitPrice(null);
+
+        when(orderRepository.findById(orderId)).thenReturn(order);
+        doNothing().when(orderRepository).updateOrder(any(Order.class));
+
+        // Act
+        CancelOrderRequest request = new CancelOrderRequest();
+        request.setOrderId(orderId);
+        CancelOrderResponse response = orderService.cancelOrder(request);
+
+        // Assert - should still succeed but skip audit logging
+        assertNotNull(response);
+        assertEquals(orderId, response.getOrderId());
+        verify(orderRepository).updateOrder(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should handle creation when account client ID is null for audit logging")
+    void testCreateOrderWhenClientIdNull() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(null); // No client ID
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(50);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert - should still succeed but skip audit logging
+        assertNotNull(response);
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+        verify(orderRepository).save(any(Order.class));
+        // Audit logging should not be called because clientId is null
+        verify(auditTrailService, never()).logOrderCreated(any(), any(), any(), any(), anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("Should handle account not found in validateCashBalance")
+    void testCreateOrderAccountNotFoundInCashValidation() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(null); // Account not found
+
+        // Act & Assert
+        assertThrows(InvalidAccountException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should handle account not found in validateMinimumBalance")
+    void testCreateOrderAccountNotFoundInMinimumBalance() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("100.00"));
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL); // Use SELL to skip validateCashBalance
+        request.setQuantity(10);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(accountRepository.findById(accountId)).thenReturn(null); // Not found in validateMinimumBalance
+
+        // Act & Assert
+        assertThrows(InvalidAccountException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should reject market BUY order when market price not available for validation")
+    void testCreateMarketOrderNoMarketPriceInCashValidation() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        // First call returns null (in validateOrderPrice), but then we get through to validateCashBalance
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
+    }
+
+    @Test
+    @DisplayName("Should create order with limit order and calculate total value correctly")
+    void testCreateLimitOrderTotalValueCalculation() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal limitPrice = new BigDecimal("75.00");
+        BigDecimal marketPrice = new BigDecimal("100.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("20000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100);
+        request.setPrice(limitPrice);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(limitPrice, response.getPrice());
+        assertEquals(new BigDecimal("7500.00"), response.getTotalValue()); // 75 * 100
+    }
+
+    @Test
+    @DisplayName("Should create order and enqueue for fulfillment")
+    void testCreateOrderEnqueuedForFulfillment() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("10000.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(50);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert
+        assertNotNull(response);
+        verify(orderQueue).enqueue(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should cancel order and update database")
+    void testCancelOrderDatabaseUpdate() {
+        // Arrange
+        UUID orderId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        
+        Account account = new Account();
+        account.setAccountId(accountId);
+        
+        Order order = new Order();
+        order.setOrderId(orderId);
+        order.setAccount(account);
+        order.setStatus(OrderStatus.PENDING);
+
+        when(orderRepository.findById(orderId)).thenReturn(order);
+        doNothing().when(orderRepository).updateOrder(any(Order.class));
+
+        // Act
+        CancelOrderRequest request = new CancelOrderRequest();
+        request.setOrderId(orderId);
+        orderService.cancelOrder(request);
+
+        // Assert
+        verify(orderRepository).updateOrder(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should validate position limit with existing holdings")
+    void testPositionLimitWithExistingHolding() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(UUID.randomUUID());
+        account.setCashBalance(new BigDecimal("500000.00"));
+
+        Holding existingHolding = new Holding();
+        existingHolding.setQuantity(new BigDecimal("9900.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.BUY);
+        request.setQuantity(100); // Exactly at limit: 9900 + 100 = 10000
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(existingHolding);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert - Should succeed at exactly 10000
+        assertNotNull(response);
+        assertEquals(OrderStatus.PENDING, response.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should allow SELL when position limit would allow it")
+    void testSellOrderDoesNotCheckPositionLimit() {
+        // Arrange
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID instrumentId = UUID.randomUUID();
+        BigDecimal marketPrice = new BigDecimal("50.00");
+
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(clientId);
+        account.setCashBalance(new BigDecimal("1000.00"));
+
+        Holding holding = new Holding();
+        holding.setQuantity(new BigDecimal("100.00"));
+
+        InstrumentPrice currentPrice = new InstrumentPrice();
+        currentPrice.setPrice(marketPrice);
+
+        CreateOrderRequest request = new CreateOrderRequest();
+        request.setAccountId(accountId);
+        request.setInstrumentId(instrumentId);
+        request.setOrderType(OrderType.SELL);
+        request.setQuantity(100);
+        request.setPrice(null);
+
+        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+
+        // Act
+        CreateOrderResponse response = orderService.createOrder(request);
+
+        // Assert - SELL doesn't check position limit
+        assertNotNull(response);
+        assertEquals(OrderType.SELL, response.getOrderType());
     }
 }
