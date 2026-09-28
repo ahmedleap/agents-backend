@@ -12,7 +12,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,13 +32,13 @@ class OrderFulfillmentServiceTest {
     private InstrumentPriceRepository instrumentPriceRepository;
 
     @Mock
-    private HoldingsRepository holdingsRepository;
-
-    @Mock
     private AccountRepository accountRepository;
 
     @Mock
     private AuditTrailService auditTrailService;
+
+    @Mock
+    private HoldingsService holdingsService;
 
     @BeforeEach
     void setUp() {
@@ -48,9 +47,9 @@ class OrderFulfillmentServiceTest {
             orderQueue,
             orderRepository,
             instrumentPriceRepository,
-            holdingsRepository,
             accountRepository,
-            auditTrailService
+            auditTrailService,
+            holdingsService
         );
     }
 
@@ -86,12 +85,10 @@ class OrderFulfillmentServiceTest {
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
         account.setClientId(clientId);
-        Holding holding = createHolding(accountId, instrumentId, new BigDecimal("50.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -99,7 +96,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsRepository).save(any(Holding.class));
+        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
         verify(accountRepository).save(any(Account.class));
         verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.BUY), eq(100), eq(marketPrice));
     }
@@ -119,12 +116,10 @@ class OrderFulfillmentServiceTest {
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
         account.setClientId(clientId);
-        Holding holding = createHolding(accountId, instrumentId, quantity, new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -132,7 +127,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsRepository).deleteByAccountAndInstrument(accountId, instrumentId);
+        verify(holdingsService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
         verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.SELL), eq(50), eq(marketPrice));
     }
@@ -151,12 +146,10 @@ class OrderFulfillmentServiceTest {
         Order order = createBuyLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
-        Holding holding = createHolding(accountId, instrumentId, new BigDecimal("50.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -164,6 +157,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
+        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
     }
 
     @Test
@@ -205,12 +199,10 @@ class OrderFulfillmentServiceTest {
         Order order = createSellLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
-        Holding holding = createHolding(accountId, instrumentId, new BigDecimal("100.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -218,6 +210,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
+        verify(holdingsService).updateHoldingsForSell(order);
     }
 
     @Test
@@ -303,13 +296,12 @@ class OrderFulfillmentServiceTest {
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
 
         // Act
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsRepository).save(any(Holding.class));
+        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -330,15 +322,11 @@ class OrderFulfillmentServiceTest {
         InstrumentPrice price2 = createInstrumentPrice(instrumentId2, marketPrice);
 
         Account account = createAccount(accountId, new BigDecimal("20000.00"));
-        Holding holding1 = createHolding(accountId, instrumentId1, new BigDecimal("50.00"), new BigDecimal("45.00"));
-        Holding holding2 = createHolding(accountId, instrumentId2, new BigDecimal("50.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order1, order2));
         when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
         when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(price2);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId2)).thenReturn(holding2);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -346,6 +334,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository, times(2)).updateOrder(any());
         verify(orderQueue, times(2)).remove(any());
+        verify(holdingsService, times(2)).updateHoldingsForBuy(any(), eq(marketPrice));
     }
 
     @Test
@@ -361,18 +350,16 @@ class OrderFulfillmentServiceTest {
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
-        Holding holding = createHolding(accountId, instrumentId, quantity, new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsRepository).deleteByAccountAndInstrument(accountId, instrumentId);
+        verify(holdingsService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -385,23 +372,20 @@ class OrderFulfillmentServiceTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
         BigDecimal sellQuantity = new BigDecimal("30.00");
-        BigDecimal holdingQuantity = new BigDecimal("100.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, sellQuantity);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
-        Holding holding = createHolding(accountId, instrumentId, holdingQuantity, new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsRepository).save(any(Holding.class));
+        verify(holdingsService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -414,24 +398,20 @@ class OrderFulfillmentServiceTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
         BigDecimal quantity = new BigDecimal("100.00");
-        BigDecimal existingQuantity = new BigDecimal("100.00");
-        BigDecimal existingCostBasis = new BigDecimal("45.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
-        Holding holding = createHolding(accountId, instrumentId, existingQuantity, existingCostBasis);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsRepository).save(any(Holding.class));
+        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -449,12 +429,10 @@ class OrderFulfillmentServiceTest {
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, initialCash);
-        Holding holding = createHolding(accountId, instrumentId, new BigDecimal("50.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -480,12 +458,10 @@ class OrderFulfillmentServiceTest {
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, initialCash);
-        Holding holding = createHolding(accountId, instrumentId, quantity, new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -512,12 +488,10 @@ class OrderFulfillmentServiceTest {
         InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
         account.setClientId(clientId);
-        Holding holding = createHolding(accountId, instrumentId, new BigDecimal("50.00"), new BigDecimal("45.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findById(accountId)).thenReturn(account);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -592,22 +566,5 @@ class OrderFulfillmentServiceTest {
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
         return account;
-    }
-
-    private Holding createHolding(UUID accountId, UUID instrumentId, BigDecimal quantity, BigDecimal averageCostBasis) {
-        Holding holding = new Holding();
-        holding.setHoldingId(UUID.randomUUID());
-
-        Account account = new Account();
-        account.setAccountId(accountId);
-        holding.setAccount(account);
-
-        Instrument instrument = new Instrument();
-        instrument.setInstrumentId(instrumentId);
-        holding.setInstrument(instrument);
-
-        holding.setQuantity(quantity);
-        holding.setAverageCostBasis(averageCostBasis);
-        return holding;
     }
 }

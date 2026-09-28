@@ -1,22 +1,18 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Order;
-import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.Account;
-import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.queue.OrderQueue;
 import com.agentsbackend.repos.OrderRepository;
 import com.agentsbackend.repos.InstrumentPriceRepository;
-import com.agentsbackend.repos.HoldingsRepository;
 import com.agentsbackend.repos.AccountRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,21 +28,21 @@ public class OrderFulfillmentService {
     private final OrderQueue orderQueue;
     private final OrderRepository orderRepository;
     private final InstrumentPriceRepository instrumentPriceRepository;
-    private final HoldingsRepository holdingsRepository;
     private final AccountRepository accountRepository;
     private final AuditTrailService auditTrailService;
+    private final HoldingsService holdingsService;
     
     public OrderFulfillmentService(OrderQueue orderQueue, OrderRepository orderRepository, 
                                   InstrumentPriceRepository instrumentPriceRepository,
-                                  HoldingsRepository holdingsRepository,
                                   AccountRepository accountRepository,
-                                  AuditTrailService auditTrailService) {
+                                  AuditTrailService auditTrailService,
+                                  HoldingsService holdingsService) {
         this.orderQueue = orderQueue;
         this.orderRepository = orderRepository;
         this.instrumentPriceRepository = instrumentPriceRepository;
-        this.holdingsRepository = holdingsRepository;
         this.accountRepository = accountRepository;
         this.auditTrailService = auditTrailService;
+        this.holdingsService = holdingsService;
     }
     
     /**
@@ -136,10 +132,10 @@ public class OrderFulfillmentService {
         
         // Update holdings and account based on order type
         if (order.getOrderType().equals(OrderType.BUY)) {
-            updateHoldingsForBuy(order, filledPrice);
+            holdingsService.updateHoldingsForBuy(order, filledPrice);
             updateCashForBuy(order, filledPrice);
         } else if (order.getOrderType().equals(OrderType.SELL)) {
-            updateHoldingsForSell(order);
+            holdingsService.updateHoldingsForSell(order);
             updateCashForSell(order, filledPrice);
         }
         
@@ -161,91 +157,6 @@ public class OrderFulfillmentService {
         logger.info("Order {} filled at price {}", order.getOrderId(), filledPrice);
     }
     
-    /**
-     * Update holdings for a BUY order - increase quantity
-     */
-    private void updateHoldingsForBuy(Order order, BigDecimal filledPrice) {
-        Holding holding = holdingsRepository.findByAccountAndInstrument(
-            order.getAccount().getAccountId(),
-            order.getInstrument().getInstrumentId()
-        );
-        
-        if (holding == null) {
-            // Create new holding
-            holding = new Holding();
-            holding.setHoldingId(UUID.randomUUID());
-            
-            // Ensure Account and Instrument objects have their IDs properly set
-            Account account = new Account();
-            account.setAccountId(order.getAccount().getAccountId());
-            holding.setAccount(account);
-            
-            Instrument instrument = new Instrument();
-            instrument.setInstrumentId(order.getInstrument().getInstrumentId());
-            holding.setInstrument(instrument);
-            
-            holding.setQuantity(order.getQuantity());
-            // Set average cost basis for new holding
-            holding.setAverageCostBasis(filledPrice);
-        } else {
-            // Update existing holding - recalculate average cost basis
-            BigDecimal currentValue = holding.getQuantity().multiply(holding.getAverageCostBasis());
-            BigDecimal newSharesValue = order.getQuantity().multiply(filledPrice);
-            BigDecimal totalValue = currentValue.add(newSharesValue);
-            BigDecimal totalQuantity = holding.getQuantity().add(order.getQuantity());
-            
-            holding.setQuantity(totalQuantity);
-            holding.setAverageCostBasis(totalValue.divide(totalQuantity, 4, java.math.RoundingMode.HALF_UP));
-            
-            // Ensure Account and Instrument IDs are properly set before saving
-            Account account = new Account();
-            account.setAccountId(order.getAccount().getAccountId());
-            holding.setAccount(account);
-            
-            Instrument instrument = new Instrument();
-            instrument.setInstrumentId(order.getInstrument().getInstrumentId());
-            holding.setInstrument(instrument);
-        }
-        
-        holdingsRepository.save(holding);
-    }
-    
-    /**
-     * Update holdings for a SELL order - decrease quantity
-     */
-    private void updateHoldingsForSell(Order order) {
-        Holding holding = holdingsRepository.findByAccountAndInstrument(
-            order.getAccount().getAccountId(),
-            order.getInstrument().getInstrumentId()
-        );
-        
-        if (holding != null) {
-            BigDecimal newQuantity = holding.getQuantity().subtract(order.getQuantity());
-            
-            if (newQuantity.compareTo(BigDecimal.ZERO) == 0) {
-                // Delete holding if quantity becomes zero
-                holdingsRepository.deleteByAccountAndInstrument(
-                    order.getAccount().getAccountId(),
-                    order.getInstrument().getInstrumentId()
-                );
-                logger.debug("Holding deleted for account {} instrument {} (quantity 0)", 
-                    order.getAccount().getAccountId(), order.getInstrument().getInstrumentId());
-            } else {
-                // Update quantity - ensure Account and Instrument IDs are properly set
-                holding.setQuantity(newQuantity);
-                
-                Account account = new Account();
-                account.setAccountId(order.getAccount().getAccountId());
-                holding.setAccount(account);
-                
-                Instrument instrument = new Instrument();
-                instrument.setInstrumentId(order.getInstrument().getInstrumentId());
-                holding.setInstrument(instrument);
-                
-                holdingsRepository.save(holding);
-            }
-        }
-    }
     
     /**
      * Update account cash balance for BUY order - decrease cash
