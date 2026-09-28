@@ -9,7 +9,6 @@ import com.agentsbackend.repos.InstrumentRepository;
 import com.agentsbackend.repos.InstrumentPriceRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.exceptions.AccountNotFoundException;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
@@ -39,33 +38,6 @@ public class HoldingServiceImpl implements HoldingService {
         this.instrumentPriceRepository = instrumentPriceRepository;
     }
     
-    // Creates a new admin with auto-generated UUID and current timestamp if not provided
-    @Override
-    public Holding createHoldingFromDTO(CreateHoldingRequestDTO request) {
-        Account account = accountRepository.findById(UUID.fromString(request.getAccountId()))
-            .orElseThrow(() -> new AccountNotFoundException(UUID.fromString(request.getAccountId())));
-
-        Instrument instrument = instrumentRepository.findById(UUID.fromString(request.getInstrumentId()))
-            .orElseThrow(() -> new InstrumentNotFoundException(UUID.fromString(request.getInstrumentId())));
-
-        Holding holding = new Holding();
-        holding.setAccount(account);
-        holding.setInstrument(instrument);
-        holding.setQuantity(request.getQuantity());
-        holding.setAverageCostBasis(request.getAverageCostBasis());
-
-        return createHolding(holding);
-    }
-
-    @Override
-    public Holding createHolding(Holding holding){
-        if (holding.getHoldingId() == null){
-            holding.setHoldingId(UUID.randomUUID());
-        }
-        holdingRepository.createHolding(holding);
-        return holding;
-    }
-
     @Override
     public java.util.List<Holding> getHoldingsByAccountId(UUID accountId){
         return holdingRepository.findByAccountId(accountId);

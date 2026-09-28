@@ -1,7 +1,6 @@
 package com.agentsbackend.controllers;
 
-import com.agentsbackend.DTO.requests.CreateHoldingRequestDTO;
-import com.agentsbackend.DTO.response.CreateHoldingResponseDTO;
+
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.repos.HoldingRepository;
@@ -26,15 +25,6 @@ public class HoldingController {
     
     public HoldingController(HoldingService holdingService){
         this.holdingService = holdingService;
-    }
-    
-    @PostMapping("/createHolding")
-    public ResponseEntity<CreateHoldingResponseDTO> createHolding(
-            @Valid @RequestBody CreateHoldingRequestDTO request) {
-    
-        Holding saved = holdingService.createHoldingFromDTO(request);
-        CreateHoldingResponseDTO response = new CreateHoldingResponseDTO(saved.getHoldingId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{accountId}")
