@@ -140,7 +140,7 @@ public class OrderFulfillmentService {
         }
         
         // Log order fill to audit trail
-        Account fullAccount = accountRepository.findById(order.getAccount().getAccountId());
+        Account fullAccount = accountRepository.findById(order.getAccount().getAccountId()).orElse(null);
         if (fullAccount != null && fullAccount.getClientId() != null) {
             auditTrailService.logOrderFilled(
                 order.getOrderId(),
@@ -162,7 +162,7 @@ public class OrderFulfillmentService {
      * Update account cash balance for BUY order - decrease cash
      */
     private void updateCashForBuy(Order order, BigDecimal filledPrice) {
-        Account account = accountRepository.findById(order.getAccount().getAccountId());
+        Account account = accountRepository.findById(order.getAccount().getAccountId()).orElse(null);
         if (account != null) {
             BigDecimal orderCost = filledPrice.multiply(order.getQuantity());
             account.setCashBalance(account.getCashBalance().subtract(orderCost));
@@ -175,7 +175,7 @@ public class OrderFulfillmentService {
      * Update account cash balance for SELL order - increase cash
      */
     private void updateCashForSell(Order order, BigDecimal filledPrice) {
-        Account account = accountRepository.findById(order.getAccount().getAccountId());
+        Account account = accountRepository.findById(order.getAccount().getAccountId()).orElse(null);
         if (account != null) {
             BigDecimal orderProceeds = filledPrice.multiply(order.getQuantity());
             account.setCashBalance(account.getCashBalance().add(orderProceeds));

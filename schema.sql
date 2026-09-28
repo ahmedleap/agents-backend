@@ -155,6 +155,7 @@ CREATE TABLE orders (
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     filled_at       TIMESTAMP,
     cancelled_at    TIMESTAMP,
+    cancel_reason   TEXT,
     CONSTRAINT fk_orders_account
         FOREIGN KEY (account_id)
         REFERENCES accounts (account_id)

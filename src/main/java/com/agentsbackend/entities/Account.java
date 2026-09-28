@@ -15,7 +15,7 @@ public class Account {
     @Column(name = "account_id", columnDefinition = "UUID")
     private UUID accountId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 

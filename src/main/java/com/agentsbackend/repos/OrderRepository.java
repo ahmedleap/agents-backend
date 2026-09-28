@@ -24,7 +24,7 @@ public interface OrderRepository {
     @Select("SELECT * FROM orders WHERE account_id = #{accountId} ORDER BY created_at DESC")
     List<Order> findAllByAccount(@Param("accountId") UUID accountId);
 
-    @Update("UPDATE orders SET status = #{status}::order_status, filled_price = #{filledPrice}, filled_at = #{filledAt} WHERE order_id = #{orderId}")
+    @Update("UPDATE orders SET status = #{status}::order_status, filled_price = #{filledPrice}, filled_at = #{filledAt}, cancelled_at = #{cancelledAt}, cancel_reason = #{cancelReason} WHERE order_id = #{orderId}")
     void updateOrder(Order order);
 
     @Insert("INSERT INTO orders (order_id, account_id, instrument_id, quantity, limit_price, order_type, status, created_at) " +

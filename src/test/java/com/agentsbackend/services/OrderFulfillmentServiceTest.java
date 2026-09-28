@@ -88,7 +88,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -119,7 +119,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -149,7 +149,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -202,7 +202,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -295,7 +295,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -326,7 +326,7 @@ class OrderFulfillmentServiceTest {
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order1, order2));
         when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
         when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(price2);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -353,7 +353,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -379,7 +379,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -405,7 +405,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -432,7 +432,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -461,7 +461,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -491,7 +491,7 @@ class OrderFulfillmentServiceTest {
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
-        when(accountRepository.findById(accountId)).thenReturn(account);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
         orderFulfillmentService.processPendingOrders();

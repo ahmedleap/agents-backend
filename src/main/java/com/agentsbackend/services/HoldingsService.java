@@ -3,9 +3,6 @@ package com.agentsbackend.services;
 import com.agentsbackend.entities.Order;
 import java.math.BigDecimal;
 
-/**
- * Service for managing holdings operations including buy and sell order processing.
- */
 public interface HoldingsService {
     
     /**

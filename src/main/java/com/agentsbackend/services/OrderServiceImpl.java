@@ -6,6 +6,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
+import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.DTO.requests.GetPendingOrdersRequest;
 import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.exceptions.OrderNotFoundException;
@@ -77,6 +78,7 @@ public class OrderServiceImpl implements OrderService {
             // validateOrderQuantity() is now handled by @Valid @Min @Max on DTO
             // validateOrderPrice() basic validation (>0) is now handled by @Valid @DecimalMin on DTO
             // Still need to validate market price exists and ±50% range for limit orders
+            validateAccountStatus(request);
             validateOrderPrice(request);
             validateClientAge(request);
             validateDuplicateOrder(request);
@@ -118,7 +120,7 @@ public class OrderServiceImpl implements OrderService {
             orderQueue.enqueue(order);
             
             // Log order creation to audit trail
-            Account fullAccount = accountRepository.findById(request.getAccountId());
+            Account fullAccount = accountRepository.findById(request.getAccountId()).orElse(null);
             if (fullAccount != null && fullAccount.getClientId() != null) {
                 auditTrailService.logOrderCreated(
                     orderId,
@@ -188,7 +190,7 @@ public class OrderServiceImpl implements OrderService {
                 orderRepository.save(rejectedOrder);
                 
                 // Log rejection to audit trail
-                Account fullAccount = accountRepository.findById(request.getAccountId());
+                Account fullAccount = accountRepository.findById(request.getAccountId()).orElse(null);
                 if (fullAccount != null && fullAccount.getClientId() != null) {
                     auditTrailService.logOrderRejected(
                         orderId,
@@ -228,7 +230,21 @@ public class OrderServiceImpl implements OrderService {
     //  For LIMIT orders (price provided): validates price is reasonable (within ±50% of market)
     //    Basic price > 0 validation is handled by @DecimalMin on DTO
     //  For MARKET orders (price omitted): validates that market price exists
-     
+
+    private void validateAccountStatus(CreateOrderRequest request) {
+        Account account = accountRepository.findById(request.getAccountId()).orElse(null);
+        
+        if (account == null) {
+            throw new InvalidAccountException("Account not found");
+        }
+        
+        if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
+            throw new InvalidAccountException(
+                "Cannot place orders on this account. Account status: " + account.getStatus()
+            );
+        }
+    }
+
     private void validateOrderPrice(CreateOrderRequest request) {
         BigDecimal price = request.getPrice();
         
@@ -361,7 +377,7 @@ public class OrderServiceImpl implements OrderService {
     // Validates that account has sufficient cash balance for the order
     // Also checks that post-fill cash balance meets minimum balance requirements
     private void validateCashBalance(CreateOrderRequest request) {
-        Account account = accountRepository.findById(request.getAccountId());
+        Account account = accountRepository.findById(request.getAccountId()).orElse(null);
         
         if (account == null) {
             throw new InvalidAccountException("Account not found");
@@ -422,7 +438,7 @@ public class OrderServiceImpl implements OrderService {
      * - If cash balance < $5 AND total equity < $5: reject BUY orders only (allow SELL for recovery)
      */
     private void validateMinimumBalance(CreateOrderRequest request) {
-        Account account = accountRepository.findById(request.getAccountId());
+        Account account = accountRepository.findById(request.getAccountId()).orElse(null);
         
         if (account == null) {
             throw new InvalidAccountException("Account not found");
@@ -453,7 +469,7 @@ public class OrderServiceImpl implements OrderService {
 
    
     private BigDecimal calculateTotalEquity(UUID accountId) {
-        Account account = accountRepository.findById(accountId);
+        Account account = accountRepository.findById(accountId).orElse(null);
         if (account == null) {
             return BigDecimal.ZERO;
         }
@@ -491,28 +507,40 @@ public class OrderServiceImpl implements OrderService {
             );
         }
         
+        // Verify account status - only active accounts can modify orders
+        Account account = accountRepository.findById(order.getAccountId()).orElse(null);
+        if (account == null) {
+            throw new InvalidAccountException("Account not found");
+        }
+        
+        if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
+            throw new InvalidAccountException(
+                "Cannot cancel orders on this account. Account status: " + account.getStatus()
+            );
+        }
 
         order.setStatus(OrderStatus.CANCELLED);
-        
-        // order.setCancellationReason(request.getCancellationReason());
-
+        order.setCancelReason(request.getCancellationReason());
         order.setCancelledAt(LocalDateTime.now());
         orderRepository.updateOrder(order);
         
         // Log order cancellation to audit trail
-        Account fullAccount = accountRepository.findById(order.getAccount().getAccountId());
-        if (fullAccount != null && fullAccount.getClientId() != null) {
+        if (account != null && account.getClient() != null && account.getClient().getClientId() != null) {
+            String auditReason = "Order cancelled by user";
+            if (request.getCancellationReason() != null && !request.getCancellationReason().trim().isEmpty()) {
+                auditReason += ": " + request.getCancellationReason();
+            }
             auditTrailService.logOrderCancelled(
                 order.getOrderId(),
-                order.getAccount().getAccountId(),
-                fullAccount.getClientId(),
+                order.getAccountId(),
+                account.getClient().getClientId(),
                 order.getOrderType(),
                 order.getQuantity().intValue(),
                 order.getLimitPrice(),
-                "Order cancelled by user"
+                auditReason
             );
         } else {
-            logger.warn("Could not log order cancellation for order {}: Account or clientId not found", order.getOrderId());
+            logger.warn("Could not log order cancellation for order {}: Account or client not found", order.getOrderId());
         }
         
         return new CancelOrderResponse(
@@ -525,7 +553,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderSummaryResponse> getOrderHistory(UUID accountId) {
-        Account account = accountRepository.findById(accountId);
+        Account account = accountRepository.findById(accountId).orElse(null);
         
         if (account == null) {
             throw new InvalidAccountException("Account not found");
