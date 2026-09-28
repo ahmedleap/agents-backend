@@ -2,10 +2,12 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Account;
+import com.agentsbackend.entities.Client;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
+import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.exceptions.*;
 import com.agentsbackend.DTO.requests.GetPendingOrdersRequest;
 import com.agentsbackend.DTO.requests.CancelOrderRequest;
@@ -33,6 +35,8 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import org.mockito.ArgumentCaptor;
 
 @DisplayName("OrderServiceImpl Tests")
 class OrderServiceImplTest {
@@ -138,17 +142,28 @@ class OrderServiceImplTest {
         // Arrange
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        
+        Client client = new Client();
+        client.setClientId(clientId);
         
         Account account = new Account();
         account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setClient(client);
         
         Order order = new Order();
         order.setOrderId(orderId);
-        order.setAccount(account);
+        order.setAccountId(accountId);
         order.setStatus(OrderStatus.PENDING);
+        order.setQuantity(new BigDecimal("100"));
+        order.setOrderType(OrderType.BUY);
+        order.setLimitPrice(null);
 
         when(orderRepository.findById(orderId)).thenReturn(order);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         doNothing().when(orderRepository).updateOrder(any(Order.class));
+        doNothing().when(auditTrailService).logOrderCancelled(any(), any(), any(), any(), anyInt(), any(), any());
 
         // Act
         CancelOrderRequest request = new CancelOrderRequest();
@@ -313,16 +328,29 @@ class OrderServiceImplTest {
     void testAuditTrailOnCancellation() {
         // Arrange
         UUID orderId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        
+        Client client = new Client();
+        client.setClientId(clientId);
+        
         Account account = new Account();
-        account.setAccountId(UUID.randomUUID());
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setClient(client);
         
         Order order = new Order();
         order.setOrderId(orderId);
-        order.setAccount(account);
+        order.setAccountId(accountId);
         order.setStatus(OrderStatus.PENDING);
+        order.setQuantity(new BigDecimal("100"));
+        order.setOrderType(OrderType.BUY);
+        order.setLimitPrice(null);
 
         when(orderRepository.findById(orderId)).thenReturn(order);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         doNothing().when(orderRepository).updateOrder(any(Order.class));
+        doNothing().when(auditTrailService).logOrderCancelled(any(), any(), any(), any(), anyInt(), any(), any());
 
         // Act
         CancelOrderRequest request = new CancelOrderRequest();
@@ -331,6 +359,7 @@ class OrderServiceImplTest {
 
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
+        verify(auditTrailService).logOrderCancelled(eq(orderId), eq(accountId), eq(clientId), any(), anyInt(), any(), any());
     }
 
     // ==================== getOrderHistory Tests ====================
@@ -482,6 +511,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -528,6 +558,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -569,6 +600,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("1000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("200.00"));
@@ -606,6 +638,10 @@ class OrderServiceImplTest {
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
         request.setInstrumentId(instrumentId);
@@ -613,6 +649,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null); // Market order
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
 
         // Act & Assert
@@ -629,6 +666,10 @@ class OrderServiceImplTest {
         BigDecimal marketPrice = new BigDecimal("100.00");
         BigDecimal limitPrice = new BigDecimal("160.00"); // 60% above market
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -639,6 +680,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
 
         // Act & Assert
@@ -655,6 +697,10 @@ class OrderServiceImplTest {
         BigDecimal marketPrice = new BigDecimal("100.00");
         BigDecimal limitPrice = new BigDecimal("40.00"); // 60% below market
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -665,6 +711,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
 
         // Act & Assert
@@ -679,6 +726,10 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -689,6 +740,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(17)); // Only 17 years old
 
@@ -730,6 +782,10 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -740,6 +796,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(1); // Duplicate found
@@ -759,6 +816,7 @@ class OrderServiceImplTest {
 
         Account account = new Account();
         account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("9500.00"));
@@ -773,6 +831,7 @@ class OrderServiceImplTest {
         request.setQuantity(600); // 9500 + 600 = 10100, exceeds 10000 limit
         request.setPrice(null);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("600"), null)).thenReturn(0);
@@ -791,6 +850,10 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -801,6 +864,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
@@ -819,6 +883,10 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("50.00")); // Only own 50 shares
 
@@ -832,6 +900,7 @@ class OrderServiceImplTest {
         request.setQuantity(100); // Trying to sell 100, only own 50
         request.setPrice(null);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
@@ -854,6 +923,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -888,6 +958,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -921,6 +992,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -956,6 +1028,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -993,6 +1066,12 @@ class OrderServiceImplTest {
         BigDecimal marketPrice = new BigDecimal("100.00");
         BigDecimal limitPrice = new BigDecimal("150.00"); // Exactly 1.50x market
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(UUID.randomUUID());
+        account.setCashBalance(new BigDecimal("20000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -1003,22 +1082,16 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         // Should pass at exactly 150% (boundary is inclusive)
-        assertDoesNotThrow(() -> {
-            when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
-            when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-            when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
-            Account account = new Account();
-            account.setAccountId(accountId);
-            account.setClientId(UUID.randomUUID());
-            account.setCashBalance(new BigDecimal("20000.00"));
-            when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-            when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
-            orderService.createOrder(request);
-        });
+        assertDoesNotThrow(() -> orderService.createOrder(request));
     }
 
     @Test
@@ -1030,6 +1103,12 @@ class OrderServiceImplTest {
         BigDecimal marketPrice = new BigDecimal("100.00");
         BigDecimal limitPrice = new BigDecimal("50.00"); // Exactly 0.50x market
 
+        Account account = new Account();
+        account.setAccountId(accountId);
+        account.setClientId(UUID.randomUUID());
+        account.setCashBalance(new BigDecimal("20000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
+
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
 
@@ -1040,22 +1119,16 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice);
 
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
+        when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
+        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         // Should pass at exactly 50% (boundary is inclusive)
-        assertDoesNotThrow(() -> {
-            when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
-            when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-            when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
-            Account account = new Account();
-            account.setAccountId(accountId);
-            account.setClientId(UUID.randomUUID());
-            account.setCashBalance(new BigDecimal("20000.00"));
-            when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-            when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
-            orderService.createOrder(request);
-        });
+        assertDoesNotThrow(() -> orderService.createOrder(request));
     }
 
     @Test
@@ -1071,6 +1144,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding = new Holding();
         holding.setInstrumentId(instrumentId);
@@ -1120,6 +1194,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding1 = new Holding();
         holding1.setInstrumentId(instrumentId1);
@@ -1183,6 +1258,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice instrumentPrice = new InstrumentPrice();
         instrumentPrice.setPrice(marketPrice);
@@ -1221,6 +1297,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding1 = new Holding();
         holding1.setInstrumentId(instrumentId1);
@@ -1271,6 +1348,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -1307,6 +1385,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(cashBalance);
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("100.00"));
@@ -1343,19 +1422,24 @@ class OrderServiceImplTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         
+        Client client = new Client();
+        client.setClientId(null); // No client ID
+        
         Account account = new Account();
         account.setAccountId(accountId);
-        account.setClientId(null); // No client ID
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setClient(client);
         
         Order order = new Order();
         order.setOrderId(orderId);
-        order.setAccount(account);
+        order.setAccountId(accountId);
         order.setStatus(OrderStatus.PENDING);
         order.setOrderType(OrderType.BUY);
         order.setQuantity(new BigDecimal("100"));
         order.setLimitPrice(null);
 
         when(orderRepository.findById(orderId)).thenReturn(order);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         doNothing().when(orderRepository).updateOrder(any(Order.class));
 
         // Act
@@ -1363,7 +1447,7 @@ class OrderServiceImplTest {
         request.setOrderId(orderId);
         CancelOrderResponse response = orderService.cancelOrder(request);
 
-        // Assert - should still succeed but skip audit logging
+        // Assert - should still succeed but skip audit logging due to null clientId
         assertNotNull(response);
         assertEquals(orderId, response.getOrderId());
         verify(orderRepository).updateOrder(any(Order.class));
@@ -1381,6 +1465,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(null); // No client ID
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -1479,6 +1564,7 @@ class OrderServiceImplTest {
         Account account = new Account();
         account.setAccountId(accountId);
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1488,6 +1574,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         // First call returns null (in validateOrderPrice), but then we get through to validateCashBalance
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
 
         // Act & Assert
@@ -1508,6 +1595,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("20000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -1548,6 +1636,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("10000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         InstrumentPrice currentPrice = new InstrumentPrice();
         currentPrice.setPrice(marketPrice);
@@ -1580,17 +1669,28 @@ class OrderServiceImplTest {
         // Arrange
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        
+        Client client = new Client();
+        client.setClientId(clientId);
         
         Account account = new Account();
         account.setAccountId(accountId);
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setClient(client);
         
         Order order = new Order();
         order.setOrderId(orderId);
-        order.setAccount(account);
+        order.setAccountId(accountId);
         order.setStatus(OrderStatus.PENDING);
+        order.setQuantity(new BigDecimal("100"));
+        order.setOrderType(OrderType.BUY);
+        order.setLimitPrice(null);
 
         when(orderRepository.findById(orderId)).thenReturn(order);
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         doNothing().when(orderRepository).updateOrder(any(Order.class));
+        doNothing().when(auditTrailService).logOrderCancelled(any(), any(), any(), any(), anyInt(), any(), any());
 
         // Act
         CancelOrderRequest request = new CancelOrderRequest();
@@ -1598,7 +1698,11 @@ class OrderServiceImplTest {
         orderService.cancelOrder(request);
 
         // Assert
-        verify(orderRepository).updateOrder(any(Order.class));
+        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).updateOrder(orderCaptor.capture());
+        Order cancelledOrder = orderCaptor.getValue();
+        assertEquals(OrderStatus.CANCELLED, cancelledOrder.getStatus());
+        assertEquals(accountId, cancelledOrder.getAccountId());
     }
 
     @Test
@@ -1613,6 +1717,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(UUID.randomUUID());
         account.setCashBalance(new BigDecimal("500000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding existingHolding = new Holding();
         existingHolding.setQuantity(new BigDecimal("9900.00"));
@@ -1655,6 +1760,7 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setClientId(clientId);
         account.setCashBalance(new BigDecimal("1000.00"));
+        account.setStatus(AccountStatus.ACTIVE);
 
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("100.00"));
