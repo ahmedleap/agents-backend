@@ -5,6 +5,7 @@ import com.agentsbackend.enums.AccountStatus;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,7 @@ public interface AccountRepository {
             @Result(column = "open_date", property = "openDate")
     })
     Optional<Account> findById(@Param("accountId") UUID accountId);
+
 
     /**
      * Find all accounts for a specific client.
@@ -229,4 +231,12 @@ public interface AccountRepository {
             @Result(column = "open_date", property = "openDate")
     })
     List<Account> findAll();
+
+    @Update("UPDATE accounts SET cash_balance = #{cashBalance} WHERE account_id = #{accountId}")
+    void save(Account account);
+    
+    @Select("SELECT c.date_of_birth FROM clients c " +
+            "INNER JOIN accounts a ON a.client_id = c.client_id " +
+            "WHERE a.account_id = #{accountId}")
+    LocalDate findClientDateOfBirthByAccountId(@Param("accountId") UUID accountId);
 }
