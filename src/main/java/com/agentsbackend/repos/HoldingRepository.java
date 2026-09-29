@@ -1,5 +1,6 @@
 package com.agentsbackend.repos;
 
+import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Holding;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -8,8 +9,10 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.One;
 import org.apache.ibatis.annotations.Param;
 
+
 import java.util.UUID;
 import java.util.Optional;
+import java.util.List;
 
 @Mapper
 public interface HoldingRepository {
@@ -22,7 +25,7 @@ public interface HoldingRepository {
         @Result(property = "instrument", column = "instrument_id",
             one = @One(select = "com.agentsbackend.repos.InstrumentRepository.findById"))
     })
-    java.util.List<Holding> findByAccountId(UUID accountId);
+    List<Holding> findByAccountId(UUID accountId);
 
     @Select("SELECT * FROM holdings WHERE holding_id = #{holdingId} AND account_id = #{accountId}")
     @Results({
@@ -30,4 +33,7 @@ public interface HoldingRepository {
         @Result(property = "instrument", column = "instrument_id", one = @One(select = "com.agentsbackend.repos.InstrumentRepository.findById"))
     })
     Optional<Holding> findOneHolding(@Param("holdingId") UUID holdingId, @Param("accountId") UUID accountId);
+
+    @Select("SELECT * FROM accounts WHERE client_id = #{clientId}")
+    List<Account> findByClientId(UUID clientId);
 }
