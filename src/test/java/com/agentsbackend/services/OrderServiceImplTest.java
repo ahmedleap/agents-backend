@@ -78,23 +78,24 @@ class OrderServiceImplTest {
     @DisplayName("Should retrieve all pending orders when no account filter provided")
     void testGetPendingOrdersWithoutFilter() {
         // Arrange
+        UUID accountId = UUID.randomUUID();
         List<Order> pendingOrders = new ArrayList<>();
         Order order1 = new Order();
         order1.setOrderId(UUID.randomUUID());
         order1.setStatus(OrderStatus.PENDING);
         pendingOrders.add(order1);
 
-        when(orderRepository.findPendingOrders()).thenReturn(pendingOrders);
+        when(orderRepository.findPendingOrdersByAccount(accountId)).thenReturn(pendingOrders);
 
         // Act
-        GetPendingOrdersRequest request = new GetPendingOrdersRequest();
+        GetPendingOrdersRequest request = new GetPendingOrdersRequest(accountId, null, null);
         List<Order> result = orderService.getPendingOrders(request);
 
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(OrderStatus.PENDING, result.get(0).getStatus());
-        verify(orderRepository).findPendingOrders();
+        verify(orderRepository).findPendingOrdersByAccount(accountId);
     }
 
     @Test
@@ -124,16 +125,17 @@ class OrderServiceImplTest {
     @DisplayName("Should return empty list when no pending orders exist")
     void testGetPendingOrdersEmpty() {
         // Arrange
-        when(orderRepository.findPendingOrders()).thenReturn(new ArrayList<>());
+        UUID accountId = UUID.randomUUID();
+        when(orderRepository.findPendingOrdersByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
-        GetPendingOrdersRequest request = new GetPendingOrdersRequest();
+        GetPendingOrdersRequest request = new GetPendingOrdersRequest(accountId, null, null);
         List<Order> result = orderService.getPendingOrders(request);
 
         // Assert
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(orderRepository).findPendingOrders();
+        verify(orderRepository).findPendingOrdersByAccount(accountId);
     }
 
     @Test
@@ -229,16 +231,16 @@ class OrderServiceImplTest {
     @DisplayName("Should verify repository is called for pending orders")
     void testRepositoryCallForPendingOrders() {
         // Arrange
-        GetPendingOrdersRequest request = new GetPendingOrdersRequest();
-        when(orderRepository.findPendingOrders()).thenReturn(new ArrayList<>());
+        UUID accountId = UUID.randomUUID();
+        GetPendingOrdersRequest request = new GetPendingOrdersRequest(accountId, null, null);
+        when(orderRepository.findPendingOrdersByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         List<Order> result = orderService.getPendingOrders(request);
 
         // Assert
         assertNotNull(result);
-        verify(orderRepository).findPendingOrders();
-        verify(orderRepository, never()).findPendingOrdersByAccount(any());
+        verify(orderRepository).findPendingOrdersByAccount(accountId);
     }
 
     @Test
@@ -262,6 +264,7 @@ class OrderServiceImplTest {
     @DisplayName("Should return multiple pending orders")
     void testGetMultiplePendingOrders() {
         // Arrange
+        UUID accountId = UUID.randomUUID();
         List<Order> pendingOrders = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             Order order = new Order();
@@ -270,10 +273,10 @@ class OrderServiceImplTest {
             pendingOrders.add(order);
         }
 
-        when(orderRepository.findPendingOrders()).thenReturn(pendingOrders);
+        when(orderRepository.findPendingOrdersByAccount(accountId)).thenReturn(pendingOrders);
 
         // Act
-        GetPendingOrdersRequest request = new GetPendingOrdersRequest();
+        GetPendingOrdersRequest request = new GetPendingOrdersRequest(accountId, null, null);
         List<Order> result = orderService.getPendingOrders(request);
 
         // Assert

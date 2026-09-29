@@ -58,15 +58,13 @@ public class OrderServiceImpl implements OrderService {
         this.auditTrailService = auditTrailService;
     }
 
-    // Returns a list of pending orders based on filter criteria (accountId, limit, offset)
+    // Returns a list of pending orders for a specific account
     @Override
     public List<Order> getPendingOrders(GetPendingOrdersRequest request) {
-        // If accountId is provided, filter by that account
-        if (request.getAccountId() != null) {
-            return orderRepository.findPendingOrdersByAccount(request.getAccountId());
+        if (request.getAccountId() == null) {
+            throw new InvalidOrderParametersException("Account ID is required to retrieve pending orders");
         }
-        // Otherwise return all pending orders
-        return orderRepository.findPendingOrders();
+        return orderRepository.findPendingOrdersByAccount(request.getAccountId());
     }
 
     @Override
