@@ -111,7 +111,7 @@ CREATE TABLE accounts (
 );
 
 -- ============================================================
--- INSTRUMENTS
+-- INSTRUMENTS (with current market pricing)
 -- ============================================================
 
 CREATE TABLE instruments (
@@ -119,24 +119,32 @@ CREATE TABLE instruments (
     ticker          VARCHAR(10) NOT NULL UNIQUE,
     name            VARCHAR(255) NOT NULL,
     asset_class     asset_class NOT NULL,
-    industry        VARCHAR(100)
+    industry        VARCHAR(100),
+    bid              NUMERIC(18,4) CHECK (bid > 0),
+    ask              NUMERIC(18,4) CHECK (ask > 0),
+    mid_price        NUMERIC(18,4) GENERATED ALWAYS AS ((bid + ask) / 2) STORED,
+    price_updated_at TIMESTAMP WITH TIME ZONE
 );
 
 -- ============================================================
--- INSTRUMENT_PRICES (periodic pricing-API pulls, ~15 min cadence)
+-- INSTRUMENT PRICE HISTORY (daily OHLCV bars from Alpaca)
 -- ============================================================
 
-CREATE TABLE instrument_prices (
-    price_id        UUID PRIMARY KEY,
-    instrument_id   UUID NOT NULL,
-    price           NUMERIC(18,4) NOT NULL CHECK (price > 0),
-    as_of           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
-    CONSTRAINT fk_instrument_prices_instrument
+CREATE TABLE instrument_price_history (
+    price_history_id UUID PRIMARY KEY,
+    instrument_id    UUID NOT NULL,
+    timestamp        TIMESTAMP WITH TIME ZONE NOT NULL,
+    open             NUMERIC(18,4) NOT NULL CHECK (open > 0),
+    high             NUMERIC(18,4) NOT NULL CHECK (high > 0),
+    low              NUMERIC(18,4) NOT NULL CHECK (low > 0),
+    close            NUMERIC(18,4) NOT NULL CHECK (close > 0),
+    volume           INTEGER NOT NULL CHECK (volume >= 0),
+    CONSTRAINT fk_price_history_instrument
         FOREIGN KEY (instrument_id)
         REFERENCES instruments (instrument_id)
         ON DELETE CASCADE,
-    CONSTRAINT uq_instrument_price_as_of
-        UNIQUE (instrument_id, as_of)
+    CONSTRAINT uq_instrument_timestamp
+        UNIQUE (instrument_id, timestamp)
 );
 
 -- ============================================================
@@ -272,4 +280,5 @@ CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
 
 CREATE INDEX idx_transactions_account_created ON transactions (account_id, created_at);
 
-CREATE INDEX idx_instrument_prices_instrument_as_of ON instrument_prices (instrument_id, as_of DESC);
+CREATE INDEX idx_price_history_instrument_timestamp 
+    ON instrument_price_history (instrument_id, timestamp DESC);
