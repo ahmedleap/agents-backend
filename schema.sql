@@ -70,7 +70,7 @@ CREATE TABLE clients (
     email                    VARCHAR(255) NOT NULL UNIQUE,
     password_hash            VARCHAR(255) NOT NULL,
     date_of_birth            DATE NOT NULL,
-    join_date                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    join_date                TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     ssn_last4                CHAR(4), -- can be hashed but full for compliance
     portfolio_size_range     portfolio_size_range,
     risk_tolerance           risk_tolerance,
@@ -90,7 +90,7 @@ CREATE TABLE admin (
     email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     role            admin_role NOT NULL,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
 );
 
 -- ============================================================
@@ -103,7 +103,7 @@ CREATE TABLE accounts (
     name            VARCHAR(255) NOT NULL,
     cash_balance    NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (cash_balance >= 0),
     status          account_status NOT NULL DEFAULT 'ACTIVE',
-    open_date       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    open_date       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_accounts_client
         FOREIGN KEY (client_id)
         REFERENCES clients (client_id)
@@ -130,7 +130,7 @@ CREATE TABLE instrument_prices (
     price_id        UUID PRIMARY KEY,
     instrument_id   UUID NOT NULL,
     price           NUMERIC(18,4) NOT NULL CHECK (price > 0),
-    as_of           TIMESTAMP NOT NULL,
+    as_of           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_instrument_prices_instrument
         FOREIGN KEY (instrument_id)
         REFERENCES instruments (instrument_id)
@@ -152,9 +152,9 @@ CREATE TABLE orders (
     limit_price     NUMERIC(18,4) CHECK (limit_price > 0),
     filled_price    NUMERIC(18,4) CHECK (filled_price > 0),
     status          order_status NOT NULL DEFAULT 'PENDING',
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    filled_at       TIMESTAMP,
-    cancelled_at    TIMESTAMP,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+    filled_at       TIMESTAMP WITH TIME ZONE,
+    cancelled_at    TIMESTAMP WITH TIME ZONE,
     cancel_reason   TEXT,
     CONSTRAINT fk_orders_account
         FOREIGN KEY (account_id)
@@ -195,7 +195,7 @@ CREATE TABLE transactions (
     account_id          UUID NOT NULL,
     txn_type                transaction_type NOT NULL,
     amount              NUMERIC(18,2) NOT NULL CHECK (amount > 0),
-    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_transactions_account
         FOREIGN KEY (account_id)
         REFERENCES accounts (account_id)
@@ -212,7 +212,7 @@ CREATE TABLE audit_logs (
     account_id      UUID NOT NULL,
     order_id        UUID NOT NULL,
     event_type      VARCHAR(20) NOT NULL,
-    event_time      TIMESTAMP NOT NULL,
+    event_time      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     reason          TEXT,
     details         JSONB,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

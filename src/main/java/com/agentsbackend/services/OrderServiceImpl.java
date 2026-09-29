@@ -17,6 +17,7 @@ import com.agentsbackend.exceptions.InvalidAccountException;
 import com.agentsbackend.queue.OrderQueue;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -70,12 +71,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CreateOrderResponse createOrder(CreateOrderRequest request) {
         UUID orderId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
         
         try {
-            // validateOrderQuantity() is now handled by @Valid @Min @Max on DTO
-            // validateOrderPrice() basic validation (>0) is now handled by @Valid @DecimalMin on DTO
-            // Still need to validate market price exists and ±50% range for limit orders
             validateAccountStatus(request);
             validateOrderPrice(request);
             validateClientAge(request);
@@ -519,7 +517,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancelReason(request.getCancellationReason());
-        order.setCancelledAt(LocalDateTime.now());
+        order.setCancelledAt(LocalDateTime.now(ZoneId.of("UTC")));
         orderRepository.updateOrder(order);
         
         // Log order cancellation to audit trail

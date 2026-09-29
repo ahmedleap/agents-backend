@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class OrderFulfillmentService {
     private void fillOrder(Order order, BigDecimal filledPrice) {
         order.setStatus(OrderStatus.FILLED);
         order.setFilledPrice(filledPrice);
-        order.setFilledAt(LocalDateTime.now());
+        order.setFilledAt(LocalDateTime.now(ZoneId.of("UTC")));
         
         // Update order in database
         orderRepository.updateOrder(order);
