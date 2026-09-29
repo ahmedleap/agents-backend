@@ -14,9 +14,8 @@ public class Transaction {
     @Column(name = "transaction_id", columnDefinition = "UUID")
     private UUID transactionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    @Column(name = "account_id", insertable = false, updatable = false)
+    private UUID accountId;
 
     @Column(name = "txn_type", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -31,10 +30,10 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(UUID transactionId, Account account, TransactionType txnType,
+    public Transaction(UUID transactionId, UUID accountId, TransactionType txnType,
                       BigDecimal amount, LocalDateTime createdAt) {
         this.transactionId = transactionId;
-        this.account = account;
+        this.accountId = accountId;
         this.txnType = txnType;
         this.amount = amount;
         this.createdAt = createdAt;
@@ -48,12 +47,12 @@ public class Transaction {
         this.transactionId = transactionId;
     }
 
-    public Account getAccount() {
-        return account;
+    public UUID getAccountId() {
+        return accountId;
     }
 
-    public void setAccount(Account account) {
-        this.account = account;
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
     }
 
     public TransactionType getTxnType() {

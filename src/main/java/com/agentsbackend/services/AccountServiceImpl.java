@@ -4,8 +4,10 @@ import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
+import com.agentsbackend.entities.Transaction;
 import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -24,9 +26,11 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
 
-    public AccountServiceImpl(AccountRepository accountRepository) {
+    public AccountServiceImpl(AccountRepository accountRepository, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     /**
@@ -390,5 +394,24 @@ public class AccountServiceImpl implements AccountService {
      */
     public List<Account> findAll() {
         return accountRepository.findAll();
+    }
+
+    /**
+     * Retrieve all transactions for an account.
+     * Validates that account exists and returns all transaction records.
+     *
+     * @param accountId UUID of the account
+     * @return List of Transaction objects ordered by created_at descending
+     * @throws IllegalArgumentException if account not found
+     */
+    @Override
+    public List<Transaction> getAccountTransactions(UUID accountId) {
+        // Verify account exists
+        if (!accountRepository.findById(accountId).isPresent()) {
+            throw new IllegalArgumentException("Account not found: " + accountId);
+        }
+
+        // Retrieve transactions from repository
+        return transactionRepository.findByAccountId(accountId);
     }
 }

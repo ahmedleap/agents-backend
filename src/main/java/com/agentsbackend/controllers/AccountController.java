@@ -3,6 +3,7 @@ package com.agentsbackend.controllers;
 import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.services.AccountService;
+import com.agentsbackend.entities.Transaction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -142,5 +143,21 @@ public class AccountController {
             @Valid @RequestBody AccountsRequest.Withdrawal request) {
         AccountsResponse.Transaction response = accountService.withdrawCash(accountId, request.getAmount());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Retrieve all transactions for an account.
+     * GET /api/accounts/{accountId}/transactions
+     *
+     * Returns all fields from the transactions table: transaction_id, account_id, txn_type, amount, created_at
+     * Ordered by created_at descending (most recent first).
+     *
+     * @param accountId UUID of the account to retrieve transactions for
+     * @return ResponseEntity with list of Transaction objects (HTTP 200)
+     */
+    @GetMapping("/{accountId}/transactions")
+    public ResponseEntity<List<Transaction>> getAccountTransactions(@PathVariable UUID accountId) {
+        List<Transaction> transactions = accountService.getAccountTransactions(accountId);
+        return ResponseEntity.ok(transactions);
     }
 }

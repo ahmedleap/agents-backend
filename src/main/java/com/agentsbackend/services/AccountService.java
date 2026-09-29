@@ -2,6 +2,7 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
+import com.agentsbackend.entities.Transaction;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -91,4 +92,14 @@ public interface AccountService {
      * @throws IllegalArgumentException if account not found, insufficient funds, or account not ACTIVE
      */
     AccountsResponse.Transaction withdrawCash(UUID accountId, BigDecimal amount);
+
+    /**
+     * Retrieve all transactions for an account.
+     * Returns transactions ordered by created_at descending (most recent first).
+     *
+     * @param accountId UUID of the account
+     * @return List of Transaction objects with all fields (transaction_id, account_id, txn_type, amount, created_at)
+     * @throws IllegalArgumentException if account not found
+     */
+    List<Transaction> getAccountTransactions(UUID accountId);
 }
