@@ -2,12 +2,16 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.GetAccountPortfolioResponseDTO;
 import com.agentsbackend.DTO.response.EntirePortfolioResponseDTO;
+import com.agentsbackend.DTO.response.GetAllocationResponseDTO;
 import com.agentsbackend.services.PortfolioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController 
@@ -19,11 +23,27 @@ public class PortfolioController {
         this.portfolioService = portfolioService;
     }
 
-    @GetMapping("/{accountId}")
-    public ResponseEntity<java.util.List<GetAccountPortfolioResponseDTO>> getHoldings(
+    @GetMapping("/{clientId}/{accountId}")
+    public ResponseEntity<GetAccountPortfolioResponseDTO> getPortfolioByAccountId(
+            @PathVariable UUID clientId,
             @PathVariable UUID accountId) {
-        java.util.List<GetAccountPortfolioResponseDTO> response = portfolioService;
+        GetAccountPortfolioResponseDTO response = portfolioService.getPortfolioByAccountId(clientId, accountId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @GetMapping("/{clientId}")
+    public ResponseEntity<EntirePortfolioResponseDTO> getEntirePortfolio(
+            @PathVariable UUID clientId) {
+        EntirePortfolioResponseDTO response = portfolioService.getEntirePortfolioByClientId(clientId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{clientId}/allocation")
+    public ResponseEntity<GetAllocationResponseDTO> getPortfolioAllocation(
+            @PathVariable UUID clientId) {
+        GetAllocationResponseDTO response = portfolioService.getPortfolioAllocation(clientId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+    
 
 }
