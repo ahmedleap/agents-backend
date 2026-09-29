@@ -43,5 +43,33 @@ public class PortfolioServiceImpl implements PortfolioService{
         BigDecimal totalValue = accountHoldings.stream()
             .map(GetHoldingResponseDTO::getCurrentValue)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalCost = accountHoldings.stream()
+            .map(h -> h.getQuantity().multiply(h.getAverageCostBasis()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal gainLossDollars = totalValue.subtract(totalCost);
+        BigDecimal gainLossPercent = calculateGainLossPercent(gainLossDollars, totalCost);
+
+        return new GetAccountPortfolioResponseDTO(
+            account.getAccountId().toString(),
+            account.getName(),
+            accountHoldings,
+            totalValue,
+            totalCost,
+            gainLossDollars,
+            gainLossPercent
+        );
+        
+    }
+
+    
+
+    private BigDecimal calculateGainLossPercent(BigDecimal gainLossDollars, BigDecimal totalCostBasis) {
+        if (totalCostBasis.compareTo(BigDecimal.ZERO) > 0) {
+            return gainLossDollars.divide(totalCostBasis, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"));
+        }
+        return BigDecimal.ZERO;
     }
 }

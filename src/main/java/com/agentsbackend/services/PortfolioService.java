@@ -1,9 +1,8 @@
 package com.agentsbackend.services;
 
-import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
-import java.util.List;
+import com.agentsbackend.DTO.response.GetAccountPortfolioResponseDTO;
 import java.util.UUID;
 
 public interface PortfolioService {
-    List<GetHoldingResponseDTO> getPortfolioByAccountId(UUID accountId);
+    GetAccountPortfolioResponseDTO getPortfolioByAccountId(UUID accountId);
 }
