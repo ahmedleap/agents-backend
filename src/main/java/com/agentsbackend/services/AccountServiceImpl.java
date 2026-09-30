@@ -6,6 +6,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.entities.Transaction;
 import com.agentsbackend.enums.AccountStatus;
+import com.agentsbackend.exceptions.InvalidTransactionException;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -241,12 +242,18 @@ public class AccountServiceImpl implements AccountService {
 
         // Validate account is ACTIVE
         if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
-            throw new IllegalArgumentException("Cannot deposit to account with status: " + account.getStatus());
+            throw new InvalidTransactionException("Cannot deposit to account with status: " + account.getStatus());
         }
 
         // Validate amount
         if (amount == null || amount.signum() <= 0) {
-            throw new IllegalArgumentException("Deposit amount must be positive");
+            throw new InvalidTransactionException("Deposit amount must be positive");
+        }
+
+        // Validate deposit limit (1 million per transaction)
+        BigDecimal depositLimit = new BigDecimal("1000000.00");
+        if (amount.compareTo(depositLimit) > 0) {
+            throw new InvalidTransactionException("Deposit amount cannot exceed $1,000,000 per transaction");
         }
 
         // Calculate new balance
@@ -277,18 +284,18 @@ public class AccountServiceImpl implements AccountService {
 
         // Validate account is ACTIVE
         if (!account.getStatus().equals(AccountStatus.ACTIVE)) {
-            throw new IllegalArgumentException("Cannot withdraw from account with status: " + account.getStatus());
+            throw new InvalidTransactionException("Cannot withdraw from account with status: " + account.getStatus());
         }
 
         // Validate amount
         if (amount == null || amount.signum() <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be positive");
+            throw new InvalidTransactionException("Withdrawal amount must be positive");
         }
 
         // Validate sufficient funds (accounting for pending orders)
         BigDecimal availableBalance = calculateAvailableBalance(accountId);
         if (amount.compareTo(availableBalance) > 0) {
-            throw new IllegalArgumentException(
+            throw new InvalidTransactionException(
                     "Insufficient funds. Available: " + availableBalance + ", Requested: " + amount
             );
         }

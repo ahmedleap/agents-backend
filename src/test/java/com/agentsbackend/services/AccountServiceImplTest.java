@@ -4,7 +4,9 @@ import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
+import com.agentsbackend.entities.Transaction;
 import com.agentsbackend.enums.AccountStatus;
+import com.agentsbackend.exceptions.InvalidTransactionException;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -208,7 +214,7 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("-5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.depositCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.depositCash(testAccountId, amount));
     }
 
     @Test
@@ -217,7 +223,7 @@ class AccountServiceImplTest {
         BigDecimal amount = BigDecimal.ZERO;
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.depositCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.depositCash(testAccountId, amount));
     }
 
     @Test
@@ -227,13 +233,36 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.depositCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.depositCash(testAccountId, amount));
     }
 
     @Test
     @DisplayName("Deposit large amount")
     void testDepositCash_LargeAmount() {
         BigDecimal amount = new BigDecimal("500000.00");
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+        doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
+        doNothing().when(transactionRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+
+        var response = accountService.depositCash(testAccountId, amount);
+
+        assertNotNull(response);
+        assertEquals("DEPOSIT", response.getTransactionType());
+    }
+
+    @Test
+    @DisplayName("Deposit exceeds 1 million limit")
+    void testDepositCash_ExceedsLimit() {
+        BigDecimal amount = new BigDecimal("1000000.01");  // Just over 1 million
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+
+        assertThrows(InvalidTransactionException.class, () -> accountService.depositCash(testAccountId, amount));
+    }
+
+    @Test
+    @DisplayName("Deposit exactly 1 million (at limit)")
+    void testDepositCash_AtLimit() {
+        BigDecimal amount = new BigDecimal("1000000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
         doNothing().when(transactionRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
@@ -267,7 +296,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(BigDecimal.ZERO);
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     @Test
@@ -280,7 +309,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(reserved);
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     @Test
@@ -291,7 +320,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(reserved);
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     @Test
@@ -300,7 +329,7 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("-5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     @Test
@@ -309,7 +338,7 @@ class AccountServiceImplTest {
         BigDecimal amount = BigDecimal.ZERO;
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     @Test
@@ -319,7 +348,7 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
 
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdrawCash(testAccountId, amount));
+        assertThrows(InvalidTransactionException.class, () -> accountService.withdrawCash(testAccountId, amount));
     }
 
     // ===== GET ACCOUNT SUMMARY TESTS =====
@@ -556,5 +585,103 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> accountService.updateAccount(testAccountId, request));
+    }
+
+    // ===== GET ACCOUNT TRANSACTIONS TESTS =====
+    @Test
+    @DisplayName("Get account transactions successfully")
+    void testGetAccountTransactions_Success() {
+        // Create mock transactions
+        Transaction txn1 = new Transaction();
+        txn1.setTransactionId(UUID.randomUUID());
+        txn1.setAccountId(testAccountId);
+        txn1.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
+
+        Transaction txn2 = new Transaction();
+        txn2.setTransactionId(UUID.randomUUID());
+        txn2.setAccountId(testAccountId);
+        txn2.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(5));
+
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.findByAccountId(testAccountId)).thenReturn(Arrays.asList(txn1, txn2));
+
+        List<Transaction> result = accountService.getAccountTransactions(testAccountId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(txn1.getTransactionId(), result.get(0).getTransactionId());
+        assertEquals(txn2.getTransactionId(), result.get(1).getTransactionId());
+    }
+
+    @Test
+    @DisplayName("Get account transactions with empty list")
+    void testGetAccountTransactions_Empty() {
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.findByAccountId(testAccountId)).thenReturn(Collections.emptyList());
+
+        List<Transaction> result = accountService.getAccountTransactions(testAccountId);
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Get transactions for non-existent account")
+    void testGetAccountTransactions_AccountNotFound() {
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> accountService.getAccountTransactions(testAccountId));
+    }
+
+    @Test
+    @DisplayName("Get account transactions ordered by created_at descending")
+    void testGetAccountTransactions_OrderedByCreatedAt() {
+        // Create transactions with different timestamps
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
+
+        Transaction txn1 = new Transaction();
+        txn1.setTransactionId(UUID.randomUUID());
+        txn1.setAccountId(testAccountId);
+        txn1.setCreatedAt(now);
+
+        Transaction txn2 = new Transaction();
+        txn2.setTransactionId(UUID.randomUUID());
+        txn2.setAccountId(testAccountId);
+        txn2.setCreatedAt(now.minusMinutes(5));
+
+        Transaction txn3 = new Transaction();
+        txn3.setTransactionId(UUID.randomUUID());
+        txn3.setAccountId(testAccountId);
+        txn3.setCreatedAt(now.minusMinutes(10));
+
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.findByAccountId(testAccountId)).thenReturn(Arrays.asList(txn1, txn2, txn3));
+
+        List<Transaction> result = accountService.getAccountTransactions(testAccountId);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        // Verify they're ordered by descending created_at (most recent first)
+        assertTrue(result.get(0).getCreatedAt().isAfter(result.get(1).getCreatedAt()));
+        assertTrue(result.get(1).getCreatedAt().isAfter(result.get(2).getCreatedAt()));
+    }
+
+    @Test
+    @DisplayName("Get account transactions single transaction")
+    void testGetAccountTransactions_Single() {
+        Transaction txn = new Transaction();
+        txn.setTransactionId(UUID.randomUUID());
+        txn.setAccountId(testAccountId);
+        txn.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
+
+        when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.findByAccountId(testAccountId)).thenReturn(Collections.singletonList(txn));
+
+        List<Transaction> result = accountService.getAccountTransactions(testAccountId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(txn.getTransactionId(), result.get(0).getTransactionId());
     }
 }
