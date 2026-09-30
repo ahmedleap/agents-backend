@@ -9,4 +9,5 @@ public interface PortfolioService {
     GetAccountPortfolioResponseDTO getPortfolioByAccountId(UUID clientId, UUID accountId);
     EntirePortfolioResponseDTO getEntirePortfolioByClientId(UUID clientId);
     GetAllocationResponseDTO getPortfolioAllocation(UUID clientId);
+    GetAllocationResponseDTO getAccountAllocation(UUID clientId, UUID accountId);
 }

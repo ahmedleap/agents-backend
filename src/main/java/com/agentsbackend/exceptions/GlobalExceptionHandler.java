@@ -16,6 +16,12 @@ public class GlobalExceptionHandler {
             .body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(ClientNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleClientNotFound(ClientNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
     @ExceptionHandler(InstrumentNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleInstrumentNotFound(InstrumentNotFoundException ex){
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -25,6 +31,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HoldingNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleHoldingNotFound(HoldingNotFoundException ex){
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedAccountAccessException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedAccountAccess(UnauthorizedAccountAccessException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(Map.of("error", ex.getMessage()));
     }
 

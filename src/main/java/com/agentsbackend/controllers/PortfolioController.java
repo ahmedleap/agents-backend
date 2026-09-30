@@ -9,8 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 
@@ -38,12 +36,18 @@ public class PortfolioController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/{clientId}/allocation")
+    @GetMapping("/allocation/{clientId}")
     public ResponseEntity<GetAllocationResponseDTO> getPortfolioAllocation(
             @PathVariable UUID clientId) {
         GetAllocationResponseDTO response = portfolioService.getPortfolioAllocation(clientId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    
 
+    @GetMapping("/allocation/{clientId}/{accountId}")
+    public ResponseEntity<GetAllocationResponseDTO> getAccountAllocation(
+            @PathVariable UUID clientId,
+            @PathVariable UUID accountId) {
+        GetAllocationResponseDTO response = portfolioService.getAccountAllocation(clientId, accountId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

@@ -6,41 +6,58 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "instrument_prices", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"instrument_id", "as_of"})
+@Table(name = "instrument_price_history", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"instrument_id", "timestamp"})
 })
 public class InstrumentPrice {
 
     @Id
-    @Column(name = "price_id", columnDefinition = "UUID")
-    private UUID priceId;
+    @Column(name = "price_history_id", columnDefinition = "UUID")
+    private UUID priceHistoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;
 
-    @Column(name = "price", nullable = false, precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (price > 0)")
-    private BigDecimal price;
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
 
-    @Column(name = "as_of", nullable = false)
-    private LocalDateTime asOf;
+    @Column(name = "open", nullable = false, precision = 18, scale = 4)
+    private BigDecimal open;
+
+    @Column(name = "high", nullable = false, precision = 18, scale = 4)
+    private BigDecimal high;
+
+    @Column(name = "low", nullable = false, precision = 18, scale = 4)
+    private BigDecimal low;
+
+    @Column(name = "close", nullable = false, precision = 18, scale = 4)
+    private BigDecimal close;
+
+    @Column(name = "volume", nullable = false)
+    private Long volume;
 
     public InstrumentPrice() {
     }
 
-    public InstrumentPrice(UUID priceId, Instrument instrument, BigDecimal price, LocalDateTime asOf) {
-        this.priceId = priceId;
+    public InstrumentPrice(UUID priceHistoryId, Instrument instrument, LocalDateTime timestamp, 
+                          BigDecimal open, BigDecimal high, BigDecimal low, BigDecimal close, Long volume) {
+        this.priceHistoryId = priceHistoryId;
         this.instrument = instrument;
-        this.price = price;
-        this.asOf = asOf;
+        this.timestamp = timestamp;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.volume = volume;
     }
 
-    public UUID getPriceId() {
-        return priceId;
+    public UUID getPriceHistoryId() {
+        return priceHistoryId;
     }
 
-    public void setPriceId(UUID priceId) {
-        this.priceId = priceId;
+    public void setPriceHistoryId(UUID priceHistoryId) {
+        this.priceHistoryId = priceHistoryId;
     }
 
     public Instrument getInstrument() {
@@ -51,19 +68,51 @@ public class InstrumentPrice {
         this.instrument = instrument;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
-    public LocalDateTime getAsOf() {
-        return asOf;
+    public BigDecimal getOpen() {
+        return open;
     }
 
-    public void setAsOf(LocalDateTime asOf) {
-        this.asOf = asOf;
+    public void setOpen(BigDecimal open) {
+        this.open = open;
+    }
+
+    public BigDecimal getHigh() {
+        return high;
+    }
+
+    public void setHigh(BigDecimal high) {
+        this.high = high;
+    }
+
+    public BigDecimal getLow() {
+        return low;
+    }
+
+    public void setLow(BigDecimal low) {
+        this.low = low;
+    }
+
+    public BigDecimal getClose() {
+        return close;
+    }
+
+    public void setClose(BigDecimal close) {
+        this.close = close;
+    }
+
+    public Long getVolume() {
+        return volume;
+    }
+
+    public void setVolume(Long volume) {
+        this.volume = volume;
     }
 }

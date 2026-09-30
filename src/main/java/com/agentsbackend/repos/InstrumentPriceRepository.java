@@ -10,6 +10,6 @@ import java.math.BigDecimal;
 @Mapper
 public interface InstrumentPriceRepository {
 
-    @Select("SELECT price FROM instrument_prices WHERE instrument_id = #{instrumentId} ORDER BY as_of DESC LIMIT 1")
+    @Select("SELECT close FROM instrument_price_history WHERE instrument_id = #{instrumentId} ORDER BY timestamp DESC LIMIT 1")
     Optional<BigDecimal> getLatestPrice(UUID instrumentId);
 }
