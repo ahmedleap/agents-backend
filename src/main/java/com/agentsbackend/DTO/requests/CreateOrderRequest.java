@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Positive;
 import java.util.UUID;
 import java.math.BigDecimal;
 import com.agentsbackend.enums.OrderType;

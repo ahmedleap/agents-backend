@@ -1,7 +1,6 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.requests.AccountsRequest;
-import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.enums.AccountStatus;

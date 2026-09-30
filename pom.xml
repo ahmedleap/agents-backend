@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.agentsbackend</groupId>
     <artifactId>agents-backend</artifactId>
-    <version>1.0.0</version>
+    <version>0.4.3</version>
     <packaging>jar</packaging>
     <name>Agents Backend</name>
     <description>Spring Boot Backend for Agents System</description>
@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.1</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -45,12 +45,6 @@
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
             <version>3.0.3</version>
-        </dependency>
-
-        <!-- Jakarta Validation (Bean Validation) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <!-- PostgreSQL Driver -->
@@ -98,8 +92,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.12.1</version>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
+                    <source>21</source>
+                    <target>21</target>
                     <parameters>true</parameters>
                 </configuration>
             </plugin>
@@ -111,7 +105,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.15</version>
+                <version>0.8.13</version>
                 <executions>
                     <execution>
                         <goals>
