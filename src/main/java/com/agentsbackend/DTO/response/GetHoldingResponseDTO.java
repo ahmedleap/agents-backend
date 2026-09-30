@@ -15,6 +15,10 @@ public class GetHoldingResponseDTO {
     private BigDecimal gainLossDollars;
     private BigDecimal gainLossPercent;
 
+    // No-arg constructor
+    public GetHoldingResponseDTO() {
+    }
+
     //constructor - data container only, no calculations
     public GetHoldingResponseDTO(String holdingId, String accountId, String instrumentId, 
                                  String ticker, String name, BigDecimal quantity, 

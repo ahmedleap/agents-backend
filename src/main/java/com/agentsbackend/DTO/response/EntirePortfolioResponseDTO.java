@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class EntirePortfolioResponseDTO {
-    private String userId;
+    private String clientId;
     private List<GetAccountPortfolioResponseDTO> accounts;
     
     private BigDecimal totalPortfolioValue;
@@ -12,11 +12,14 @@ public class EntirePortfolioResponseDTO {
     private BigDecimal totalGainLossDollars;
     private BigDecimal totalGainLossPercent;
     
-    // Constructor
-    public EntirePortfolioResponseDTO(String userId, List<GetAccountPortfolioResponseDTO> accounts,
+    // Constructors
+    public EntirePortfolioResponseDTO() {
+    }
+    
+    public EntirePortfolioResponseDTO(String clientId, List<GetAccountPortfolioResponseDTO> accounts,
                                       BigDecimal totalPortfolioValue, BigDecimal totalCostBasis,
                                       BigDecimal totalGainLossDollars, BigDecimal totalGainLossPercent) {
-        this.userId = userId;
+        this.clientId = clientId;
         this.accounts = accounts;
         this.totalPortfolioValue = totalPortfolioValue;
         this.totalCostBasis = totalCostBasis;
@@ -25,12 +28,12 @@ public class EntirePortfolioResponseDTO {
     }
     
     // Getters and Setters
-    public String getUserId() {
-        return userId;
+    public String getClientId() {
+        return clientId;
     }
     
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
     
     public List<GetAccountPortfolioResponseDTO> getAccounts() {

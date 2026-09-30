@@ -13,7 +13,10 @@ public class GetAccountPortfolioResponseDTO {
     private BigDecimal totalGainLossDollars;
     private BigDecimal totalGainLossPercent;
     
-    // Constructor
+    // Constructors
+    public GetAccountPortfolioResponseDTO() {
+    }
+    
     public GetAccountPortfolioResponseDTO(String accountId, String accountName,
                                    List<GetHoldingResponseDTO> holdings,
                                    BigDecimal totalPortfolioValue,

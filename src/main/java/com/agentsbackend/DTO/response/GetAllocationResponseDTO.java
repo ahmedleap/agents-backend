@@ -7,6 +7,9 @@ public class GetAllocationResponseDTO {
     private List<IndustryAllocationDTO> industryBreakdown;
     private List<AssetClassAllocationDTO> assetClassBreakdown;
 
+    public GetAllocationResponseDTO() {
+    }
+
     public GetAllocationResponseDTO(List<IndustryAllocationDTO> industryBreakdown,
                                      List<AssetClassAllocationDTO> assetClassBreakdown) {
         this.industryBreakdown = industryBreakdown;
@@ -34,6 +37,9 @@ public class GetAllocationResponseDTO {
         private String industry;
         private BigDecimal percentage;
         private BigDecimal value;
+
+        public IndustryAllocationDTO() {
+        }
 
         public IndustryAllocationDTO(String industry, BigDecimal percentage, BigDecimal value) {
             this.industry = industry;
@@ -71,6 +77,9 @@ public class GetAllocationResponseDTO {
         private String assetClass;
         private BigDecimal percentage;
         private BigDecimal value;
+
+        public AssetClassAllocationDTO() {
+        }
 
         public AssetClassAllocationDTO(String assetClass, BigDecimal percentage, BigDecimal value) {
             this.assetClass = assetClass;
