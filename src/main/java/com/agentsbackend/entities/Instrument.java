@@ -2,6 +2,8 @@ package com.agentsbackend.entities;
 
 import jakarta.persistence.*;
 import com.agentsbackend.enums.AssetClass;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +28,15 @@ public class Instrument {
     @Column(name = "industry", length = 100)
     private String industry;
 
+    @Column(name = "bid", precision = 18, scale = 4)
+    private BigDecimal bid;
+
+    @Column(name = "ask", precision = 18, scale = 4)
+    private BigDecimal ask;
+
+    @Column(name = "price_updated_at")
+    private LocalDateTime priceUpdatedAt;
+
     @OneToMany(mappedBy = "instrument", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InstrumentPrice> prices;
 
@@ -39,13 +50,17 @@ public class Instrument {
     }
 
     public Instrument(UUID instrumentId, String ticker, String name, AssetClass assetClass,
-                      String industry, List<InstrumentPrice> prices, List<Order> orders,
+                      String industry, BigDecimal bid, BigDecimal ask, LocalDateTime priceUpdatedAt,
+                      List<InstrumentPrice> prices, List<Order> orders,
                       List<Holding> holdings) {
         this.instrumentId = instrumentId;
         this.ticker = ticker;
         this.name = name;
         this.assetClass = assetClass;
         this.industry = industry;
+        this.bid = bid;
+        this.ask = ask;
+        this.priceUpdatedAt = priceUpdatedAt;
         this.prices = prices;
         this.orders = orders;
         this.holdings = holdings;
@@ -113,5 +128,29 @@ public class Instrument {
 
     public void setHoldings(List<Holding> holdings) {
         this.holdings = holdings;
+    }
+
+    public BigDecimal getBid() {
+        return bid;
+    }
+
+    public void setBid(BigDecimal bid) {
+        this.bid = bid;
+    }
+
+    public BigDecimal getAsk() {
+        return ask;
+    }
+
+    public void setAsk(BigDecimal ask) {
+        this.ask = ask;
+    }
+
+    public LocalDateTime getPriceUpdatedAt() {
+        return priceUpdatedAt;
+    }
+
+    public void setPriceUpdatedAt(LocalDateTime priceUpdatedAt) {
+        this.priceUpdatedAt = priceUpdatedAt;
     }
 }
