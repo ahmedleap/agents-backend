@@ -15,6 +15,9 @@ public class Order {
     @Column(name = "order_id", columnDefinition = "UUID")
     private UUID orderId;
 
+    @Column(name = "account_id", insertable = false, updatable = false)
+    private UUID accountId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
@@ -30,7 +33,7 @@ public class Order {
     @Column(name = "quantity", nullable = false, precision = 18, scale = 6, columnDefinition = "NUMERIC(18,6) CHECK (quantity > 0)")
     private BigDecimal quantity;
 
-    @Column(name = "limit_price", nullable = false, precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
+    @Column(name = "limit_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
     private BigDecimal limitPrice;
 
     @Column(name = "filled_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (filled_price > 0)")
@@ -49,12 +52,15 @@ public class Order {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
+    @Column(name = "cancel_reason")
+    private String cancelReason;
+
     public Order() {
     }
 
     public Order(UUID orderId, Account account, Instrument instrument, OrderType orderType,
                  BigDecimal quantity, BigDecimal limitPrice, BigDecimal filledPrice, OrderStatus status,
-                 LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt) {
+                 LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt, String cancelReason) {
         this.orderId = orderId;
         this.account = account;
         this.instrument = instrument;
@@ -66,6 +72,7 @@ public class Order {
         this.createdAt = createdAt;
         this.filledAt = filledAt;
         this.cancelledAt = cancelledAt;
+        this.cancelReason = cancelReason;
     }
 
     public UUID getOrderId() {
@@ -74,6 +81,14 @@ public class Order {
 
     public void setOrderId(UUID orderId) {
         this.orderId = orderId;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
     }
 
     public Account getAccount() {
@@ -154,5 +169,13 @@ public class Order {
 
     public void setCancelledAt(LocalDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
     }
 }

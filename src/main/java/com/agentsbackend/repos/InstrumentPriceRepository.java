@@ -1,6 +1,5 @@
 package com.agentsbackend.repos;
 
-import com.agentsbackend.entities.InstrumentPrice;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import java.util.UUID;

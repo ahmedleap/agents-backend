@@ -1,266 +1,413 @@
 package com.agentsbackend.exceptions;
 
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GlobalExceptionHandler Tests")
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler exceptionHandler;
+    @InjectMocks
+    private GlobalExceptionHandler handler;
+
+    private UUID testClientId;
+    private UUID testAccountId;
+    private UUID testOrderId;
 
     @BeforeEach
     void setUp() {
-        exceptionHandler = new GlobalExceptionHandler();
+        testClientId = UUID.randomUUID();
+        testAccountId = UUID.randomUUID();
+        testOrderId = UUID.randomUUID();
     }
 
+    // ==================== PORTFOLIO EXCEPTION TESTS ====================
+
     @Test
-    @DisplayName("Should handle AccountNotFoundException with 404 status")
-    void testHandleAccountNotFoundException() {
-        UUID accountId = UUID.randomUUID();
-        AccountNotFoundException exception = new AccountNotFoundException(accountId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleAccountNotFound(exception);
-
+    @DisplayName("AccountNotFoundException returns 404 status")
+    void testAccountNotFoundException_Returns404() {
+        AccountNotFoundException ex = new AccountNotFoundException("Account not found");
+        ResponseEntity<Map<String, String>> response = handler.handleAccountNotFoundException(ex);
+        
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("Account not found with ID: " + accountId, response.getBody().get("error"));
+        assertEquals("Account not found", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle ClientNotFoundException with 404 status")
-    void testHandleClientNotFoundException() {
-        UUID clientId = UUID.randomUUID();
-        ClientNotFoundException exception = new ClientNotFoundException(clientId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleClientNotFound(exception);
-
+    @DisplayName("ClientNotFoundException returns 404 status")
+    void testClientNotFoundException_Returns404() {
+        ClientNotFoundException ex = new ClientNotFoundException("Client not found");
+        ResponseEntity<Map<String, String>> response = handler.handleClientNotFoundException(ex);
+        
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("Client not found with ID: " + clientId, response.getBody().get("error"));
+        assertEquals("Client not found", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle InstrumentNotFoundException with 404 status")
-    void testHandleInstrumentNotFoundException() {
-        UUID instrumentId = UUID.randomUUID();
-        InstrumentNotFoundException exception = new InstrumentNotFoundException(instrumentId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleInstrumentNotFound(exception);
-
+    @DisplayName("InstrumentNotFoundException returns 404 status")
+    void testInstrumentNotFoundException_Returns404() {
+        InstrumentNotFoundException ex = new InstrumentNotFoundException("Instrument not found");
+        ResponseEntity<Map<String, String>> response = handler.handleInstrumentNotFoundException(ex);
+        
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("Instrument was not found with Instrument Id: " + instrumentId, response.getBody().get("error"));
+        assertEquals("Instrument not found", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle HoldingNotFoundException with 404 status")
-    void testHandleHoldingNotFoundException() {
-        UUID holdingId = UUID.randomUUID();
-        HoldingNotFoundException exception = new HoldingNotFoundException(holdingId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleHoldingNotFound(exception);
-
+    @DisplayName("HoldingNotFoundException returns 404 status")
+    void testHoldingNotFoundException_Returns404() {
+        HoldingNotFoundException ex = new HoldingNotFoundException("Holding not found");
+        ResponseEntity<Map<String, String>> response = handler.handleHoldingNotFoundException(ex);
+        
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("Holding not found with ID: " + holdingId, response.getBody().get("error"));
+        assertEquals("Holding not found", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle UnauthorizedAccountAccessException with 403 status")
-    void testHandleUnauthorizedAccountAccessException() {
-        UUID accountId = UUID.randomUUID();
-        UUID clientId = UUID.randomUUID();
-        UnauthorizedAccountAccessException exception = new UnauthorizedAccountAccessException(clientId, accountId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleUnauthorizedAccountAccess(exception);
-
+    @DisplayName("UnauthorizedAccountAccessException returns 403 status")
+    void testUnauthorizedAccountAccessException_Returns403() {
+        UnauthorizedAccountAccessException ex = new UnauthorizedAccountAccessException(
+            "Client does not have access to this account"
+        );
+        ResponseEntity<Map<String, String>> response = handler.handleUnauthorizedAccountAccessException(ex);
+        
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("Account with ID: " + accountId + " does not belong to client with ID: " + clientId, response.getBody().get("error"));
+        assertEquals("Client does not have access to this account", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle IllegalArgumentException with 400 status")
-    void testHandleIllegalArgumentException() {
-        IllegalArgumentException exception = new IllegalArgumentException("Invalid UUID format");
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleIllegalArgument(exception);
-
+    @DisplayName("IllegalArgumentException returns 400 status")
+    void testIllegalArgumentException_Returns400() {
+        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument provided");
+        ResponseEntity<Map<String, String>> response = handler.handleIllegalArgumentException(ex);
+        
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertTrue(response.getBody().get("error").contains("Invalid UUID format"));
+        assertEquals("Invalid argument provided", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle DuplicateKeyException with 409 status")
-    void testHandleDuplicateKeyException() {
-        DuplicateKeyException exception = new DuplicateKeyException("Duplicate key");
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleDuplicateKey(exception);
-
+    @DisplayName("DuplicateKeyException returns 409 status")
+    void testDuplicateKeyException_Returns409() {
+        DuplicateKeyException ex = new DuplicateKeyException("Duplicate key found");
+        ResponseEntity<Map<String, String>> response = handler.handleDuplicateKeyException(ex);
+        
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().containsKey("error"));
-        assertEquals("This account already holds this instrument. Use PUT to update quantity instead.", response.getBody().get("error"));
+        assertEquals("Duplicate key found", response.getBody().get("error"));
     }
 
     @Test
-    @DisplayName("Should handle AccountNotFoundException with proper error message format")
-    void testHandleAccountNotFoundException_MessageFormat() {
-        UUID accountId = UUID.randomUUID();
-        AccountNotFoundException exception = new AccountNotFoundException(accountId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleAccountNotFound(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertTrue(errorMessage.contains("Account not found"));
-        assertTrue(errorMessage.contains(accountId.toString()));
-    }
-
-    @Test
-    @DisplayName("Should handle ClientNotFoundException with proper error message format")
-    void testHandleClientNotFoundException_MessageFormat() {
-        UUID clientId = UUID.randomUUID();
-        ClientNotFoundException exception = new ClientNotFoundException(clientId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleClientNotFound(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertTrue(errorMessage.contains("Client not found"));
-        assertTrue(errorMessage.contains(clientId.toString()));
-    }
-
-    @Test
-    @DisplayName("Should handle InstrumentNotFoundException with proper error message format")
-    void testHandleInstrumentNotFoundException_MessageFormat() {
-        UUID instrumentId = UUID.randomUUID();
-        InstrumentNotFoundException exception = new InstrumentNotFoundException(instrumentId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleInstrumentNotFound(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertTrue(errorMessage.contains("Instrument"));
-        assertTrue(errorMessage.contains(instrumentId.toString()));
-    }
-
-    @Test
-    @DisplayName("Should return error map with single error key")
-    void testExceptionResponse_ErrorMapStructure() {
-        UUID accountId = UUID.randomUUID();
-        AccountNotFoundException exception = new AccountNotFoundException(accountId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleAccountNotFound(exception);
-
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-        assertTrue(response.getBody().containsKey("error"));
-    }
-
-    @Test
-    @DisplayName("Should handle AccountNotFoundException consistently across multiple calls")
-    void testHandleAccountNotFoundException_Consistency() {
-        UUID accountId = UUID.randomUUID();
-        AccountNotFoundException exception1 = new AccountNotFoundException(accountId);
-        AccountNotFoundException exception2 = new AccountNotFoundException(accountId);
-
-        ResponseEntity<Map<String, String>> response1 = exceptionHandler.handleAccountNotFound(exception1);
-        ResponseEntity<Map<String, String>> response2 = exceptionHandler.handleAccountNotFound(exception2);
-
-        assertEquals(response1.getStatusCode(), response2.getStatusCode());
-        assertEquals(response1.getBody().get("error"), response2.getBody().get("error"));
-    }
-
-    @Test
-    @DisplayName("Should handle UnauthorizedAccountAccessException with correct status code")
-    void testHandleUnauthorizedAccountAccessException_StatusCode() {
-        UUID accountId = UUID.randomUUID();
-        UUID clientId = UUID.randomUUID();
-        UnauthorizedAccountAccessException exception = new UnauthorizedAccountAccessException(clientId, accountId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleUnauthorizedAccountAccess(exception);
-
-        // 403 Forbidden is the correct status for unauthorized access
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-    }
-
-    @Test
-    @DisplayName("Should handle IllegalArgumentException with appropriate message")
-    void testHandleIllegalArgumentException_Message() {
-        String invalidMessage = "Invalid UUID";
-        IllegalArgumentException exception = new IllegalArgumentException(invalidMessage);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleIllegalArgument(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertTrue(errorMessage.contains("Invalid UUID format"));
-        assertTrue(errorMessage.contains(invalidMessage));
-    }
-
-    @Test
-    @DisplayName("Should handle DuplicateKeyException with consistent message")
-    void testHandleDuplicateKeyException_Message() {
-        DuplicateKeyException exception = new DuplicateKeyException("Duplicate entry");
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleDuplicateKey(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertEquals("This account already holds this instrument. Use PUT to update quantity instead.", errorMessage);
-    }
-
-    @Test
-    @DisplayName("Should handle HoldingNotFoundException with proper error message format")
-    void testHandleHoldingNotFoundException_MessageFormat() {
-        UUID holdingId = UUID.randomUUID();
-        HoldingNotFoundException exception = new HoldingNotFoundException(holdingId);
-
-        ResponseEntity<Map<String, String>> response = exceptionHandler.handleHoldingNotFound(exception);
-
-        assertNotNull(response.getBody());
-        String errorMessage = response.getBody().get("error");
-        assertTrue(errorMessage.contains("Holding not found"));
-        assertTrue(errorMessage.contains(holdingId.toString()));
-    }
-
-    @Test
-    @DisplayName("Should handle multiple exceptions with different status codes")
-    void testHandleMultipleExceptions_DifferentStatusCodes() {
-        UUID id = UUID.randomUUID();
+    @DisplayName("Portfolio exception message format is correct")
+    void testPortfolioException_MessageFormat() {
+        ClientNotFoundException ex = new ClientNotFoundException("Test client missing");
+        ResponseEntity<Map<String, String>> response = handler.handleClientNotFoundException(ex);
         
-        ResponseEntity<Map<String, String>> notFoundResponse = exceptionHandler.handleAccountNotFound(
-            new AccountNotFoundException(id)
-        );
-        ResponseEntity<Map<String, String>> forbiddenResponse = exceptionHandler.handleUnauthorizedAccountAccess(
-            new UnauthorizedAccountAccessException(id, id)
-        );
-        ResponseEntity<Map<String, String>> conflictResponse = exceptionHandler.handleDuplicateKey(
-            new DuplicateKeyException("duplicate")
-        );
+        Map<String, String> body = response.getBody();
+        assertEquals(1, body.size());
+        assertEquals("Test client missing", body.get("error"));
+    }
 
-        assertEquals(HttpStatus.NOT_FOUND, notFoundResponse.getStatusCode());
-        assertEquals(HttpStatus.FORBIDDEN, forbiddenResponse.getStatusCode());
-        assertEquals(HttpStatus.CONFLICT, conflictResponse.getStatusCode());
+    @Test
+    @DisplayName("Portfolio exceptions use simple response format")
+    void testPortfolioException_SimpleFormat() {
+        HoldingNotFoundException ex = new HoldingNotFoundException("Holding missing");
+        ResponseEntity<Map<String, String>> response = handler.handleHoldingNotFoundException(ex);
+        
+        Map<String, String> body = response.getBody();
+        assertNotNull(body);
+        // Should only have "error" key, no timestamp or path
+        assertTrue(body.containsKey("error"));
+        assertFalse(body.containsKey("timestamp"));
+        assertFalse(body.containsKey("path"));
+    }
+
+    @Test
+    @DisplayName("Multiple portfolio exceptions maintain consistent format")
+    void testMultiplePortfolioExceptions_ConsistentFormat() {
+        AccountNotFoundException ex1 = new AccountNotFoundException("Account 1 not found");
+        InstrumentNotFoundException ex2 = new InstrumentNotFoundException("Instrument 1 not found");
+        
+        ResponseEntity<Map<String, String>> response1 = handler.handleAccountNotFoundException(ex1);
+        ResponseEntity<Map<String, String>> response2 = handler.handleInstrumentNotFoundException(ex2);
+        
+        assertEquals(response1.getStatusCode(), HttpStatus.NOT_FOUND);
+        assertEquals(response2.getStatusCode(), HttpStatus.NOT_FOUND);
+        assertEquals(response1.getBody().keySet(), response2.getBody().keySet());
+    }
+
+    @Test
+    @DisplayName("Portfolio exception with null message")
+    void testPortfolioException_NullMessage() {
+        ClientNotFoundException ex = new ClientNotFoundException(null);
+        ResponseEntity<Map<String, String>> response = handler.handleClientNotFoundException(ex);
+        
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("Portfolio exception with empty message")
+    void testPortfolioException_EmptyMessage() {
+        AccountNotFoundException ex = new AccountNotFoundException("");
+        ResponseEntity<Map<String, String>> response = handler.handleAccountNotFoundException(ex);
+        
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("", response.getBody().get("error"));
+    }
+
+    // ==================== ORDER EXCEPTION TESTS ====================
+
+    @Test
+    @DisplayName("InvalidOrderParametersException returns 400 status")
+    void testInvalidOrderParametersException_Returns400() {
+        InvalidOrderParametersException ex = new InvalidOrderParametersException(
+            "Invalid order parameters",
+            testOrderId
+        );
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderParametersException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("message"));
+        assertEquals("Invalid order parameters", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("OrderNotFoundException returns 404 status")
+    void testOrderNotFoundException_Returns404() {
+        OrderNotFoundException ex = new OrderNotFoundException("Order not found", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleOrderNotFoundException(ex);
+        
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Order not found", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("InvalidOrderStatusException returns 400 status")
+    void testInvalidOrderStatusException_Returns400() {
+        InvalidOrderStatusException ex = new InvalidOrderStatusException("Invalid status", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderStatusException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Invalid status", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("InsufficientFundsException returns 400 status")
+    void testInsufficientFundsException_Returns400() {
+        InsufficientFundsException ex = new InsufficientFundsException(
+            "Not enough funds",
+            testAccountId,
+            new BigDecimal("1000"),
+            new BigDecimal("500")
+        );
+        ResponseEntity<Map<String, Object>> response = handler.handleInsufficientFundsException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Not enough funds", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("InvalidAccountException returns 400 status")
+    void testInvalidAccountException_Returns400() {
+        InvalidAccountException ex = new InvalidAccountException("Invalid account", testAccountId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidAccountException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Invalid account", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("Order exception response includes timestamp")
+    void testOrderException_IncludesTimestamp() {
+        InvalidOrderParametersException ex = new InvalidOrderParametersException("Bad params", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderParametersException(ex);
+        
+        Map<String, Object> body = response.getBody();
+        assertTrue(body.containsKey("timestamp"));
+        assertNotNull(body.get("timestamp"));
+    }
+
+    @Test
+    @DisplayName("Order exception response includes path")
+    void testOrderException_IncludesPath() {
+        OrderNotFoundException ex = new OrderNotFoundException("Not found", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleOrderNotFoundException(ex);
+        
+        Map<String, Object> body = response.getBody();
+        assertTrue(body.containsKey("path"));
+    }
+
+    @Test
+    @DisplayName("Order exception response includes orderId")
+    void testOrderException_IncludesOrderId() {
+        InvalidOrderStatusException ex = new InvalidOrderStatusException("Invalid", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderStatusException(ex);
+        
+        Map<String, Object> body = response.getBody();
+        assertTrue(body.containsKey("orderId"));
+        assertEquals(testOrderId.toString(), body.get("orderId"));
+    }
+
+    @Test
+    @DisplayName("Order exception response structure is complete")
+    void testOrderException_CompleteStructure() {
+        InsufficientFundsException ex = new InsufficientFundsException(
+            "Insufficient funds message",
+            testAccountId,
+            new BigDecimal("5000"),
+            new BigDecimal("2000")
+        );
+        ResponseEntity<Map<String, Object>> response = handler.handleInsufficientFundsException(ex);
+        
+        Map<String, Object> body = response.getBody();
+        assertTrue(body.containsKey("message"));
+        assertTrue(body.containsKey("timestamp"));
+        assertTrue(body.containsKey("path"));
+        assertTrue(body.containsKey("orderId"));
+    }
+
+    @Test
+    @DisplayName("Multiple order exceptions maintain consistent format")
+    void testMultipleOrderExceptions_ConsistentFormat() {
+        InvalidOrderParametersException ex1 = new InvalidOrderParametersException("Bad 1", testOrderId);
+        OrderNotFoundException ex2 = new OrderNotFoundException("Not found", testOrderId);
+        
+        ResponseEntity<Map<String, Object>> response1 = handler.handleInvalidOrderParametersException(ex1);
+        ResponseEntity<Map<String, Object>> response2 = handler.handleOrderNotFoundException(ex2);
+        
+        Map<String, Object> body1 = response1.getBody();
+        Map<String, Object> body2 = response2.getBody();
+        
+        assertEquals(body1.keySet(), body2.keySet());
+    }
+
+    @Test
+    @DisplayName("Order exception timestamp is LocalDateTime")
+    void testOrderException_TimestampType() {
+        InvalidAccountException ex = new InvalidAccountException("Invalid", testAccountId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidAccountException(ex);
+        
+        Map<String, Object> body = response.getBody();
+        Object timestamp = body.get("timestamp");
+        assertTrue(timestamp instanceof LocalDateTime || timestamp instanceof String);
+    }
+
+    @Test
+    @DisplayName("Order exception message is preserved")
+    void testOrderException_MessagePreserved() {
+        String expectedMessage = "This is a detailed error message";
+        InvalidOrderParametersException ex = new InvalidOrderParametersException(expectedMessage, testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderParametersException(ex);
+        
+        assertEquals(expectedMessage, response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("Order exception with null message")
+    void testOrderException_NullMessage() {
+        OrderNotFoundException ex = new OrderNotFoundException(null, testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleOrderNotFoundException(ex);
+        
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("Order exception with empty message")
+    void testOrderException_EmptyMessage() {
+        InvalidOrderStatusException ex = new InvalidOrderStatusException("", testOrderId);
+        ResponseEntity<Map<String, Object>> response = handler.handleInvalidOrderStatusException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("", response.getBody().get("message"));
+    }
+
+    @Test
+    @DisplayName("InsufficientFundsException preserves financial details")
+    void testInsufficientFundsException_FinancialDetails() {
+        BigDecimal required = new BigDecimal("5000.00");
+        BigDecimal available = new BigDecimal("3000.00");
+        InsufficientFundsException ex = new InsufficientFundsException(
+            "Insufficient funds",
+            testAccountId,
+            required,
+            available
+        );
+        ResponseEntity<Map<String, Object>> response = handler.handleInsufficientFundsException(ex);
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("Order exceptions all return correct HTTP status codes")
+    void testAllOrderExceptions_StatusCodes() {
+        UUID orderId = UUID.randomUUID();
+        
+        ResponseEntity<Map<String, Object>> response1 = 
+            handler.handleInvalidOrderParametersException(
+                new InvalidOrderParametersException("Invalid params", orderId)
+            );
+        ResponseEntity<Map<String, Object>> response2 = 
+            handler.handleOrderNotFoundException(
+                new OrderNotFoundException("Not found", orderId)
+            );
+        ResponseEntity<Map<String, Object>> response3 = 
+            handler.handleInvalidOrderStatusException(
+                new InvalidOrderStatusException("Invalid status", orderId)
+            );
+        ResponseEntity<Map<String, Object>> response4 = 
+            handler.handleInsufficientFundsException(
+                new InsufficientFundsException(
+                    "Insufficient",
+                    testAccountId,
+                    new BigDecimal("1000"),
+                    new BigDecimal("500")
+                )
+            );
+        ResponseEntity<Map<String, Object>> response5 = 
+            handler.handleInvalidAccountException(
+                new InvalidAccountException("Invalid account", testAccountId)
+            );
+        
+        assertEquals(HttpStatus.BAD_REQUEST, response1.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response2.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response3.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response4.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response5.getStatusCode());
     }
 }
