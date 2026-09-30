@@ -113,13 +113,13 @@ public class AccountController {
 
     /**
      * Deposit cash into an account.
-     * POST /api/accounts/{accountId}/deposit
+     * PATCH /api/accounts/{accountId}/deposit
      *
      * @param accountId UUID of the account
      * @param request AccountsRequest.Deposit containing deposit amount
      * @return ResponseEntity with AccountsResponse.Transaction showing new balance (HTTP 200)
      */
-    @PostMapping("/{accountId}/deposit")
+    @PatchMapping("/{accountId}/deposit")
     public ResponseEntity<AccountsResponse.Transaction> depositCash(
             @PathVariable UUID accountId,
             @Valid @RequestBody AccountsRequest.Deposit request) {
@@ -129,14 +129,14 @@ public class AccountController {
 
     /**
      * Withdraw cash from an account.
-     * POST /api/accounts/{accountId}/withdraw
+     * PATCH /api/accounts/{accountId}/withdraw
      *
      * @param accountId UUID of the account
      * @param request AccountsRequest.Withdrawal containing withdrawal amount
      * @return ResponseEntity with AccountsResponse.Transaction showing new balance (HTTP 200)
      * @throws IllegalArgumentException if insufficient funds or account is closed
      */
-    @PostMapping("/{accountId}/withdraw")
+    @PatchMapping("/{accountId}/withdraw")
     public ResponseEntity<AccountsResponse.Transaction> withdrawCash(
             @PathVariable UUID accountId,
             @Valid @RequestBody AccountsRequest.Withdrawal request) {

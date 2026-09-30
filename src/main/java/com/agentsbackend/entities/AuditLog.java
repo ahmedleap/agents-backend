@@ -1,39 +1,18 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "audit_logs")
 public class AuditLog {
 
-    @Id
-    @Column(name = "audit_log_id", columnDefinition = "UUID")
     private UUID auditLogId;
-
-    @Column(name = "order_id", columnDefinition = "UUID", nullable = false)
     private UUID orderId;
-
-    @Column(name = "account_id", columnDefinition = "UUID", nullable = false)
     private UUID accountId;
-
-    @Column(name = "client_id", columnDefinition = "UUID", nullable = false)
     private UUID clientId;
-
-    @Column(name = "event_type", nullable = false)
     private String eventType;
-
-    @Column(name = "event_time", nullable = false)
     private LocalDateTime eventTime;
-
-    @Column(name = "reason", columnDefinition = "TEXT")
     private String reason;
-
-    @Column(name = "details", columnDefinition = "JSONB")
     private String details;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public AuditLog() {

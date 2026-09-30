@@ -29,7 +29,7 @@ class OrderFulfillmentServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private InstrumentPriceRepository instrumentPriceRepository;
+    private InstrumentRepository instrumentRepository;
 
     @Mock
     private AccountRepository accountRepository;
@@ -46,8 +46,8 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService = new OrderFulfillmentService(
             orderQueue,
             orderRepository,
-            instrumentPriceRepository,
             accountRepository,
+            instrumentRepository,
             auditTrailService,
             holdingsService
         );
@@ -82,12 +82,12 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
         account.setClientId(clientId);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -113,12 +113,12 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
         account.setClientId(clientId);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -144,11 +144,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -172,10 +172,10 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -197,11 +197,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -225,10 +225,10 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -250,7 +250,7 @@ class OrderFulfillmentServiceTest {
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.empty());
 
         // Act
         orderFulfillmentService.processPendingOrders();
@@ -272,7 +272,7 @@ class OrderFulfillmentServiceTest {
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenThrow(new RuntimeException("Database error"));
+        when(instrumentRepository.findById(instrumentId)).thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert - should not throw, should continue processing
         assertDoesNotThrow(() -> orderFulfillmentService.processPendingOrders());
@@ -290,11 +290,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -318,14 +318,14 @@ class OrderFulfillmentServiceTest {
         Order order1 = createBuyMarketOrder(UUID.randomUUID(), accountId, instrumentId1, quantity);
         Order order2 = createBuyMarketOrder(UUID.randomUUID(), accountId, instrumentId2, quantity);
 
-        InstrumentPrice price1 = createInstrumentPrice(instrumentId1, marketPrice);
-        InstrumentPrice price2 = createInstrumentPrice(instrumentId2, marketPrice);
+        Instrument price1 = createInstrumentPrice(instrumentId1, marketPrice);
+        Instrument price2 = createInstrumentPrice(instrumentId2, marketPrice);
 
         Account account = createAccount(accountId, new BigDecimal("20000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order1, order2));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(price2);
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(price1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(price2));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -348,11 +348,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -374,11 +374,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal sellQuantity = new BigDecimal("30.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, sellQuantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -400,11 +400,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -427,11 +427,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal initialCash = new BigDecimal("10000.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, initialCash);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -456,11 +456,11 @@ class OrderFulfillmentServiceTest {
         BigDecimal initialCash = new BigDecimal("1000.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, initialCash);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -485,12 +485,12 @@ class OrderFulfillmentServiceTest {
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        InstrumentPrice currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
         account.setClientId(clientId);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(currentPrice));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act
@@ -552,13 +552,16 @@ class OrderFulfillmentServiceTest {
         return order;
     }
 
-    private InstrumentPrice createInstrumentPrice(UUID instrumentId, BigDecimal price) {
-        InstrumentPrice instrumentPrice = new InstrumentPrice();
+    private Instrument createInstrument(UUID instrumentId, BigDecimal price) {
         Instrument instrument = new Instrument();
         instrument.setInstrumentId(instrumentId);
-        instrumentPrice.setInstrument(instrument);
-        instrumentPrice.setPrice(price);
-        return instrumentPrice;
+        instrument.setMidPrice(price);
+        return instrument;
+    }
+
+    private Instrument createInstrumentPrice(UUID instrumentId, BigDecimal price) {
+        // Changed to return Instrument instead of InstrumentPrice (schema update)
+        return createInstrument(instrumentId, price);
     }
 
     private Account createAccount(UUID accountId, BigDecimal cashBalance) {
@@ -568,3 +571,9 @@ class OrderFulfillmentServiceTest {
         return account;
     }
 }
+
+
+
+
+
+

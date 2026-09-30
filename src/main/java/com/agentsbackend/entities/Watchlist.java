@@ -12,6 +12,16 @@ public class Watchlist {
     private String instrumentName;
     private LocalDateTime addedAt;
 
+    public Watchlist() {
+    }
+
+    public Watchlist(UUID watchlistId, UUID clientId, UUID instrumentId, LocalDateTime addedAt) {
+        this.watchlistId = watchlistId;
+        this.clientId = clientId;
+        this.instrumentId = instrumentId;
+        this.addedAt = addedAt;
+    }
+
     public UUID getWatchlistId() {
         return watchlistId;
     }

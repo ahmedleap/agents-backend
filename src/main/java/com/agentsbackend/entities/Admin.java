@@ -1,35 +1,17 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.AdminRole;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "admin")
 public class Admin {
 
-    @Id
-    @Column(name = "admin_id", columnDefinition = "UUID")
     private UUID adminId;
-
-    @Column(name = "first_name", length = 50, nullable = false)
     private String firstName;
-
-    @Column(name = "last_name", length = 50, nullable = false)
     private String lastName;
-
-    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
-
-    @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
-
-    @Column(name = "role", nullable = false)
-    @Enumerated(EnumType.STRING)
     private AdminRole role;
-
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
     // Constructors

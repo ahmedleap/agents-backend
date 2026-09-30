@@ -92,7 +92,7 @@ class OrderControllerTest {
             .thenReturn(response);
 
         // Act & Assert
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId)
+        mockMvc.perform(delete("/api/v1/orders/{orderId}", orderId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -205,13 +205,13 @@ class OrderControllerTest {
             .thenReturn(response1, response2);
 
         // Act & Assert - First cancellation
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId1)
+        mockMvc.perform(delete("/api/v1/orders/{orderId}", orderId1)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request1)))
             .andExpect(status().isOk());
 
         // Act & Assert - Second cancellation
-        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId2)
+        mockMvc.perform(delete("/api/v1/orders/{orderId}", orderId2)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request2)))
             .andExpect(status().isOk());
