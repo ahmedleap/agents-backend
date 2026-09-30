@@ -3,6 +3,10 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'Java 21'
+    }
+
     environment {
         // Extract version from pom.xml for consistency across builds
         PROJECT_VERSION = sh(
