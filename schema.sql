@@ -1,9 +1,10 @@
 -- Design notes:
--- * Orders are always LIMIT orders for now, so reserved funds = quantity * limit_price;
---   no live pricing lookup is needed at order time. Available balance is computed
---   dynamically (cash_balance minus the sum of open BUY orders) rather than stored, so the
---   same query path can later absorb other checks (e.g. trade limits) without a denormalized
---   column to keep in sync.
+-- * Orders can be LIMIT (limit_price provided) or MARKET (limit_price = NULL).
+--   For LIMIT orders: reserved funds = quantity * limit_price.
+--   For MARKET orders: uses current market price when filled.
+--   Available balance is computed dynamically (cash_balance minus the sum of open BUY orders)
+--   rather than stored, so the same query path can later absorb other checks
+--   (e.g. trade limits) without a denormalized column to keep in sync.
 -- * instrument_prices holds periodic (~15 min) pulls from the pricing API. It's only consumed
 --   by the EOD historical_snapshot job and portfolio valuation reads — never by order placement.
 -- * orders never need created_by/approved_by: the client is always both creator and submitter.
@@ -69,7 +70,7 @@ CREATE TABLE clients (
     email                    VARCHAR(255) NOT NULL UNIQUE,
     password_hash            VARCHAR(255) NOT NULL,
     date_of_birth            DATE NOT NULL,
-    join_date                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    join_date                TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     ssn_last4                CHAR(4), -- can be hashed but full for compliance
     portfolio_size_range     portfolio_size_range,
     risk_tolerance           risk_tolerance,
@@ -89,7 +90,7 @@ CREATE TABLE admin (
     email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     role            admin_role NOT NULL,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
 );
 
 -- ============================================================
@@ -102,7 +103,7 @@ CREATE TABLE accounts (
     name            VARCHAR(255) NOT NULL,
     cash_balance    NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (cash_balance >= 0),
     status          account_status NOT NULL DEFAULT 'ACTIVE',
-    open_date       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    open_date       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_accounts_client
         FOREIGN KEY (client_id)
         REFERENCES clients (client_id)
@@ -150,7 +151,7 @@ CREATE TABLE instrument_prices (
     price_id        UUID PRIMARY KEY,
     instrument_id   UUID NOT NULL,
     price           NUMERIC(18,4) NOT NULL CHECK (price > 0),
-    as_of           TIMESTAMP NOT NULL,
+    as_of           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_instrument_prices_instrument
         FOREIGN KEY (instrument_id)
         REFERENCES instruments (instrument_id)
@@ -169,12 +170,13 @@ CREATE TABLE orders (
     instrument_id   UUID NOT NULL,
     order_type      order_type NOT NULL,
     quantity        NUMERIC(18,6) NOT NULL CHECK (quantity > 0),
-    limit_price     NUMERIC(18,4) NOT NULL CHECK (limit_price > 0),
+    limit_price     NUMERIC(18,4) CHECK (limit_price > 0),
     filled_price    NUMERIC(18,4) CHECK (filled_price > 0),
     status          order_status NOT NULL DEFAULT 'PENDING',
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    filled_at       TIMESTAMP,
-    cancelled_at    TIMESTAMP,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+    filled_at       TIMESTAMP WITH TIME ZONE,
+    cancelled_at    TIMESTAMP WITH TIME ZONE,
+    cancel_reason   TEXT,
     CONSTRAINT fk_orders_account
         FOREIGN KEY (account_id)
         REFERENCES accounts (account_id)
@@ -214,10 +216,38 @@ CREATE TABLE transactions (
     account_id          UUID NOT NULL,
     txn_type                transaction_type NOT NULL,
     amount              NUMERIC(18,2) NOT NULL CHECK (amount > 0),
-    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_transactions_account
         FOREIGN KEY (account_id)
         REFERENCES accounts (account_id)
+        ON DELETE CASCADE
+);
+
+-- ============================================================
+-- AUDIT_LOGS (compliance trail for order lifecycle events)
+-- ============================================================
+
+CREATE TABLE audit_logs (
+    audit_log_id    UUID PRIMARY KEY,
+    client_id       UUID NOT NULL,
+    account_id      UUID NOT NULL,
+    order_id        UUID NOT NULL,
+    event_type      VARCHAR(20) NOT NULL,
+    event_time      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+    reason          TEXT,
+    details         JSONB,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_logs_client
+        FOREIGN KEY (client_id)
+        REFERENCES clients (client_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_audit_logs_account
+        FOREIGN KEY (account_id)
+        REFERENCES accounts (account_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_audit_logs_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders (order_id)
         ON DELETE CASCADE
 );
 
@@ -252,6 +282,12 @@ CREATE INDEX idx_orders_instrument ON orders (instrument_id);
 CREATE INDEX idx_orders_account_status ON orders (account_id, status);
 -- Supports EOD/matching jobs scanning all open orders system-wide.
 CREATE INDEX idx_orders_status ON orders (status);
+
+CREATE INDEX idx_audit_logs_account ON audit_logs (account_id);
+CREATE INDEX idx_audit_logs_order ON audit_logs (order_id);
+CREATE INDEX idx_audit_logs_event_type ON audit_logs (event_type);
+CREATE INDEX idx_audit_logs_account_event_time ON audit_logs (account_id, event_time DESC);
+CREATE INDEX idx_audit_logs_client_event_time ON audit_logs (client_id, event_time DESC);
 
 CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
 
