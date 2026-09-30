@@ -9,7 +9,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -85,11 +84,9 @@ class GlobalExceptionHandlerTest {
     void testHandleInvalidOrderParametersIncludesTimestamp() {
         // Arrange
         InvalidOrderParametersException exception = new InvalidOrderParametersException("Error");
-        LocalDateTime before = LocalDateTime.now();
 
         // Act
         ResponseEntity<Map<String, Object>> response = exceptionHandler.handleInvalidOrderParameters(exception, webRequest);
-        LocalDateTime after = LocalDateTime.now();
 
         // Assert
         assertTrue(response.getBody().containsKey("timestamp"));

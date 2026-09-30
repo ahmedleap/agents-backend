@@ -1,12 +1,9 @@
 package com.agentsbackend.repos;
 
 import com.agentsbackend.entities.Account;
-import com.agentsbackend.enums.AccountStatus;
 import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.type.JdbcType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

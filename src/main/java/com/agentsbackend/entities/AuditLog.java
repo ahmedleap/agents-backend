@@ -1,7 +1,6 @@
 package com.agentsbackend.entities;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
