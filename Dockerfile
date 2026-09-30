@@ -1,7 +1,7 @@
 # Multi-stage build for Spring Boot Backend (Lean Production Image)
 
 # Build arguments
-ARG VERSION=0.4.3
+ARG VERSION=0.5.1
 
 # Stage 1: Builder
 FROM maven:3.9-eclipse-temurin-21 as builder
@@ -27,7 +27,7 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Build arguments available in runtime stage
-ARG VERSION=0.4.3
+ARG VERSION=0.5.1
 LABEL version="${VERSION}"
 LABEL description="Spring Boot Backend - Agents System"
 LABEL maintainer="agents-backend-team"
