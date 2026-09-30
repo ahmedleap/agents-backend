@@ -4,7 +4,7 @@
 ARG VERSION=0.4.3
 
 # Stage 1: Builder
-FROM maven:3.9-eclipse-temurin-17 as builder
+FROM maven:3.9-eclipse-temurin-21 as builder
 
 WORKDIR /build
 
@@ -22,7 +22,7 @@ RUN echo "--- java -version ---" && java -version \
 RUN mvn -B clean verify
 
 # Stage 2: Runtime (Lean)
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 
