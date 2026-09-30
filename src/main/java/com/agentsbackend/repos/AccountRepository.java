@@ -87,19 +87,7 @@ public interface AccountRepository {
             "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     void updateCashBalance(@Param("accountId") UUID accountId, @Param("newBalance") BigDecimal newBalance);
 
-    /**
-     * Record a cash transaction (deposit or withdrawal).
-     * Inserts transaction record into transactions table with auto-generated UUID.
-     *
-     * @param accountId UUID of the account
-     * @param amount Amount of the transaction
-     * @param transactionType "DEPOSIT" or "WITHDRAWAL"
-     */
-    @Insert("INSERT INTO transactions (transaction_id, account_id, txn_type, amount) " +
-            "VALUES (gen_random_uuid(), #{accountId,jdbcType=VARCHAR}, " +
-            "CAST(#{transactionType} AS transaction_type), #{amount,jdbcType=NUMERIC})")
-    void recordTransaction(@Param("accountId") UUID accountId, @Param("amount") BigDecimal amount,
-                          @Param("transactionType") String transactionType);
+
 
     /**
      * Check if a client exists in the database.
@@ -139,15 +127,7 @@ public interface AccountRepository {
     @Select("SELECT COUNT(*) FROM orders WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     Integer getOrderCount(@Param("accountId") UUID accountId);
 
-    /**
-     * Get count of transactions for an account.
-     * Transactions represent cash deposits and withdrawals.
-     *
-     * @param accountId UUID of the account
-     * @return Count of transactions, or null if none
-     */
-    @Select("SELECT COUNT(*) FROM transactions WHERE account_id = #{accountId,jdbcType=VARCHAR}")
-    Integer getTransactionCount(@Param("accountId") UUID accountId);
+
 
     /**
      * Calculate reserved funds for open BUY orders.

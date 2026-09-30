@@ -6,6 +6,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,9 @@ class AccountServiceImplTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @InjectMocks
     private AccountServiceImpl accountService;
@@ -148,7 +152,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getHoldingCount(testAccountId)).thenReturn(5);
         when(accountRepository.getOrderCount(testAccountId)).thenReturn(3);
-        when(accountRepository.getTransactionCount(testAccountId)).thenReturn(10);
+        when(transactionRepository.getTransactionCount(testAccountId)).thenReturn(10);
 
         var result = accountService.getAccountDetails(testAccountId);
 
@@ -173,7 +177,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getHoldingCount(testAccountId)).thenReturn(null);
         when(accountRepository.getOrderCount(testAccountId)).thenReturn(null);
-        when(accountRepository.getTransactionCount(testAccountId)).thenReturn(null);
+        when(transactionRepository.getTransactionCount(testAccountId)).thenReturn(null);
 
         var result = accountService.getAccountDetails(testAccountId);
 
@@ -189,7 +193,7 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.depositCash(testAccountId, amount);
 
@@ -232,7 +236,7 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("500000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.depositCash(testAccountId, amount);
 
@@ -248,7 +252,7 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(BigDecimal.ZERO);
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.withdrawCash(testAccountId, amount);
 

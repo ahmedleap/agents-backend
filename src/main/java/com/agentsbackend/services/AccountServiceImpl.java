@@ -103,7 +103,7 @@ public class AccountServiceImpl implements AccountService {
 
         Integer holdingCount = accountRepository.getHoldingCount(accountId);
         Integer orderCount = accountRepository.getOrderCount(accountId);
-        Integer transactionCount = accountRepository.getTransactionCount(accountId);
+        Integer transactionCount = transactionRepository.getTransactionCount(accountId);
         BigDecimal availableBalance = calculateAvailableBalance(accountId);
 
         return new AccountsResponse.AccountDetail(
@@ -256,7 +256,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.updateCashBalance(accountId, newBalance);
 
         // Record transaction in database
-        accountRepository.recordTransaction(accountId, amount, "DEPOSIT");
+        transactionRepository.recordTransaction(accountId, amount, "DEPOSIT");
 
         return new AccountsResponse.Transaction(
                 "Deposit successful. Amount: " + amount,
@@ -300,7 +300,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.updateCashBalance(accountId, newBalance);
 
         // Record transaction in database
-        accountRepository.recordTransaction(accountId, amount, "WITHDRAWAL");
+        transactionRepository.recordTransaction(accountId, amount, "WITHDRAWAL");
 
         return new AccountsResponse.Transaction(
                 "Withdrawal successful. Amount: " + amount,
