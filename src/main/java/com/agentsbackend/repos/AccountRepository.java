@@ -166,10 +166,10 @@ public interface AccountRepository {
      * @param accountId UUID of the account
      * @return Total value of all holdings, or null if no holdings
      */
-    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.price, 0)), 0) FROM holdings h " +
-            "LEFT JOIN instrument_prices ip ON h.instrument_id = ip.instrument_id " +
+    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.close, 0)), 0) FROM holdings h " +
+            "LEFT JOIN instrument_price_history ip ON h.instrument_id = ip.instrument_id " +
             "WHERE h.account_id = #{accountId,jdbcType=VARCHAR} " +
-            "AND ip.as_of = (SELECT MAX(as_of) FROM instrument_prices WHERE instrument_id = h.instrument_id)")
+            "AND ip.timestamp = (SELECT MAX(timestamp) FROM instrument_price_history WHERE instrument_id = h.instrument_id)")
     BigDecimal getPortfolioValue(@Param("accountId") UUID accountId);
 
     /**
@@ -184,7 +184,7 @@ public interface AccountRepository {
             "WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND snapshot_date <= #{date,jdbcType=DATE} " +
             "ORDER BY snapshot_date DESC LIMIT 1")
-    BigDecimal getPortfolioValueAtDate(@Param("accountId") UUID accountId, @Param("date") java.time.LocalDateTime date);
+    BigDecimal getPortfolioValueAtDate(@Param("accountId") UUID accountId, @Param("date") java.time.OffsetDateTime date);
 
     /**
      * Get realized gain/loss for trades executed during a period.
@@ -199,7 +199,7 @@ public interface AccountRepository {
             "FROM orders o LEFT JOIN holdings h ON o.instrument_id = h.instrument_id " +
             "WHERE o.account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND o.status = 'FILLED' AND o.created_at >= #{startDate,jdbcType=TIMESTAMP}")
-    BigDecimal getRealizedGainLoss(@Param("accountId") UUID accountId, @Param("startDate") java.time.LocalDateTime startDate);
+    BigDecimal getRealizedGainLoss(@Param("accountId") UUID accountId, @Param("startDate") java.time.OffsetDateTime startDate);
 
     /**
      * Get cost basis of current holdings (total amount paid for all holdings).

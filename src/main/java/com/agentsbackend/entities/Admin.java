@@ -1,7 +1,7 @@
 package com.agentsbackend.entities;
 
 import com.agentsbackend.enums.AdminRole;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class Admin {
@@ -12,12 +12,12 @@ public class Admin {
     private String email;
     private String passwordHash;
     private AdminRole role;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     // Constructors
     public Admin() {}
 
-    public Admin(UUID adminId, String firstName, String lastName, String email, String passwordHash, AdminRole role, LocalDateTime createdAt) {
+    public Admin(UUID adminId, String firstName, String lastName, String email, String passwordHash, AdminRole role, OffsetDateTime createdAt) {
         this.adminId = adminId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -88,12 +88,12 @@ public class Admin {
     }
 
     // Retrieves the creation timestamp of this admin record
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
     // Sets the creation timestamp of this admin record
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 

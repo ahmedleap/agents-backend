@@ -2,7 +2,7 @@ package com.agentsbackend.entities;
 
 import com.agentsbackend.enums.TransactionType;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class Transaction {
@@ -11,13 +11,13 @@ public class Transaction {
     private Account account;
     private TransactionType txnType;
     private BigDecimal amount;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     public Transaction() {
     }
 
     public Transaction(UUID transactionId, Account account, TransactionType txnType,
-                      BigDecimal amount, LocalDateTime createdAt) {
+                      BigDecimal amount, OffsetDateTime createdAt) {
         this.transactionId = transactionId;
         this.account = account;
         this.txnType = txnType;
@@ -57,11 +57,11 @@ public class Transaction {
         this.amount = amount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

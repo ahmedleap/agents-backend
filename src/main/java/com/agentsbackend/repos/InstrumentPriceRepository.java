@@ -9,6 +9,6 @@ import java.util.UUID;
 @Mapper
 public interface InstrumentPriceRepository {
     
-    @Select("SELECT * FROM instrument_prices WHERE instrument_id = #{instrumentId} ORDER BY as_of DESC LIMIT 1")
+    @Select("SELECT * FROM instrument_price_history WHERE instrument_id = #{instrumentId} ORDER BY timestamp DESC LIMIT 1")
     InstrumentPrice findLatestPrice(@Param("instrumentId") UUID instrumentId);
 }

@@ -1,6 +1,6 @@
 package com.agentsbackend.entities;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class Watchlist {
@@ -10,12 +10,12 @@ public class Watchlist {
     private UUID instrumentId;
     private String ticker;
     private String instrumentName;
-    private LocalDateTime addedAt;
+    private OffsetDateTime addedAt;
 
     public Watchlist() {
     }
 
-    public Watchlist(UUID watchlistId, UUID clientId, UUID instrumentId, LocalDateTime addedAt) {
+    public Watchlist(UUID watchlistId, UUID clientId, UUID instrumentId, OffsetDateTime addedAt) {
         this.watchlistId = watchlistId;
         this.clientId = clientId;
         this.instrumentId = instrumentId;
@@ -62,11 +62,11 @@ public class Watchlist {
         this.instrumentName = instrumentName;
     }
 
-    public LocalDateTime getAddedAt() {
+    public OffsetDateTime getAddedAt() {
         return addedAt;
     }
 
-    public void setAddedAt(LocalDateTime addedAt) {
+    public void setAddedAt(OffsetDateTime addedAt) {
         this.addedAt = addedAt;
     }
 }

@@ -2,7 +2,7 @@ package com.agentsbackend.entities;
 
 import com.agentsbackend.enums.AssetClass;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +16,7 @@ public class Instrument {
     private BigDecimal bid;
     private BigDecimal ask;
     private BigDecimal midPrice;
-    private LocalDateTime priceUpdatedAt;
+    private OffsetDateTime priceUpdatedAt;
     private List<InstrumentPriceHistory> priceHistory;
     private List<Order> orders;
     private List<Holding> holdings;
@@ -26,7 +26,7 @@ public class Instrument {
 
     public Instrument(UUID instrumentId, String ticker, String name, AssetClass assetClass,
                       String industry, BigDecimal bid, BigDecimal ask, BigDecimal midPrice,
-                      LocalDateTime priceUpdatedAt, List<InstrumentPriceHistory> priceHistory,
+                      OffsetDateTime priceUpdatedAt, List<InstrumentPriceHistory> priceHistory,
                       List<Order> orders, List<Holding> holdings) {
         this.instrumentId = instrumentId;
         this.ticker = ticker;
@@ -106,11 +106,11 @@ public class Instrument {
         this.midPrice = midPrice;
     }
 
-    public LocalDateTime getPriceUpdatedAt() {
+    public OffsetDateTime getPriceUpdatedAt() {
         return priceUpdatedAt;
     }
 
-    public void setPriceUpdatedAt(LocalDateTime priceUpdatedAt) {
+    public void setPriceUpdatedAt(OffsetDateTime priceUpdatedAt) {
         this.priceUpdatedAt = priceUpdatedAt;
     }
 

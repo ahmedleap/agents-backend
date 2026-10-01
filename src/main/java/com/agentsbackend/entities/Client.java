@@ -3,7 +3,7 @@ package com.agentsbackend.entities;
 import com.agentsbackend.enums.PortfolioSizeRange;
 import com.agentsbackend.enums.RiskTolerance;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +16,7 @@ public class Client {
     private String email;
     private String passwordHash;
     private LocalDate dateOfBirth;
-    private LocalDateTime joinDate;
+    private OffsetDateTime joinDate;
     private String ssnLast4;
     private PortfolioSizeRange portfolioSizeRange;
     private RiskTolerance riskTolerance;
@@ -27,7 +27,7 @@ public class Client {
     }
 
     public Client(UUID clientId, String firstName, String middleName, String lastName, String email,
-                  String passwordHash, LocalDate dateOfBirth, LocalDateTime joinDate, String ssnLast4,
+                  String passwordHash, LocalDate dateOfBirth, OffsetDateTime joinDate, String ssnLast4,
                   PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, String refreshToken, List<Account> accounts) {
         this.clientId = clientId;
         this.firstName = firstName;
@@ -100,11 +100,11 @@ public class Client {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public LocalDateTime getJoinDate() {
+    public OffsetDateTime getJoinDate() {
         return joinDate;
     }
 
-    public void setJoinDate(LocalDateTime joinDate) {
+    public void setJoinDate(OffsetDateTime joinDate) {
         this.joinDate = joinDate;
     }
 

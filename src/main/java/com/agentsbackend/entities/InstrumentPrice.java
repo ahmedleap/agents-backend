@@ -1,55 +1,104 @@
 package com.agentsbackend.entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class InstrumentPrice {
 
-    private UUID priceId;
-    private Instrument instrument;
-    private BigDecimal price;
-    private LocalDateTime asOf;
+    private UUID priceHistoryId;
+    private UUID instrumentId;
+    private OffsetDateTime timestamp;
+    private BigDecimal open;
+    private BigDecimal high;
+    private BigDecimal low;
+    private BigDecimal close;
+    private Integer volume;
 
     public InstrumentPrice() {
     }
 
-    public InstrumentPrice(UUID priceId, Instrument instrument, BigDecimal price, LocalDateTime asOf) {
-        this.priceId = priceId;
-        this.instrument = instrument;
-        this.price = price;
-        this.asOf = asOf;
+    public InstrumentPrice(UUID priceHistoryId, UUID instrumentId, OffsetDateTime timestamp, 
+                          BigDecimal open, BigDecimal high, BigDecimal low, BigDecimal close, Integer volume) {
+        this.priceHistoryId = priceHistoryId;
+        this.instrumentId = instrumentId;
+        this.timestamp = timestamp;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.volume = volume;
     }
 
-    public UUID getPriceId() {
-        return priceId;
+    public UUID getPriceHistoryId() {
+        return priceHistoryId;
     }
 
-    public void setPriceId(UUID priceId) {
-        this.priceId = priceId;
+    public void setPriceHistoryId(UUID priceHistoryId) {
+        this.priceHistoryId = priceHistoryId;
     }
 
-    public Instrument getInstrument() {
-        return instrument;
+    public UUID getInstrumentId() {
+        return instrumentId;
     }
 
-    public void setInstrument(Instrument instrument) {
-        this.instrument = instrument;
+    public void setInstrumentId(UUID instrumentId) {
+        this.instrumentId = instrumentId;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public OffsetDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setTimestamp(OffsetDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
-    public LocalDateTime getAsOf() {
-        return asOf;
+    public BigDecimal getOpen() {
+        return open;
     }
 
-    public void setAsOf(LocalDateTime asOf) {
-        this.asOf = asOf;
+    public void setOpen(BigDecimal open) {
+        this.open = open;
+    }
+
+    public BigDecimal getHigh() {
+        return high;
+    }
+
+    public void setHigh(BigDecimal high) {
+        this.high = high;
+    }
+
+    public BigDecimal getLow() {
+        return low;
+    }
+
+    public void setLow(BigDecimal low) {
+        this.low = low;
+    }
+
+    public BigDecimal getClose() {
+        return close;
+    }
+
+    public void setClose(BigDecimal close) {
+        this.close = close;
+    }
+
+    public Integer getVolume() {
+        return volume;
+    }
+
+    public void setVolume(Integer volume) {
+        this.volume = volume;
+    }
+
+    public OffsetDateTime getAsOf() {
+        return timestamp;
+    }
+
+    public void setAsOf(OffsetDateTime asOf) {
+        this.timestamp = asOf;
     }
 }

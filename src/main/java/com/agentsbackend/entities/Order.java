@@ -3,7 +3,7 @@ package com.agentsbackend.entities;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.OrderStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class Order {
@@ -17,9 +17,9 @@ public class Order {
     private BigDecimal limitPrice;
     private BigDecimal filledPrice;
     private OrderStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime filledAt;
-    private LocalDateTime cancelledAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime filledAt;
+    private OffsetDateTime cancelledAt;
     private String cancelReason;
 
     public Order() {
@@ -27,7 +27,7 @@ public class Order {
 
     public Order(UUID orderId, Account account, Instrument instrument, OrderType orderType,
                  BigDecimal quantity, BigDecimal limitPrice, BigDecimal filledPrice, OrderStatus status,
-                 LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt, String cancelReason) {
+                 OffsetDateTime createdAt, OffsetDateTime filledAt, OffsetDateTime cancelledAt, String cancelReason) {
         this.orderId = orderId;
         this.account = account;
         this.instrument = instrument;
@@ -114,27 +114,27 @@ public class Order {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getFilledAt() {
+    public OffsetDateTime getFilledAt() {
         return filledAt;
     }
 
-    public void setFilledAt(LocalDateTime filledAt) {
+    public void setFilledAt(OffsetDateTime filledAt) {
         this.filledAt = filledAt;
     }
 
-    public LocalDateTime getCancelledAt() {
+    public OffsetDateTime getCancelledAt() {
         return cancelledAt;
     }
 
-    public void setCancelledAt(LocalDateTime cancelledAt) {
+    public void setCancelledAt(OffsetDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
     }
 

@@ -2,6 +2,7 @@ package com.agentsbackend.DTO.requests;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import org.springframework.lang.Nullable;
 import java.util.UUID;
 
 /**
@@ -9,12 +10,15 @@ import java.util.UUID;
  */
 public class GetPendingOrdersRequest {
 
+    @Nullable
     private UUID accountId;
 
+    @Nullable
     @Min(value = 0, message = "Limit must be at least 0")
     @Max(value = 1000, message = "Limit cannot exceed 1000")
     private Integer limit;
 
+    @Nullable
     @Min(value = 0, message = "Offset must be at least 0")
     private Integer offset;
 

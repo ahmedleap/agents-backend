@@ -15,7 +15,8 @@ import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
 import com.agentsbackend.queue.OrderQueue;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CreateOrderResponse createOrder(CreateOrderRequest request) {
         UUID orderId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         
         try {
             validateAccountStatus(request);
@@ -527,7 +528,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancelReason(request.getCancellationReason());
-        order.setCancelledAt(LocalDateTime.now(ZoneId.of("UTC")));
+        order.setCancelledAt(OffsetDateTime.now(ZoneOffset.UTC));
         orderRepository.updateOrder(order);
         
         // Log order cancellation to audit trail

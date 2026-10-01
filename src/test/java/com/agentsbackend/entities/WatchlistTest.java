@@ -2,7 +2,7 @@ package com.agentsbackend.entities;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +14,7 @@ class WatchlistTest {
         UUID watchlistId = UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001");
         UUID clientId = UUID.fromString("850e8400-e29b-41d4-a716-446655770001");
         UUID instrumentId = UUID.fromString("650e8400-e29b-41d4-a716-446655550001");
-        LocalDateTime addedAt = LocalDateTime.parse("2026-09-21T12:00:00");
+        OffsetDateTime addedAt = OffsetDateTime.parse("2026-09-21T12:00:00Z");
 
         Watchlist watchlist = new Watchlist();
         watchlist.setWatchlistId(watchlistId);

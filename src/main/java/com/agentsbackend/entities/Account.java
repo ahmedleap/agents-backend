@@ -2,7 +2,7 @@ package com.agentsbackend.entities;
 
 import com.agentsbackend.enums.AccountStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +14,7 @@ public class Account {
     private String name;
     private BigDecimal cashBalance;
     private AccountStatus status;
-    private LocalDateTime openDate;
+    private OffsetDateTime openDate;
     private List<Order> orders;
     private List<Holding> holdings;
     private List<Transaction> transactions;
@@ -24,7 +24,7 @@ public class Account {
     }
 
     public Account(UUID accountId, Client client, String name, BigDecimal cashBalance, AccountStatus status,
-                   LocalDateTime openDate, List<Order> orders, List<Holding> holdings,
+                   OffsetDateTime openDate, List<Order> orders, List<Holding> holdings,
                    List<Transaction> transactions, List<HistoricalSnapshot> snapshots) {
         this.accountId = accountId;
         this.client = client;
@@ -88,11 +88,11 @@ public class Account {
         this.status = status;
     }
 
-    public LocalDateTime getOpenDate() {
+    public OffsetDateTime getOpenDate() {
         return openDate;
     }
 
-    public void setOpenDate(LocalDateTime openDate) {
+    public void setOpenDate(OffsetDateTime openDate) {
         this.openDate = openDate;
     }
 

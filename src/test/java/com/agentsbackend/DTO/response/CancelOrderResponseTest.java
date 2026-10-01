@@ -1,7 +1,8 @@
 package com.agentsbackend.DTO.response;
 
 import com.agentsbackend.enums.OrderStatus;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +17,7 @@ class CancelOrderResponseTest {
     void testCancelOrderResponseInitialization() {
         // Arrange
         UUID orderId = UUID.randomUUID();
-        LocalDateTime cancelledAt = LocalDateTime.now();
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         CancelOrderResponse response = new CancelOrderResponse(
@@ -75,7 +76,7 @@ class CancelOrderResponseTest {
     void testCancelOrderResponseCancelledAt() {
         // Arrange
         CancelOrderResponse response = new CancelOrderResponse();
-        LocalDateTime cancelledTime = LocalDateTime.now();
+        OffsetDateTime cancelledTime = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         response.setCancelledAt(cancelledTime);
@@ -139,7 +140,7 @@ class CancelOrderResponseTest {
         // Arrange
         CancelOrderResponse response = new CancelOrderResponse();
         UUID orderId = UUID.randomUUID();
-        LocalDateTime cancelledAt = LocalDateTime.now();
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         response.setOrderId(orderId);
@@ -159,7 +160,7 @@ class CancelOrderResponseTest {
     void testCancelOrderResponsePreserveTimestamp() {
         // Arrange
         UUID orderId = UUID.randomUUID();
-        LocalDateTime cancelledAt = LocalDateTime.now().minusMinutes(5);
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5);
 
         // Act
         CancelOrderResponse response = new CancelOrderResponse(
@@ -174,8 +175,8 @@ class CancelOrderResponseTest {
     @DisplayName("Should handle different cancelled timestamps")
     void testCancelOrderResponseDifferentTimestamps() {
         // Arrange
-        LocalDateTime time1 = LocalDateTime.now();
-        LocalDateTime time2 = LocalDateTime.now().minusHours(1);
+        OffsetDateTime time1 = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime time2 = OffsetDateTime.now(ZoneOffset.UTC).minusHours(1);
 
         // Act
         CancelOrderResponse response1 = new CancelOrderResponse();
@@ -195,7 +196,7 @@ class CancelOrderResponseTest {
     void testCancelOrderResponseBuyOrder() {
         // Arrange
         UUID orderId = UUID.randomUUID();
-        LocalDateTime cancelledAt = LocalDateTime.now();
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         CancelOrderResponse response = new CancelOrderResponse(
@@ -212,7 +213,7 @@ class CancelOrderResponseTest {
     void testCancelOrderResponseSellOrder() {
         // Arrange
         UUID orderId = UUID.randomUUID();
-        LocalDateTime cancelledAt = LocalDateTime.now();
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         CancelOrderResponse response = new CancelOrderResponse(
@@ -229,9 +230,9 @@ class CancelOrderResponseTest {
     void testCancelOrderResponseRapidUpdates() {
         // Arrange
         CancelOrderResponse response = new CancelOrderResponse();
-        LocalDateTime time1 = LocalDateTime.now();
-        LocalDateTime time2 = time1.plusSeconds(1);
-        LocalDateTime time3 = time2.plusSeconds(1);
+        OffsetDateTime time1 = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime time2 = time1.plusSeconds(1);
+        OffsetDateTime time3 = time2.plusSeconds(1);
 
         // Act
         response.setCancelledAt(time1);
@@ -256,7 +257,7 @@ class CancelOrderResponseTest {
 
         // Act
         CancelOrderResponse response = new CancelOrderResponse(
-            orderId1, OrderStatus.CANCELLED, LocalDateTime.now(), "Initial"
+            orderId1, OrderStatus.CANCELLED, OffsetDateTime.now(ZoneOffset.UTC), "Initial"
         );
         response.setOrderId(orderId2);
         response.setMessage("Updated");

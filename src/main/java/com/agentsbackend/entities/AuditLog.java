@@ -1,6 +1,6 @@
 package com.agentsbackend.entities;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class AuditLog {
@@ -10,17 +10,17 @@ public class AuditLog {
     private UUID accountId;
     private UUID clientId;
     private String eventType;
-    private LocalDateTime eventTime;
+    private OffsetDateTime eventTime;
     private String reason;
     private String details;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     public AuditLog() {
     }
 
     public AuditLog(UUID auditLogId, UUID orderId, UUID accountId, UUID clientId, 
-                    String eventType, LocalDateTime eventTime, String reason, 
-                    String details, LocalDateTime createdAt) {
+                    String eventType, OffsetDateTime eventTime, String reason,
+                    String details, OffsetDateTime createdAt) {
         this.auditLogId = auditLogId;
         this.orderId = orderId;
         this.accountId = accountId;
@@ -72,11 +72,11 @@ public class AuditLog {
         this.eventType = eventType;
     }
 
-    public LocalDateTime getEventTime() {
+    public OffsetDateTime getEventTime() {
         return eventTime;
     }
 
-    public void setEventTime(LocalDateTime eventTime) {
+    public void setEventTime(OffsetDateTime eventTime) {
         this.eventTime = eventTime;
     }
 
@@ -96,11 +96,11 @@ public class AuditLog {
         this.details = details;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

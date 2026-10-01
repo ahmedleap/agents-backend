@@ -9,7 +9,8 @@ import com.agentsbackend.repos.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -79,7 +80,7 @@ public class AccountServiceImpl implements AccountService {
         account.setName(request.getName());
         account.setCashBalance(request.getInitialCashBalance());
         account.setStatus(AccountStatus.ACTIVE);
-        account.setOpenDate(LocalDateTime.now());
+        account.setOpenDate(OffsetDateTime.now(ZoneOffset.UTC));
 
         // Persist account
         accountRepository.createAccount(account);
@@ -137,7 +138,7 @@ public class AccountServiceImpl implements AccountService {
                 availableBalance,
                 holdingsValue,
                 totalValue,
-                LocalDateTime.now().toString()
+                OffsetDateTime.now(ZoneOffset.UTC).toString()
         );
     }
 
@@ -195,7 +196,7 @@ public class AccountServiceImpl implements AccountService {
                 realizedGainLoss,
                 unrealizedGainLoss,
                 getPeriodStartDate(period).toString(),
-                LocalDateTime.now().toString()
+                OffsetDateTime.now(ZoneOffset.UTC).toString()
         );
     }
 
@@ -370,8 +371,8 @@ public class AccountServiceImpl implements AccountService {
     /**
      * Get start date based on period string.
      */
-    private LocalDateTime getPeriodStartDate(String period) {
-        LocalDateTime now = LocalDateTime.now();
+    private OffsetDateTime getPeriodStartDate(String period) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return switch (period) {
             case "1D" -> now.minusDays(1);
             case "1W" -> now.minusWeeks(1);
@@ -379,7 +380,7 @@ public class AccountServiceImpl implements AccountService {
             case "3M" -> now.minusMonths(3);
             case "6M" -> now.minusMonths(6);
             case "1Y" -> now.minusYears(1);
-            case "ALL" -> LocalDateTime.of(2000, 1, 1, 0, 0); // Beginning of time
+            case "ALL" -> OffsetDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC); // Beginning of time
             default -> now;
         };
     }

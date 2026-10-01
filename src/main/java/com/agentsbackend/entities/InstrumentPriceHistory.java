@@ -1,14 +1,14 @@
 package com.agentsbackend.entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class InstrumentPriceHistory {
 
     private UUID priceHistoryId;
     private Instrument instrument;
-    private LocalDateTime timestamp;
+    private OffsetDateTime timestamp;
     private BigDecimal open;
     private BigDecimal high;
     private BigDecimal low;
@@ -18,7 +18,7 @@ public class InstrumentPriceHistory {
     public InstrumentPriceHistory() {
     }
 
-    public InstrumentPriceHistory(UUID priceHistoryId, Instrument instrument, LocalDateTime timestamp,
+    public InstrumentPriceHistory(UUID priceHistoryId, Instrument instrument, OffsetDateTime timestamp,
                                   BigDecimal open, BigDecimal high, BigDecimal low,
                                   BigDecimal close, Integer volume) {
         this.priceHistoryId = priceHistoryId;
@@ -47,11 +47,11 @@ public class InstrumentPriceHistory {
         this.instrument = instrument;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(OffsetDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
