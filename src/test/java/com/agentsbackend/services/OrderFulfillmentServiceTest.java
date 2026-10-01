@@ -78,11 +78,12 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID clientId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
         account.setClientId(clientId);
 
@@ -96,9 +97,9 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
+        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
-        verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.BUY), eq(100), eq(marketPrice));
+        verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.BUY), eq(100), eq(askPrice));
     }
 
     @Test
@@ -109,11 +110,12 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID clientId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal bidPrice = midPrice.subtract(new BigDecimal("0.50"));  // 49.50
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, new BigDecimal("5000.00"));
         account.setClientId(clientId);
 
@@ -129,7 +131,7 @@ class OrderFulfillmentServiceTest {
         verify(orderQueue).remove(order);
         verify(holdingsService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
-        verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.SELL), eq(50), eq(marketPrice));
+        verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.SELL), eq(50), eq(bidPrice));  // SELL uses BID price
     }
 
     @Test
@@ -141,6 +143,7 @@ class OrderFulfillmentServiceTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal limitPrice = new BigDecimal("50.00");
         BigDecimal marketPrice = new BigDecimal("48.00");
+        BigDecimal askPrice = marketPrice.add(new BigDecimal("0.50"));  // 48.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyLimitOrder(orderId, accountId, instrumentId, quantity, limitPrice);
@@ -157,7 +160,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
+        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY orders use ASK price
     }
 
     @Test
@@ -286,11 +289,12 @@ class OrderFulfillmentServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
@@ -301,7 +305,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
+        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -313,6 +317,7 @@ class OrderFulfillmentServiceTest {
         UUID instrumentId1 = UUID.randomUUID();
         UUID instrumentId2 = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = marketPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order1 = createBuyMarketOrder(UUID.randomUUID(), accountId, instrumentId1, quantity);
@@ -334,7 +339,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository, times(2)).updateOrder(any());
         verify(orderQueue, times(2)).remove(any());
-        verify(holdingsService, times(2)).updateHoldingsForBuy(any(), eq(marketPrice));
+        verify(holdingsService, times(2)).updateHoldingsForBuy(any(), eq(askPrice));  // BUY orders use ASK price
     }
 
     @Test
@@ -396,11 +401,12 @@ class OrderFulfillmentServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, new BigDecimal("10000.00"));
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
@@ -411,7 +417,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForBuy(order, marketPrice);
+        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -422,12 +428,13 @@ class OrderFulfillmentServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
         BigDecimal initialCash = new BigDecimal("10000.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, initialCash);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
@@ -438,9 +445,9 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        // Expected: 10000 - (50 * 100) = 5000
+        // Expected: 10000 - (50.50 * 100) = 4950
         verify(accountRepository).save(argThat(acc -> 
-            acc.getCashBalance().compareTo(new BigDecimal("5000.00")) == 0
+            acc.getCashBalance().compareTo(new BigDecimal("4950.00")) == 0
         ));
     }
 
@@ -451,12 +458,13 @@ class OrderFulfillmentServiceTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal midPrice = new BigDecimal("50.00");
+        BigDecimal bidPrice = midPrice.subtract(new BigDecimal("0.50"));  // 49.50
         BigDecimal quantity = new BigDecimal("100.00");
         BigDecimal initialCash = new BigDecimal("1000.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
-        Instrument currentPrice = createInstrumentPrice(instrumentId, marketPrice);
+        Instrument currentPrice = createInstrumentPrice(instrumentId, midPrice);
         Account account = createAccount(accountId, initialCash);
 
         when(orderQueue.getPendingOrders()).thenReturn(List.of(order));
@@ -467,9 +475,9 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        // Expected: 1000 + (50 * 100) = 6000
+        // Expected: 1000 + (49.50 * 100) = 5950
         verify(accountRepository).save(argThat(acc -> 
-            acc.getCashBalance().compareTo(new BigDecimal("6000.00")) == 0
+            acc.getCashBalance().compareTo(new BigDecimal("5950.00")) == 0
         ));
     }
 
@@ -482,6 +490,7 @@ class OrderFulfillmentServiceTest {
         UUID clientId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
+        BigDecimal askPrice = marketPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
@@ -497,7 +506,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(auditTrailService).logOrderFilled(orderId, accountId, clientId, OrderType.BUY, 100, marketPrice);
+        verify(auditTrailService).logOrderFilled(orderId, accountId, clientId, OrderType.BUY, 100, askPrice);  // BUY orders use ASK price
     }
 
     // ==================== Helper Methods ====================
@@ -555,6 +564,11 @@ class OrderFulfillmentServiceTest {
     private Instrument createInstrument(UUID instrumentId, BigDecimal price) {
         Instrument instrument = new Instrument();
         instrument.setInstrumentId(instrumentId);
+        // Set bid/ask with realistic spread (bid is lower, ask is higher)
+        BigDecimal bid = price.subtract(new BigDecimal("0.50"));  // bid = price - 0.50
+        BigDecimal ask = price.add(new BigDecimal("0.50"));       // ask = price + 0.50
+        instrument.setBid(bid);
+        instrument.setAsk(ask);
         instrument.setMidPrice(price);
         return instrument;
     }
