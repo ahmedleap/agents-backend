@@ -57,6 +57,9 @@ CREATE DATABASE agents_of_leap;
 \i schema.sql
 ```
 
+For an existing database created before authentication was added, apply the additive,
+rerunnable migration with `\i auth_schema.sql` after `schema.sql`.
+
 #### Verify Schema
 ```sql
 \dt  -- Should show: admin, accounts, clients, orders, holdings, instruments, transactions, etc.
@@ -76,6 +79,20 @@ DB_NAME=agents_of_leap
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
+# SMTP is required to deliver verification and password-reset tokens.
+# Use any SMTP relay/provider (not tied to Gmail); recipient email domains can be different.
+SPRING_MAIL_HOST=smtp.your-provider.example
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=your-smtp-user
+SPRING_MAIL_PASSWORD=your-smtp-password
+SPRING_MAIL_FROM=no-reply@your-verified-domain.example
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=false
+AUTH_EMAIL_ENABLED=true
+AUTH_PUBLIC_BASE_URL=https://api.example.com
+
 # Optional
 JAVA_OPTS=-Xmx512m
 ```
@@ -93,6 +110,19 @@ mybatis.configuration.map-underscore-to-camel-case=true
 
 logging.level.com.agentsbackend=DEBUG
 ```
+
+### Authentication API
+
+- `POST /auth/register` — requires `firstName`, `lastName`, `dateOfBirth` (ISO date), `email`, `password`, and a two-letter `country`; optional `phone` must use E.164 format. Creates the client and an initial trading account, then sends an email-verification token.
+- `POST /auth/verify-email` — accepts `{ "token": "..." }`.
+- `POST /auth/login` and `POST /auth/refresh` — issue and rotate opaque bearer access/refresh tokens.
+- `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/sessions`, and `DELETE /auth/sessions/{sessionId}` — session management.
+- `POST /auth/password/reset-request`, `POST /auth/password/reset`, and authenticated `POST /auth/password/change` — password lifecycle.
+- `GET /users/me` — authenticated profile and own trading accounts.
+
+Mail transport is provider-neutral JavaMail SMTP: configure the host, port, credentials, TLS mode, and verified sender address for the SMTP relay you choose (for example, a transactional mail service). The relay can deliver to client addresses at Gmail, Outlook, or other domains; this backend does not require the recipient to use the same provider. For implicit TLS providers on port 465, set `SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true` and both STARTTLS settings to `false`; for STARTTLS providers on port 587, use the defaults shown above. Configure SPF/DKIM for your sender domain as required by the relay.
+
+Passwords require at least 12 characters, uppercase, lowercase, a number, and a special character; BCrypt's 72-byte UTF-8 input limit is enforced. Access tokens expire in 15 minutes; refresh tokens rotate and expire after 30 days. Sessions time out after 30 minutes of inactivity, and the fourth consecutive bad password locks the account for 30 minutes. Password-reset requests are limited to three per account per hour. SMTP is required to complete registration and deliver reset links. MFA, SMS verification, IP geolocation, and IP-level rate limiting are not configured yet.
 
 ### 4. Build and Run
 

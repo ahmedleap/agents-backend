@@ -68,6 +68,15 @@ CREATE TABLE clients (
     last_name                VARCHAR(50) NOT NULL,
     email                    VARCHAR(255) NOT NULL UNIQUE,
     password_hash            VARCHAR(255) NOT NULL,
+    phone                    VARCHAR(32) UNIQUE,
+    country                  CHAR(2),
+    email_verified           BOOLEAN NOT NULL DEFAULT FALSE,
+    auth_status              VARCHAR(32) NOT NULL DEFAULT 'PENDING_VERIFICATION'
+                                 CHECK (auth_status IN ('PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'LOCKED')),
+    failed_login_attempts    INTEGER NOT NULL DEFAULT 0 CHECK (failed_login_attempts >= 0),
+    locked_until             TIMESTAMP,
+    signup_ip                INET,
+    signup_device            VARCHAR(512),
     date_of_birth            DATE NOT NULL,
     join_date                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ssn_last4                CHAR(4), -- can be hashed but full for compliance
@@ -234,3 +243,33 @@ CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
 CREATE INDEX idx_transactions_account_created ON transactions (account_id, created_at);
 
 CREATE INDEX idx_instrument_prices_instrument_as_of ON instrument_prices (instrument_id, as_of DESC);
+
+-- ============================================================
+-- AUTHENTICATION, SESSIONS, AND ONE-TIME TOKENS
+-- ============================================================
+
+CREATE TABLE auth_sessions (
+    session_id          UUID PRIMARY KEY,
+    client_id           UUID NOT NULL REFERENCES clients (client_id) ON DELETE CASCADE,
+    access_token_hash   CHAR(64) NOT NULL UNIQUE,
+    refresh_token_hash  CHAR(64) NOT NULL UNIQUE,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_active         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    access_expires_at   TIMESTAMP NOT NULL,
+    refresh_expires_at  TIMESTAMP NOT NULL,
+    revoked_at          TIMESTAMP,
+    device              VARCHAR(512),
+    location            VARCHAR(128)
+);
+CREATE INDEX idx_auth_sessions_client ON auth_sessions (client_id, created_at DESC);
+
+CREATE TABLE auth_one_time_tokens (
+    token_id       UUID PRIMARY KEY,
+    client_id      UUID NOT NULL REFERENCES clients (client_id) ON DELETE CASCADE,
+    token_hash     CHAR(64) NOT NULL UNIQUE,
+    token_type     VARCHAR(24) NOT NULL CHECK (token_type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET')),
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at     TIMESTAMP NOT NULL,
+    used_at        TIMESTAMP
+);
+CREATE INDEX idx_auth_tokens_client_type ON auth_one_time_tokens (client_id, token_type, expires_at);
