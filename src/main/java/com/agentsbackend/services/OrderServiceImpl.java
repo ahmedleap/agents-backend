@@ -136,10 +136,14 @@ public class OrderServiceImpl implements OrderService {
                 totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
             } else {
                 // Market order - use current mid_price from instrument
-                Instrument inst = new Instrument();
-                inst.setInstrumentId(request.getInstrumentId());
-                // Note: mid_price would be fetched from DB in production
-                // This is a simplified estimation; full implementation would load from DB
+                Instrument inst = instrumentRepository.findById(request.getInstrumentId()).orElse(null);
+                if (inst != null && inst.getMidPrice() != null) {
+                    totalValue = inst.getMidPrice().multiply(new BigDecimal(request.getQuantity()));
+                } else {
+                    // If instrument or mid_price not available, use zero
+                    totalValue = BigDecimal.ZERO;
+                    logger.warn("Could not retrieve mid_price for instrument {}", request.getInstrumentId());
+                }
             }
             
             CreateOrderResponse response = new CreateOrderResponse(
@@ -244,7 +248,12 @@ public class OrderServiceImpl implements OrderService {
         // Fetch current instrument pricing
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
             .orElse(null);
-        BigDecimal marketPrice = (instrument != null) ? instrument.getMidPrice() : null;
+        BigDecimal marketPrice;
+        if (instrument != null) {
+            marketPrice = instrument.getMidPrice();
+        } else {
+            marketPrice = null;
+        }
         
         if (price == null) {
             // MARKET ORDER - validate market price exists

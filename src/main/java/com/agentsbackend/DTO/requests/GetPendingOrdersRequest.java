@@ -25,8 +25,16 @@ public class GetPendingOrdersRequest {
 
     public GetPendingOrdersRequest(UUID accountId, Integer limit, Integer offset) {
         this.accountId = accountId;
-        this.limit = limit != null ? limit : 50;
-        this.offset = offset != null ? offset : 0;
+        if (limit != null) {
+            this.limit = limit;
+        } else {
+            this.limit = 50;
+        }
+        if (offset != null) {
+            this.offset = offset;
+        } else {
+            this.offset = 0;
+        }
     }
 
     // Getters and Setters
@@ -43,7 +51,11 @@ public class GetPendingOrdersRequest {
     }
 
     public void setLimit(Integer limit) {
-        this.limit = limit != null ? limit : 50;
+        if (limit != null) {
+            this.limit = limit;
+        } else {
+            this.limit = 50;
+        }
     }
 
     public Integer getOffset() {
@@ -51,6 +63,10 @@ public class GetPendingOrdersRequest {
     }
 
     public void setOffset(Integer offset) {
-        this.offset = offset != null ? offset : 0;
+        if (offset != null) {
+            this.offset = offset;
+        } else {
+            this.offset = 0;
+        }
     }
 }

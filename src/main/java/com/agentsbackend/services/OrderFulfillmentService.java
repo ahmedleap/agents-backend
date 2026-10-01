@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,17 +85,15 @@ public class OrderFulfillmentService {
      */
     private boolean tryFillOrder(Order order) {
         // Get current instrument pricing (bid/ask/mid_price)
-        Optional<Instrument> instrumentOpt = instrumentRepository.findById(
+        Instrument instrument = instrumentRepository.findById(
             order.getInstrument().getInstrumentId()
-        );
+        ).orElse(null);
         
-        if (!instrumentOpt.isPresent()) {
+        if (instrument == null) {
             logger.warn("Instrument {} not found for order {}", 
                 order.getInstrument().getInstrumentId(), order.getOrderId());
             return false;
         }
-        
-        Instrument instrument = instrumentOpt.get();
         BigDecimal bid = instrument.getBid();
         BigDecimal ask = instrument.getAsk();
         
