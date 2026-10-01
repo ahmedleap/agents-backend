@@ -15,9 +15,15 @@ public class Account {
     @Column(name = "account_id", columnDefinition = "UUID")
     private UUID accountId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
+
+    @Column(name = "client_id", insertable = false, updatable = false, columnDefinition = "UUID")
+    private UUID clientId;
+
+    @Column(name = "name", length = 255, nullable = false)
+    private String name;
 
     @Column(name = "cash_balance", nullable = false, precision = 18, scale = 2, columnDefinition = "NUMERIC(18,2) DEFAULT 0 CHECK (cash_balance >= 0)")
     private BigDecimal cashBalance;
@@ -44,11 +50,12 @@ public class Account {
     public Account() {
     }
 
-    public Account(UUID accountId, Client client, BigDecimal cashBalance, AccountStatus status,
+    public Account(UUID accountId, Client client, String name, BigDecimal cashBalance, AccountStatus status,
                    LocalDateTime openDate, List<Order> orders, List<Holding> holdings,
                    List<Transaction> transactions, List<HistoricalSnapshot> snapshots) {
         this.accountId = accountId;
         this.client = client;
+        this.name = name;
         this.cashBalance = cashBalance;
         this.status = status;
         this.openDate = openDate;
@@ -72,6 +79,24 @@ public class Account {
 
     public void setClient(Client client) {
         this.client = client;
+    }
+
+    public UUID getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(UUID clientId) {
+        this.clientId = clientId;
+    }
+
+    // Retrieves the user-friendly name of this account
+    public String getName() {
+        return name;
+    }
+
+    // Sets the user-friendly name of this account
+    public void setName(String name) {
+        this.name = name;
     }
 
     public BigDecimal getCashBalance() {

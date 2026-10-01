@@ -19,119 +19,127 @@ INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role) 
 -- 2. INSTRUMENTS (Stocks, ETFs, Mutual Funds)
 -- ============================================================
 
-INSERT INTO instruments (instrument_id, ticker, name, asset_class, industry) VALUES
-('650e8400-e29b-41d4-a716-446655550001', 'AAPL', 'Apple Inc.', 'STOCK', 'Technology'),
-('650e8400-e29b-41d4-a716-446655550002', 'MSFT', 'Microsoft Corporation', 'STOCK', 'Technology'),
-('650e8400-e29b-41d4-a716-446655550003', 'GOOGL', 'Alphabet Inc.', 'STOCK', 'Technology'),
-('650e8400-e29b-41d4-a716-446655550004', 'AMZN', 'Amazon.com Inc.', 'STOCK', 'Consumer Discretionary'),
-('650e8400-e29b-41d4-a716-446655550005', 'TSLA', 'Tesla Inc.', 'STOCK', 'Automotive'),
-('650e8400-e29b-41d4-a716-446655550006', 'JPM', 'JPMorgan Chase & Co.', 'STOCK', 'Financials'),
-('650e8400-e29b-41d4-a716-446655550007', 'JNJ', 'Johnson & Johnson', 'STOCK', 'Healthcare'),
-('650e8400-e29b-41d4-a716-446655550008', 'PG', 'Procter & Gamble', 'STOCK', 'Consumer Staples'),
-('650e8400-e29b-41d4-a716-446655550009', 'SPY', 'SPDR S&P 500 ETF Trust', 'ETF', 'Index Fund'),
-('650e8400-e29b-41d4-a716-446655550010', 'QQQ', 'Invesco QQQ Trust', 'ETF', 'Tech Index'),
-('650e8400-e29b-41d4-a716-446655550011', 'VTI', 'Vanguard Total Stock Market ETF', 'ETF', 'Index Fund'),
-('650e8400-e29b-41d4-a716-446655550012', 'BND', 'Vanguard Total Bond Market ETF', 'ETF', 'Bond Fund');
+INSERT INTO instruments (instrument_id, ticker, name, asset_class, industry, bid, ask, price_updated_at) VALUES
+('650e8400-e29b-41d4-a716-446655550001', 'AAPL', 'Apple Inc.', 'STOCK', 'Technology', 226.95, 227.45, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550002', 'MSFT', 'Microsoft Corporation', 'STOCK', 'Technology', 416.80, 417.30, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550003', 'GOOGL', 'Alphabet Inc.', 'STOCK', 'Technology', 195.10, 195.75, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550004', 'AMZN', 'Amazon.com Inc.', 'STOCK', 'Consumer Discretionary', 197.90, 198.65, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550005', 'TSLA', 'Tesla Inc.', 'STOCK', 'Automotive', 247.70, 248.50, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550006', 'JPM', 'JPMorgan Chase & Co.', 'STOCK', 'Financials', 194.90, 195.40, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550007', 'JNJ', 'Johnson & Johnson', 'STOCK', 'Healthcare', 158.25, 158.75, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550008', 'PG', 'Procter & Gamble', 'STOCK', 'Consumer Staples', 162.80, 163.20, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550009', 'SPY', 'SPDR S&P 500 ETF Trust', 'ETF', 'Index Fund', 563.65, 564.30, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550010', 'QQQ', 'Invesco QQQ Trust', 'ETF', 'Tech Index', 525.95, 526.85, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550011', 'VTI', 'Vanguard Total Stock Market ETF', 'ETF', 'Index Fund', 241.10, 241.65, '2026-09-08 14:45:00+00:00'),
+('650e8400-e29b-41d4-a716-446655550012', 'BND', 'Vanguard Total Bond Market ETF', 'ETF', 'Bond Fund', 81.45, 81.50, '2026-09-08 14:45:00+00:00');
 
 -- ============================================================
--- 3. INSTRUMENT PRICES (Recent prices, ~15 min cadence)
+-- 3. INSTRUMENT PRICE HISTORY (Daily OHLCV bars from Alpaca)
 -- ============================================================
 
-INSERT INTO instrument_prices (price_id, instrument_id, price, as_of) VALUES
--- AAPL
-('750e8400-e29b-41d4-a716-446655660001', '650e8400-e29b-41d4-a716-446655550001', 227.45, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660002', '650e8400-e29b-41d4-a716-446655550001', 227.20, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660003', '650e8400-e29b-41d4-a716-446655550001', 226.95, '2026-09-08 14:15:00'),
-
--- MSFT
-('750e8400-e29b-41d4-a716-446655660004', '650e8400-e29b-41d4-a716-446655550002', 417.30, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660005', '650e8400-e29b-41d4-a716-446655550002', 417.05, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660006', '650e8400-e29b-41d4-a716-446655550002', 416.80, '2026-09-08 14:15:00'),
-
--- GOOGL
-('750e8400-e29b-41d4-a716-446655660007', '650e8400-e29b-41d4-a716-446655550003', 195.75, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660008', '650e8400-e29b-41d4-a716-446655550003', 195.40, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660009', '650e8400-e29b-41d4-a716-446655550003', 195.10, '2026-09-08 14:15:00'),
-
--- AMZN
-('750e8400-e29b-41d4-a716-446655660010', '650e8400-e29b-41d4-a716-446655550004', 198.65, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660011', '650e8400-e29b-41d4-a716-446655550004', 198.30, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660012', '650e8400-e29b-41d4-a716-446655550004', 197.90, '2026-09-08 14:15:00'),
-
--- TSLA
-('750e8400-e29b-41d4-a716-446655660013', '650e8400-e29b-41d4-a716-446655550005', 248.50, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660014', '650e8400-e29b-41d4-a716-446655550005', 248.10, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660015', '650e8400-e29b-41d4-a716-446655550005', 247.70, '2026-09-08 14:15:00'),
-
--- JPM
-('750e8400-e29b-41d4-a716-446655660016', '650e8400-e29b-41d4-a716-446655550006', 195.40, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660017', '650e8400-e29b-41d4-a716-446655550006', 195.15, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660018', '650e8400-e29b-41d4-a716-446655550006', 194.90, '2026-09-08 14:15:00'),
-
--- JNJ
-('750e8400-e29b-41d4-a716-446655660019', '650e8400-e29b-41d4-a716-446655550007', 158.75, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660020', '650e8400-e29b-41d4-a716-446655550007', 158.50, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660021', '650e8400-e29b-41d4-a716-446655550007', 158.25, '2026-09-08 14:15:00'),
-
--- PG
-('750e8400-e29b-41d4-a716-446655660022', '650e8400-e29b-41d4-a716-446655550008', 163.20, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660023', '650e8400-e29b-41d4-a716-446655550008', 163.00, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660024', '650e8400-e29b-41d4-a716-446655550008', 162.80, '2026-09-08 14:15:00'),
-
--- SPY
-('750e8400-e29b-41d4-a716-446655660025', '650e8400-e29b-41d4-a716-446655550009', 564.30, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660026', '650e8400-e29b-41d4-a716-446655550009', 564.00, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660027', '650e8400-e29b-41d4-a716-446655550009', 563.65, '2026-09-08 14:15:00'),
-
--- QQQ
-('750e8400-e29b-41d4-a716-446655660028', '650e8400-e29b-41d4-a716-446655550010', 526.85, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660029', '650e8400-e29b-41d4-a716-446655550010', 526.40, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660030', '650e8400-e29b-41d4-a716-446655550010', 525.95, '2026-09-08 14:15:00'),
-
--- VTI
-('750e8400-e29b-41d4-a716-446655660031', '650e8400-e29b-41d4-a716-446655550011', 241.65, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660032', '650e8400-e29b-41d4-a716-446655550011', 241.40, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660033', '650e8400-e29b-41d4-a716-446655550011', 241.10, '2026-09-08 14:15:00'),
-
--- BND
-('750e8400-e29b-41d4-a716-446655660034', '650e8400-e29b-41d4-a716-446655550012', 81.50, '2026-09-08 14:45:00'),
-('750e8400-e29b-41d4-a716-446655660035', '650e8400-e29b-41d4-a716-446655550012', 81.48, '2026-09-08 14:30:00'),
-('750e8400-e29b-41d4-a716-446655660036', '650e8400-e29b-41d4-a716-446655550012', 81.45, '2026-09-08 14:15:00');
+INSERT INTO instrument_price_history (price_history_id, instrument_id, timestamp, open, high, low, close, volume) VALUES
+-- AAPL (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660001', '650e8400-e29b-41d4-a716-446655550001', '2026-09-08 00:00:00+00:00', 225.50, 228.00, 225.00, 227.45, 52300000),
+-- MSFT (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660004', '650e8400-e29b-41d4-a716-446655550002', '2026-09-08 00:00:00+00:00', 415.00, 418.00, 414.50, 417.30, 28400000),
+-- GOOGL (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660007', '650e8400-e29b-41d4-a716-446655550003', '2026-09-08 00:00:00+00:00', 193.00, 196.50, 192.50, 195.75, 21600000),
+-- AMZN (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660010', '650e8400-e29b-41d4-a716-446655550004', '2026-09-08 00:00:00+00:00', 196.50, 199.50, 196.00, 198.65, 41900000),
+-- TSLA (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660013', '650e8400-e29b-41d4-a716-446655550005', '2026-09-08 00:00:00+00:00', 245.00, 250.00, 244.50, 248.50, 68700000),
+-- JPM (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660016', '650e8400-e29b-41d4-a716-446655550006', '2026-09-08 00:00:00+00:00', 192.50, 196.00, 192.00, 195.40, 35200000),
+-- JNJ (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660019', '650e8400-e29b-41d4-a716-446655550007', '2026-09-08 00:00:00+00:00', 156.00, 159.50, 155.50, 158.75, 22100000),
+-- PG (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660022', '650e8400-e29b-41d4-a716-446655550008', '2026-09-08 00:00:00+00:00', 161.00, 164.00, 160.50, 163.20, 19800000),
+-- SPY (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660025', '650e8400-e29b-41d4-a716-446655550009', '2026-09-08 00:00:00+00:00', 561.00, 566.00, 560.50, 564.30, 95600000),
+-- QQQ (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660028', '650e8400-e29b-41d4-a716-446655550010', '2026-09-08 00:00:00+00:00', 520.00, 529.00, 519.50, 526.85, 61200000),
+-- VTI (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660031', '650e8400-e29b-41d4-a716-446655550011', '2026-09-08 00:00:00+00:00', 239.50, 243.00, 239.00, 241.65, 15400000),
+-- BND (2026-09-08 bar)
+('750e8400-e29b-41d4-a716-446655660034', '650e8400-e29b-41d4-a716-446655550012', '2026-09-08 00:00:00+00:00', 80.95, 82.00, 80.90, 81.50, 4200000);
 
 -- ============================================================
--- 4. CLIENTS
+-- 4. WATCHLISTS (Client instrument watchlists)
 -- ============================================================
 
-INSERT INTO clients (client_id, first_name, middle_name, last_name, email, password_hash, date_of_birth, join_date, ssn_last4, portfolio_size_range, risk_tolerance) VALUES
-('850e8400-e29b-41d4-a716-446655770001', 'Alice', 'Marie', 'Johnson', 'alice.johnson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1985-03-15', '2024-01-10 08:30:00', '5432', 'BETWEEN_100K_200K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770002', 'Bob', 'David', 'Smith', 'bob.smith@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1990-07-22', '2024-02-15 10:15:00', '6789', 'BETWEEN_50K_100K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770003', 'Carol', 'Elizabeth', 'Williams', 'carol.williams@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1992-11-08', '2024-03-01 14:45:00', '2345', 'BETWEEN_200K_500K', 'AGGRESSIVE'),
-('850e8400-e29b-41d4-a716-446655770004', 'David', 'James', 'Brown', 'david.brown@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1988-05-30', '2024-04-12 09:20:00', '3456', 'BETWEEN_100K_200K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770005', 'Emma', 'Louise', 'Davis', 'emma.davis@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1995-09-12', '2024-05-20 11:30:00', '7890', 'UNDER_50K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770006', 'Frank', 'Michael', 'Miller', 'frank.miller@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1987-01-25', '2024-06-05 13:15:00', '1111', 'OVER_500K', 'AGGRESSIVE'),
-('850e8400-e29b-41d4-a716-446655770007', 'Grace', 'Ann', 'Wilson', 'grace.wilson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1993-08-18', '2024-07-10 15:45:00', '2222', 'BETWEEN_50K_100K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770008', 'Henry', 'Thomas', 'Moore', 'henry.moore@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1991-04-07', '2024-08-14 10:00:00', '3333', 'BETWEEN_100K_200K', 'CONSERVATIVE'),
-('850e8400-e29b-41d4-a716-446655770009', 'Ivy', 'Rebecca', 'Taylor', 'ivy.taylor@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1994-12-20', '2024-09-01 12:30:00', '4444', 'BETWEEN_200K_500K', 'MODERATE'),
-('850e8400-e29b-41d4-a716-446655770010', 'Jack', 'Robert', 'Anderson', 'jack.anderson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1989-06-14', '2024-09-05 08:45:00', '5555', 'BETWEEN_50K_100K', 'AGGRESSIVE');
+INSERT INTO watchlists (watchlist_id, client_id, instrument_id, added_at) VALUES
+-- Alice's watchlist
+('850e8400-e29b-41d4-a716-446655770001', '850e8400-e29b-41d4-a716-446655770001', '650e8400-e29b-41d4-a716-446655550001', '2026-09-01 08:00:00'),  -- AAPL
+('850e8400-e29b-41d4-a716-446655770001', '850e8400-e29b-41d4-a716-446655770001', '650e8400-e29b-41d4-a716-446655550002', '2026-09-02 09:00:00'),  -- MSFT
+('850e8400-e29b-41d4-a716-446655770001', '850e8400-e29b-41d4-a716-446655770001', '650e8400-e29b-41d4-a716-446655550003', '2026-09-03 10:00:00'),  -- GOOGL
+-- Bob's watchlist
+('850e8400-e29b-41d4-a716-446655770002', '850e8400-e29b-41d4-a716-446655770002', '650e8400-e29b-41d4-a716-446655550006', '2026-09-01 11:00:00'),  -- JPM
+('850e8400-e29b-41d4-a716-446655770002', '850e8400-e29b-41d4-a716-446655770002', '650e8400-e29b-41d4-a716-446655550007', '2026-09-02 12:00:00'),  -- JNJ
+('850e8400-e29b-41d4-a716-446655770002', '850e8400-e29b-41d4-a716-446655770002', '650e8400-e29b-41d4-a716-446655550012', '2026-09-04 13:00:00'),  -- BND
+-- Carol's watchlist (Tech focus)
+('850e8400-e29b-41d4-a716-446655770003', '850e8400-e29b-41d4-a716-446655770003', '650e8400-e29b-41d4-a716-446655550001', '2026-09-01 08:30:00'),  -- AAPL
+('850e8400-e29b-41d4-a716-446655770003', '850e8400-e29b-41d4-a716-446655770003', '650e8400-e29b-41d4-a716-446655550002', '2026-09-02 09:30:00'),  -- MSFT
+('850e8400-e29b-41d4-a716-446655770003', '850e8400-e29b-41d4-a716-446655770003', '650e8400-e29b-41d4-a716-446655550003', '2026-09-03 10:30:00'),  -- GOOGL
+('850e8400-e29b-41d4-a716-446655770003', '850e8400-e29b-41d4-a716-446655770003', '650e8400-e29b-41d4-a716-446655550004', '2026-09-04 11:30:00'),  -- AMZN
+('850e8400-e29b-41d4-a716-446655770003', '850e8400-e29b-41d4-a716-446655770003', '650e8400-e29b-41d4-a716-446655550005', '2026-09-05 12:30:00'),  -- TSLA
+-- David's watchlist
+('850e8400-e29b-41d4-a716-446655770004', '850e8400-e29b-41d4-a716-446655770004', '650e8400-e29b-41d4-a716-446655550007', '2026-09-01 14:00:00'),  -- JNJ
+('850e8400-e29b-41d4-a716-446655770004', '850e8400-e29b-41d4-a716-446655770004', '650e8400-e29b-41d4-a716-446655550009', '2026-09-02 15:00:00'),  -- SPY
+-- Emma's watchlist (Conservative)
+('850e8400-e29b-41d4-a716-446655770005', '850e8400-e29b-41d4-a716-446655770005', '650e8400-e29b-41d4-a716-446655550012', '2026-09-01 16:00:00'),  -- BND
+('850e8400-e29b-41d4-a716-446655770005', '850e8400-e29b-41d4-a716-446655770005', '650e8400-e29b-41d4-a716-446655550008', '2026-09-03 17:00:00'),  -- PG
+-- Frank's watchlist (Large positions)
+('850e8400-e29b-41d4-a716-446655770006', '850e8400-e29b-41d4-a716-446655770006', '650e8400-e29b-41d4-a716-446655550001', '2026-09-01 09:00:00'),  -- AAPL
+('850e8400-e29b-41d4-a716-446655770006', '850e8400-e29b-41d4-a716-446655770006', '650e8400-e29b-41d4-a716-446655550002', '2026-09-02 10:00:00'),  -- MSFT
+('850e8400-e29b-41d4-a716-446655770006', '850e8400-e29b-41d4-a716-446655770006', '650e8400-e29b-41d4-a716-446655550006', '2026-09-05 11:00:00'),  -- JPM
+-- Grace's watchlist
+('850e8400-e29b-41d4-a716-446655770007', '850e8400-e29b-41d4-a716-446655770007', '650e8400-e29b-41d4-a716-446655550011', '2026-09-01 18:00:00'),  -- VTI
+('850e8400-e29b-41d4-a716-446655770007', '850e8400-e29b-41d4-a716-446655770007', '650e8400-e29b-41d4-a716-446655550009', '2026-09-03 19:00:00'),  -- SPY
+-- Henry's watchlist
+('850e8400-e29b-41d4-a716-446655770008', '850e8400-e29b-41d4-a716-446655770008', '650e8400-e29b-41d4-a716-446655550009', '2026-09-01 20:00:00'),  -- SPY
+('850e8400-e29b-41d4-a716-446655770008', '850e8400-e29b-41d4-a716-446655770008', '650e8400-e29b-41d4-a716-446655550012', '2026-09-02 21:00:00'),  -- BND
+-- Ivy's watchlist (Moderate)
+('850e8400-e29b-41d4-a716-446655770009', '850e8400-e29b-41d4-a716-446655770009', '650e8400-e29b-41d4-a716-446655550003', '2026-09-01 13:00:00'),  -- GOOGL
+('850e8400-e29b-41d4-a716-446655770009', '850e8400-e29b-41d4-a716-446655770009', '650e8400-e29b-41d4-a716-446655550004', '2026-09-02 14:00:00'),  -- AMZN
+('850e8400-e29b-41d4-a716-446655770009', '850e8400-e29b-41d4-a716-446655770009', '650e8400-e29b-41d4-a716-446655550010', '2026-09-05 15:00:00'),  -- QQQ
+-- Jack's watchlist (Aggressive)
+('850e8400-e29b-41d4-a716-446655770010', '850e8400-e29b-41d4-a716-446655770010', '650e8400-e29b-41d4-a716-446655550005', '2026-09-01 07:00:00'),  -- TSLA
+('850e8400-e29b-41d4-a716-446655770010', '850e8400-e29b-41d4-a716-446655770010', '650e8400-e29b-41d4-a716-446655550010', '2026-09-04 08:00:00');  -- QQQ
 
 -- ============================================================
--- 5. ACCOUNTS
+-- 5. CLIENTS
 -- ============================================================
 
-INSERT INTO accounts (account_id, client_id, cash_balance, status, open_date) VALUES
-('950e8400-e29b-41d4-a716-446655880001', '850e8400-e29b-41d4-a716-446655770001', 75000.00, 'ACTIVE', '2024-01-10 08:30:00'),
-('950e8400-e29b-41d4-a716-446655880002', '850e8400-e29b-41d4-a716-446655770002', 45000.00, 'ACTIVE', '2024-02-15 10:15:00'),
-('950e8400-e29b-41d4-a716-446655880003', '850e8400-e29b-41d4-a716-446655770003', 180000.00, 'ACTIVE', '2024-03-01 14:45:00'),
-('950e8400-e29b-41d4-a716-446655880004', '850e8400-e29b-41d4-a716-446655770004', 65000.00, 'ACTIVE', '2024-04-12 09:20:00'),
-('950e8400-e29b-41d4-a716-446655880005', '850e8400-e29b-41d4-a716-446655770005', 25000.00, 'ACTIVE', '2024-05-20 11:30:00'),
-('950e8400-e29b-41d4-a716-446655880006', '850e8400-e29b-41d4-a716-446655770006', 450000.00, 'ACTIVE', '2024-06-05 13:15:00'),
-('950e8400-e29b-41d4-a716-446655880007', '850e8400-e29b-41d4-a716-446655770007', 55000.00, 'ACTIVE', '2024-07-10 15:45:00'),
-('950e8400-e29b-41d4-a716-446655880008', '850e8400-e29b-41d4-a716-446655770008', 85000.00, 'ACTIVE', '2024-08-14 10:00:00'),
-('950e8400-e29b-41d4-a716-446655880009', '850e8400-e29b-41d4-a716-446655770009', 250000.00, 'ACTIVE', '2024-09-01 12:30:00'),
-('950e8400-e29b-41d4-a716-446655880010', '850e8400-e29b-41d4-a716-446655770010', 48000.00, 'ACTIVE', '2024-09-05 08:45:00');
+INSERT INTO clients (client_id, first_name, middle_name, last_name, email, password_hash, date_of_birth, join_date, ssn_last4, portfolio_size_range, risk_tolerance, refresh_token) VALUES
+('850e8400-e29b-41d4-a716-446655770001', 'Alice', 'Marie', 'Johnson', 'alice.johnson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1985-03-15', '2024-01-10 08:30:00', '5432', 'BETWEEN_100K_200K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDEiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_alice_1'),
+('850e8400-e29b-41d4-a716-446655770002', 'Bob', 'David', 'Smith', 'bob.smith@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1990-07-22', '2024-02-15 10:15:00', '6789', 'BETWEEN_50K_100K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDIiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_bob_2'),
+('850e8400-e29b-41d4-a716-446655770003', 'Carol', 'Elizabeth', 'Williams', 'carol.williams@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1992-11-08', '2024-03-01 14:45:00', '2345', 'BETWEEN_200K_500K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDMiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_carol_3'),
+('850e8400-e29b-41d4-a716-446655770004', 'David', 'James', 'Brown', 'david.brown@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1988-05-30', '2024-04-12 09:20:00', '3456', 'BETWEEN_100K_200K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDQiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_david_4'),
+('850e8400-e29b-41d4-a716-446655770005', 'Emma', 'Louise', 'Davis', 'emma.davis@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1995-09-12', '2024-05-20 11:30:00', '7890', 'UNDER_50K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDUiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_emma_5'),
+('850e8400-e29b-41d4-a716-446655770006', 'Frank', 'Michael', 'Miller', 'frank.miller@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1987-01-25', '2024-06-05 13:15:00', '1111', 'OVER_500K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDYiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_frank_6'),
+('850e8400-e29b-41d4-a716-446655770007', 'Grace', 'Ann', 'Wilson', 'grace.wilson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1993-08-18', '2024-07-10 15:45:00', '2222', 'BETWEEN_50K_100K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDciLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_grace_7'),
+('850e8400-e29b-41d4-a716-446655770008', 'Henry', 'Thomas', 'Moore', 'henry.moore@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1991-04-07', '2024-08-14 10:00:00', '3333', 'BETWEEN_100K_200K', 'CONSERVATIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDgiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_henry_8'),
+('850e8400-e29b-41d4-a716-446655770009', 'Ivy', 'Rebecca', 'Taylor', 'ivy.taylor@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1994-12-20', '2024-09-01 12:30:00', '4444', 'BETWEEN_200K_500K', 'MODERATE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMDkiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_ivy_9'),
+('850e8400-e29b-41d4-a716-446655770010', 'Jack', 'Robert', 'Anderson', 'jack.anderson@email.com', '$2b$12$KIXz1UmKJBMF8E8Yn9e4heW.9U7xY3z5aBcDeF.gHiJ.kLmNoPqRs', '1989-06-14', '2024-09-05 08:45:00', '5555', 'BETWEEN_50K_100K', 'AGGRESSIVE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU3NzAwMTAiLCJleHAiOjE3MjU0NDI0MDB9.refresh_token_jack_10');
 
 -- ============================================================
--- 6. TRANSACTIONS (Deposits & Withdrawals)
+-- 6. ACCOUNTS
+-- ============================================================
+
+INSERT INTO accounts (account_id, client_id, name, cash_balance, status, open_date) VALUES
+('950e8400-e29b-41d4-a716-446655880001', '850e8400-e29b-41d4-a716-446655770001', 'Primary Trading Account', 75000.00, 'ACTIVE', '2024-01-10 08:30:00'),
+('950e8400-e29b-41d4-a716-446655880002', '850e8400-e29b-41d4-a716-446655770002', 'Conservative Portfolio', 45000.00, 'ACTIVE', '2024-02-15 10:15:00'),
+('950e8400-e29b-41d4-a716-446655880003', '850e8400-e29b-41d4-a716-446655770003', 'Growth Portfolio', 180000.00, 'ACTIVE', '2024-03-01 14:45:00'),
+('950e8400-e29b-41d4-a716-446655880004', '850e8400-e29b-41d4-a716-446655770004', 'Balanced Account', 65000.00, 'ACTIVE', '2024-04-12 09:20:00'),
+('950e8400-e29b-41d4-a716-446655880005', '850e8400-e29b-41d4-a716-446655770005', 'Starter Account', 25000.00, 'ACTIVE', '2024-05-20 11:30:00'),
+('950e8400-e29b-41d4-a716-446655880006', '850e8400-e29b-41d4-a716-446655770006', 'Premium Portfolio', 450000.00, 'ACTIVE', '2024-06-05 13:15:00'),
+('950e8400-e29b-41d4-a716-446655880007', '850e8400-e29b-41d4-a716-446655770007', 'Income Account', 55000.00, 'ACTIVE', '2024-07-10 15:45:00'),
+('950e8400-e29b-41d4-a716-446655880008', '850e8400-e29b-41d4-a716-446655770008', 'Retirement Portfolio', 85000.00, 'ACTIVE', '2024-08-14 10:00:00'),
+('950e8400-e29b-41d4-a716-446655880009', '850e8400-e29b-41d4-a716-446655770009', 'Aggressive Growth Account', 250000.00, 'ACTIVE', '2024-09-01 12:30:00'),
+('950e8400-e29b-41d4-a716-446655880010', '850e8400-e29b-41d4-a716-446655770010', 'Diversified Portfolio', 48000.00, 'ACTIVE', '2024-09-05 08:45:00');
+
+-- ============================================================
+-- 7. TRANSACTIONS (Deposits & Withdrawals)
 -- ============================================================
 
 INSERT INTO transactions (transaction_id, account_id, txn_type, amount, created_at) VALUES
@@ -169,7 +177,7 @@ INSERT INTO transactions (transaction_id, account_id, txn_type, amount, created_
 ('a50e8400-e29b-41d4-a716-446655990013', '950e8400-e29b-41d4-a716-446655880010', 'DEPOSIT', 48000.00, '2024-09-05 08:45:00');
 
 -- ============================================================
--- 7. ORDERS (Buy and Sell orders in various statuses)
+-- 8. ORDERS (Buy and Sell orders in various statuses)
 -- ============================================================
 
 INSERT INTO orders (order_id, account_id, instrument_id, order_type, quantity, limit_price, status, created_at, filled_at, cancelled_at) VALUES
@@ -214,7 +222,7 @@ INSERT INTO orders (order_id, account_id, instrument_id, order_type, quantity, l
 ('b50e8400-e29b-41d4-a716-446655aa0020', '950e8400-e29b-41d4-a716-446655880010', '650e8400-e29b-41d4-a716-446655550010', 'BUY', 50.000000, 525.00, 'PENDING', '2024-09-08 08:00:00', NULL, NULL);
 
 -- ============================================================
--- 8. HOLDINGS (Current positions from filled orders)
+-- 9. HOLDINGS (Current positions from filled orders)
 -- ============================================================
 
 INSERT INTO holdings (holding_id, account_id, instrument_id, quantity, average_cost_basis) VALUES
@@ -255,7 +263,7 @@ INSERT INTO holdings (holding_id, account_id, instrument_id, quantity, average_c
 ('c50e8400-e29b-41d4-a716-446655bb0016', '950e8400-e29b-41d4-a716-446655880010', '650e8400-e29b-41d4-a716-446655550005', 80.000000, 245.00);
 
 -- ============================================================
--- 9. HISTORICAL SNAPSHOTS (EOD portfolio snapshots)
+-- 10. HISTORICAL SNAPSHOTS (EOD portfolio snapshots)
 -- ============================================================
 
 INSERT INTO historical_snapshot (snapshot_id, account_id, snapshot_date, cash_balance, holdings_value, total_value) VALUES
@@ -306,8 +314,9 @@ INSERT INTO historical_snapshot (snapshot_id, account_id, snapshot_date, cash_ba
 -- ============================================================
 -- Summary:
 -- - 3 Admin users
--- 12 Instruments (stocks, ETFs)
--- - 36 Instrument price points
+-- - 12 Instruments (stocks, ETFs) with bid/ask pricing
+-- - 12 Daily OHLCV bars (instrument_price_history)
+-- - 25 Watchlist entries across all clients
 -- - 10 Clients with varying risk profiles
 -- - 10 Accounts
 -- - 13 Transactions (deposits)

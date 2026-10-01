@@ -44,8 +44,8 @@ public interface AuthRepository {
                       @Param("joinDate") LocalDateTime joinDate, @Param("signupIp") String signupIp,
                       @Param("signupDevice") String signupDevice);
 
-    @Insert("INSERT INTO accounts (account_id, client_id, cash_balance, status, open_date) " +
-            "VALUES (#{accountId}, #{clientId}, 0, 'ACTIVE', #{createdAt})")
+    @Insert("INSERT INTO accounts (account_id, client_id, name, cash_balance, status, open_date) " +
+            "VALUES (#{accountId}, #{clientId}, 'Primary Trading Account', 0, 'ACTIVE', #{createdAt})")
     void insertInitialAccount(@Param("accountId") UUID accountId, @Param("clientId") UUID clientId,
                               @Param("createdAt") LocalDateTime createdAt);
 

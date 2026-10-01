@@ -57,6 +57,9 @@ public class Client {
     @Enumerated(EnumType.STRING)
     private RiskTolerance riskTolerance;
 
+    @Column(name = "refresh_token", length = 500)
+    private String refreshToken;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;
 
@@ -65,7 +68,7 @@ public class Client {
 
     public Client(UUID clientId, String firstName, String middleName, String lastName, String email,
                   String passwordHash, LocalDate dateOfBirth, LocalDateTime joinDate, String ssnLast4,
-                  PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, List<Account> accounts) {
+                  PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, String refreshToken, List<Account> accounts) {
         this.clientId = clientId;
         this.firstName = firstName;
         this.middleName = middleName;
@@ -77,6 +80,7 @@ public class Client {
         this.ssnLast4 = ssnLast4;
         this.portfolioSizeRange = portfolioSizeRange;
         this.riskTolerance = riskTolerance;
+        this.refreshToken = refreshToken;
         this.accounts = accounts;
     }
 
@@ -190,6 +194,16 @@ public class Client {
 
     public void setRiskTolerance(RiskTolerance riskTolerance) {
         this.riskTolerance = riskTolerance;
+    }
+
+    // Retrieves the OAuth/API refresh token for this client
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    // Sets the OAuth/API refresh token for this client
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public List<Account> getAccounts() {
