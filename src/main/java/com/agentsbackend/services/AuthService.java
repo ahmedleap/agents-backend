@@ -17,6 +17,8 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
@@ -243,7 +245,7 @@ public class AuthService {
     private OneTimeToken validOneTimeToken(String rawToken, String type) {
         OneTimeToken token = repository.findToken(sha256(rawToken), type)
                 .orElseThrow(() -> badRequest("Token is invalid or expired."));
-        if (token.getUsedAt() != null || !token.getExpiresAt().isAfter(LocalDateTime.now())) {
+        if (token.getUsedAt() != null || !token.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
             throw badRequest("Token is invalid or expired.");
         }
         return token;
@@ -251,7 +253,7 @@ public class AuthService {
 
     private String createOneTimeToken(UUID clientId, String type, long expiresInMinutes) {
         String token = newOpaqueToken();
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         repository.insertToken(UUID.randomUUID(), clientId, sha256(token), type, now, now.plusMinutes(expiresInMinutes));
         return token;
     }

@@ -338,8 +338,8 @@ CREATE TABLE auth_one_time_tokens (
     client_id      UUID NOT NULL REFERENCES clients (client_id) ON DELETE CASCADE,
     token_hash     CHAR(64) NOT NULL UNIQUE,
     token_type     VARCHAR(24) NOT NULL CHECK (token_type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET')),
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at     TIMESTAMP NOT NULL,
-    used_at        TIMESTAMP
+    created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at     TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at        TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX idx_auth_tokens_client_type ON auth_one_time_tokens (client_id, token_type, expires_at);

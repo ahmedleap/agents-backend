@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -132,7 +133,7 @@ public interface AuthRepository {
             "VALUES (#{tokenId}, #{clientId}, #{tokenHash}, #{tokenType}, #{createdAt}, #{expiresAt})")
     void insertToken(@Param("tokenId") UUID tokenId, @Param("clientId") UUID clientId,
                      @Param("tokenHash") String tokenHash, @Param("tokenType") String tokenType,
-                     @Param("createdAt") LocalDateTime createdAt, @Param("expiresAt") LocalDateTime expiresAt);
+                     @Param("createdAt") OffsetDateTime createdAt, @Param("expiresAt") OffsetDateTime expiresAt);
 
     @Update("UPDATE auth_one_time_tokens SET used_at = CURRENT_TIMESTAMP WHERE token_id = #{tokenId} " +
             "AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP")

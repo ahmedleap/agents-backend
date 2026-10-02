@@ -37,7 +37,7 @@ public class SmtpAuthEmailService implements AuthEmailService {
 
     @Override
     public void sendPasswordReset(String email, String token) {
-        send(email, "Password reset", "Submit this one-time token to POST " + publicBaseUrl +
+        send(email, "Password Reset Request", "Submit this one-time token to POST " + publicBaseUrl +
                 "/auth/password/reset. It expires in 30 minutes: " + token);
     }
 
