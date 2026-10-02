@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.agentsbackend.enums.AccountStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -33,13 +33,13 @@ public class AccountsResponse {
         private AccountStatus status;
 
         @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-        private LocalDateTime openDate;
+        private OffsetDateTime openDate;
 
         // Constructors
         public Account() {}
 
         public Account(UUID accountId, UUID clientId, String name, BigDecimal cashBalance,
-                      AccountStatus status, LocalDateTime openDate) {
+                      AccountStatus status, OffsetDateTime openDate) {
             this.accountId = accountId;
             this.clientId = clientId;
             this.name = name;
@@ -89,11 +89,11 @@ public class AccountsResponse {
             this.status = status;
         }
 
-        public LocalDateTime getOpenDate() {
+        public OffsetDateTime getOpenDate() {
             return openDate;
         }
 
-        public void setOpenDate(LocalDateTime openDate) {
+        public void setOpenDate(OffsetDateTime openDate) {
             this.openDate = openDate;
         }
 
@@ -233,7 +233,7 @@ public class AccountsResponse {
         private AccountStatus status;
 
         @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-        private LocalDateTime openDate;
+        private OffsetDateTime openDate;
 
         @JsonProperty(access = JsonProperty.Access.READ_ONLY)
         private Integer holdingCount;
@@ -248,7 +248,7 @@ public class AccountsResponse {
         public AccountDetail() {}
 
         public AccountDetail(UUID accountId, UUID clientId, String name, BigDecimal cashBalance,
-                            BigDecimal availableBalance, AccountStatus status, LocalDateTime openDate,
+                            BigDecimal availableBalance, AccountStatus status, OffsetDateTime openDate,
                             Integer holdingCount, Integer orderCount, Integer transactionCount) {
             this.accountId = accountId;
             this.clientId = clientId;
@@ -311,11 +311,11 @@ public class AccountsResponse {
             this.status = status;
         }
 
-        public LocalDateTime getOpenDate() {
+        public OffsetDateTime getOpenDate() {
             return openDate;
         }
 
-        public void setOpenDate(LocalDateTime openDate) {
+        public void setOpenDate(OffsetDateTime openDate) {
             this.openDate = openDate;
         }
 

@@ -4,7 +4,7 @@ import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.entities.Holding;
-import com.agentsbackend.entities.InstrumentPrice;
+import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.AccountStatus;
@@ -18,7 +18,7 @@ import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import com.agentsbackend.repos.OrderRepository;
 import com.agentsbackend.repos.HoldingsRepository;
 import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
+import com.agentsbackend.repos.InstrumentRepository;
 import com.agentsbackend.queue.OrderQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class OrderServiceImplTest {
     private AccountRepository accountRepository;
 
     @Mock
-    private InstrumentPriceRepository instrumentPriceRepository;
+    private InstrumentRepository instrumentRepository;
 
     @Mock
     private OrderQueue orderQueue;
@@ -67,7 +67,7 @@ class OrderServiceImplTest {
             orderRepository,
             holdingsRepository,
             accountRepository,
-            instrumentPriceRepository,
+            instrumentRepository,
             orderQueue,
             auditTrailService
         );
@@ -515,8 +515,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("10000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -525,7 +525,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null); // Market order
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -562,8 +562,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("10000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -572,7 +572,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice); // Limit order
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -607,8 +607,8 @@ class OrderServiceImplTest {
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("200.00"));
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -617,7 +617,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -652,7 +652,7 @@ class OrderServiceImplTest {
         request.setPrice(null); // Market order
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -672,8 +672,8 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -683,7 +683,7 @@ class OrderServiceImplTest {
         request.setPrice(limitPrice);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -703,8 +703,8 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -714,7 +714,7 @@ class OrderServiceImplTest {
         request.setPrice(limitPrice);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -732,8 +732,8 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -743,7 +743,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(17)); // Only 17 years old
 
         // Act & Assert
@@ -759,8 +759,8 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -769,7 +769,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(null);
 
         // Act & Assert
@@ -788,8 +788,8 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -799,7 +799,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(1); // Duplicate found
 
@@ -823,8 +823,8 @@ class OrderServiceImplTest {
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("9500.00"));
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -834,7 +834,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("600"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -856,8 +856,8 @@ class OrderServiceImplTest {
         account.setAccountId(accountId);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -867,7 +867,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null); // No holdings
@@ -892,8 +892,8 @@ class OrderServiceImplTest {
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("50.00")); // Only own 50 shares
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -903,7 +903,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -927,8 +927,8 @@ class OrderServiceImplTest {
         account.setCashBalance(cashBalance);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -937,7 +937,7 @@ class OrderServiceImplTest {
         request.setQuantity(100); // Would need $10,000 but only have $5000
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -962,8 +962,8 @@ class OrderServiceImplTest {
         account.setCashBalance(cashBalance);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -972,7 +972,7 @@ class OrderServiceImplTest {
         request.setQuantity(100); // Would leave $0 balance
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -996,8 +996,8 @@ class OrderServiceImplTest {
         account.setCashBalance(cashBalance);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1006,7 +1006,7 @@ class OrderServiceImplTest {
         request.setQuantity(1);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1032,8 +1032,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("10000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1042,7 +1042,7 @@ class OrderServiceImplTest {
         request.setQuantity(50);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1074,8 +1074,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("20000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1085,7 +1085,7 @@ class OrderServiceImplTest {
         request.setPrice(limitPrice);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1111,8 +1111,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("20000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1122,7 +1122,7 @@ class OrderServiceImplTest {
         request.setPrice(limitPrice);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1152,8 +1152,8 @@ class OrderServiceImplTest {
         holding.setInstrumentId(instrumentId);
         holding.setQuantity(holdingQuantity);
 
-        InstrumentPrice instrumentPrice = new InstrumentPrice();
-        instrumentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         List<Holding> holdings = new ArrayList<>();
         holdings.add(holding);
@@ -1166,7 +1166,7 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(instrumentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
@@ -1210,14 +1210,14 @@ class OrderServiceImplTest {
         holding3.setInstrumentId(instrumentId3);
         holding3.setQuantity(new BigDecimal("25.00"));
 
-        InstrumentPrice price1 = new InstrumentPrice();
-        price1.setPrice(marketPrice1);
+        Instrument price1 = new Instrument();
+        price1.setMidPrice(marketPrice1);
 
-        InstrumentPrice price2 = new InstrumentPrice();
-        price2.setPrice(marketPrice2);
+        Instrument price2 = new Instrument();
+        price2.setMidPrice(marketPrice2);
 
-        InstrumentPrice price3 = new InstrumentPrice();
-        price3.setPrice(marketPrice3);
+        Instrument price3 = new Instrument();
+        price3.setMidPrice(marketPrice3);
 
         List<Holding> holdings = new ArrayList<>();
         holdings.add(holding1);
@@ -1233,9 +1233,9 @@ class OrderServiceImplTest {
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(price2);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId3)).thenReturn(price3);
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(price1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(price2));
+        when(instrumentRepository.findById(instrumentId3)).thenReturn(Optional.of(price3));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
@@ -1262,8 +1262,8 @@ class OrderServiceImplTest {
         account.setCashBalance(cashBalance);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice instrumentPrice = new InstrumentPrice();
-        instrumentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1274,7 +1274,7 @@ class OrderServiceImplTest {
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(instrumentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("5"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1309,8 +1309,8 @@ class OrderServiceImplTest {
         holding2.setInstrumentId(instrumentId2);
         holding2.setQuantity(new BigDecimal("50.00"));
 
-        InstrumentPrice price1 = new InstrumentPrice();
-        price1.setPrice(marketPrice1);
+        Instrument price1 = new Instrument();
+        price1.setMidPrice(marketPrice1);
 
         List<Holding> holdings = new ArrayList<>();
         holdings.add(holding1);
@@ -1325,8 +1325,8 @@ class OrderServiceImplTest {
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId1)).thenReturn(price1);
-        when(instrumentPriceRepository.findLatestPrice(instrumentId2)).thenReturn(null); // No price for second holding
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(price1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.empty()); // No price for second holding
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
@@ -1352,8 +1352,8 @@ class OrderServiceImplTest {
         account.setCashBalance(cashBalance);
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1362,7 +1362,7 @@ class OrderServiceImplTest {
         request.setQuantity(1);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1392,8 +1392,8 @@ class OrderServiceImplTest {
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("100.00"));
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1402,7 +1402,7 @@ class OrderServiceImplTest {
         request.setQuantity(10);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -1469,8 +1469,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("10000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1479,7 +1479,7 @@ class OrderServiceImplTest {
         request.setQuantity(50);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1505,8 +1505,8 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1515,7 +1515,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1533,8 +1533,8 @@ class OrderServiceImplTest {
         UUID instrumentId = UUID.randomUUID();
         BigDecimal marketPrice = new BigDecimal("50.00");
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("100.00"));
@@ -1546,7 +1546,7 @@ class OrderServiceImplTest {
         request.setQuantity(10);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -1577,7 +1577,7 @@ class OrderServiceImplTest {
 
         // First call returns null (in validateOrderPrice), but then we get through to validateCashBalance
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(null);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -1599,8 +1599,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("20000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1609,7 +1609,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(limitPrice);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1640,8 +1640,8 @@ class OrderServiceImplTest {
         account.setCashBalance(new BigDecimal("10000.00"));
         account.setStatus(AccountStatus.ACTIVE);
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1650,7 +1650,7 @@ class OrderServiceImplTest {
         request.setQuantity(50);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
@@ -1724,8 +1724,8 @@ class OrderServiceImplTest {
         Holding existingHolding = new Holding();
         existingHolding.setQuantity(new BigDecimal("9900.00"));
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1734,7 +1734,7 @@ class OrderServiceImplTest {
         request.setQuantity(100); // Exactly at limit: 9900 + 100 = 10000
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(existingHolding);
@@ -1767,8 +1767,8 @@ class OrderServiceImplTest {
         Holding holding = new Holding();
         holding.setQuantity(new BigDecimal("100.00"));
 
-        InstrumentPrice currentPrice = new InstrumentPrice();
-        currentPrice.setPrice(marketPrice);
+        Instrument instrument = new Instrument();
+        instrument.setMidPrice(marketPrice);
 
         CreateOrderRequest request = new CreateOrderRequest();
         request.setAccountId(accountId);
@@ -1777,7 +1777,7 @@ class OrderServiceImplTest {
         request.setQuantity(100);
         request.setPrice(null);
 
-        when(instrumentPriceRepository.findLatestPrice(instrumentId)).thenReturn(currentPrice);
+        when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
         when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
@@ -1792,3 +1792,9 @@ class OrderServiceImplTest {
         assertEquals(OrderType.SELL, response.getOrderType());
     }
 }
+
+
+
+
+
+

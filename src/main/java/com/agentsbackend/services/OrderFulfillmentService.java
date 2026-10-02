@@ -2,17 +2,18 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Account;
-import com.agentsbackend.entities.InstrumentPrice;
+import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.queue.OrderQueue;
 import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
 import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.InstrumentRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.List;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Service for processing orders from the queue and fulfilling them if prices match.
+ * Uses instrument mid_price from the instruments table for market pricing.
  */
 @Service
 public class OrderFulfillmentService {
@@ -28,20 +30,20 @@ public class OrderFulfillmentService {
     
     private final OrderQueue orderQueue;
     private final OrderRepository orderRepository;
-    private final InstrumentPriceRepository instrumentPriceRepository;
     private final AccountRepository accountRepository;
+    private final InstrumentRepository instrumentRepository;
     private final AuditTrailService auditTrailService;
     private final HoldingsService holdingsService;
     
     public OrderFulfillmentService(OrderQueue orderQueue, OrderRepository orderRepository, 
-                                  InstrumentPriceRepository instrumentPriceRepository,
                                   AccountRepository accountRepository,
+                                  InstrumentRepository instrumentRepository,
                                   AuditTrailService auditTrailService,
                                   HoldingsService holdingsService) {
         this.orderQueue = orderQueue;
         this.orderRepository = orderRepository;
-        this.instrumentPriceRepository = instrumentPriceRepository;
         this.accountRepository = accountRepository;
+        this.instrumentRepository = instrumentRepository;
         this.auditTrailService = auditTrailService;
         this.holdingsService = holdingsService;
     }
@@ -74,40 +76,64 @@ public class OrderFulfillmentService {
     
     /**
      * Attempt to fill an order if conditions are met.
-     * Market orders (limit_price = NULL): fill immediately at current market price
-     * Limit orders: fill only if current price matches limit price
+     * Market orders (limit_price = NULL): fill immediately at current bid/ask (depending on order type)
+     * Limit orders: fill based on bid/ask comparison with limit price
+     * 
+     * BUY orders: checked against ASK price (what sellers are asking)
+     * SELL orders: checked against BID price (what buyers are bidding)
+     * 
      * Returns true if order was filled, false otherwise.
      */
     private boolean tryFillOrder(Order order) {
-        // Get current market price for the instrument
-        InstrumentPrice currentPrice = instrumentPriceRepository.findLatestPrice(
+        // Get current instrument pricing (bid/ask/mid_price)
+        Instrument instrument = instrumentRepository.findById(
             order.getInstrument().getInstrumentId()
-        );
+        ).orElse(null);
         
-        if (currentPrice == null) {
-            logger.warn("No market price available for instrument {}", 
-                order.getInstrument().getInstrumentId());
+        if (instrument == null) {
+            logger.warn("Instrument {} not found for order {}", 
+                order.getInstrument().getInstrumentId(), order.getOrderId());
+            return false;
+        }
+        BigDecimal bid = instrument.getBid();
+        BigDecimal ask = instrument.getAsk();
+        
+        // Determine relevant market price based on order type
+        BigDecimal marketPrice;
+        if (order.getOrderType().equals(OrderType.BUY)) {
+            // For BUY orders, use ASK price (what we pay to sellers)
+            marketPrice = ask;
+        } else {
+            // For SELL orders, use BID price (what we receive from buyers)
+            marketPrice = bid;
+        }
+        
+        if (marketPrice == null) {
+            logger.warn("No market price (bid/ask) available for instrument {} for {} order", 
+                instrument.getInstrumentId(), order.getOrderType());
             return false;
         }
         
-        BigDecimal marketPrice = currentPrice.getPrice();
-        
-        // Market order: fill immediately at current price
+        // Market order: fill immediately at current market price
         if (order.getLimitPrice() == null) {
             fillOrder(order, marketPrice);
             return true;
         }
         
-        // Limit order: check if price matches
+        // Limit order: check if market price allows execution
         BigDecimal orderPrice = order.getLimitPrice();
         boolean canFill = false;
         
-        if (order.getOrderType().toString().equals("BUY")) {
-            // BUY orders: fill if market price <= order price
+        if (order.getOrderType().equals(OrderType.BUY)) {
+            // BUY orders: fill if ASK price <= order price (we get a good deal or equal)
             canFill = marketPrice.compareTo(orderPrice) <= 0;
-        } else if (order.getOrderType().toString().equals("SELL")) {
-            // SELL orders: fill if market price >= order price
+            logger.debug("BUY order {}: ASK={} vs limit={}, canFill={}", 
+                order.getOrderId(), marketPrice, orderPrice, canFill);
+        } else if (order.getOrderType().equals(OrderType.SELL)) {
+            // SELL orders: fill if BID price >= order price (we get a good deal or equal)
             canFill = marketPrice.compareTo(orderPrice) >= 0;
+            logger.debug("SELL order {}: BID={} vs limit={}, canFill={}", 
+                order.getOrderId(), marketPrice, orderPrice, canFill);
         }
         
         if (canFill) {
@@ -126,7 +152,7 @@ public class OrderFulfillmentService {
     private void fillOrder(Order order, BigDecimal filledPrice) {
         order.setStatus(OrderStatus.FILLED);
         order.setFilledPrice(filledPrice);
-        order.setFilledAt(LocalDateTime.now(ZoneId.of("UTC")));
+        order.setFilledAt(OffsetDateTime.now(ZoneOffset.UTC));
         
         // Update order in database
         orderRepository.updateOrder(order);

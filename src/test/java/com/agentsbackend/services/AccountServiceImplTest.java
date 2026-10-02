@@ -14,7 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ class AccountServiceImplTest {
         testAccount.setName("Test Account");
         testAccount.setCashBalance(new BigDecimal("50000.00"));
         testAccount.setStatus(AccountStatus.ACTIVE);
-        testAccount.setOpenDate(LocalDateTime.now());
+        testAccount.setOpenDate(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     // ===== LIST ACCOUNTS TESTS =====

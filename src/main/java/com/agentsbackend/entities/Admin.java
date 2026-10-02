@@ -1,41 +1,23 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.AdminRole;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "admin")
 public class Admin {
 
-    @Id
-    @Column(name = "admin_id", columnDefinition = "UUID")
     private UUID adminId;
-
-    @Column(name = "first_name", length = 50, nullable = false)
     private String firstName;
-
-    @Column(name = "last_name", length = 50, nullable = false)
     private String lastName;
-
-    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
-
-    @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
-
-    @Column(name = "role", nullable = false)
-    @Enumerated(EnumType.STRING)
     private AdminRole role;
-
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     // Constructors
     public Admin() {}
 
-    public Admin(UUID adminId, String firstName, String lastName, String email, String passwordHash, AdminRole role, LocalDateTime createdAt) {
+    public Admin(UUID adminId, String firstName, String lastName, String email, String passwordHash, AdminRole role, OffsetDateTime createdAt) {
         this.adminId = adminId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -106,12 +88,12 @@ public class Admin {
     }
 
     // Retrieves the creation timestamp of this admin record
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
     // Sets the creation timestamp of this admin record
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 

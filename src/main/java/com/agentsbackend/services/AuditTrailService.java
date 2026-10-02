@@ -7,7 +7,8 @@ import com.agentsbackend.enums.OrderStatus;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,14 +40,14 @@ public class AuditTrailService {
             auditLog.setAccountId(accountId);
             auditLog.setClientId(clientId);
             auditLog.setEventType("REJECTED");
-            auditLog.setEventTime(LocalDateTime.now());
+            auditLog.setEventTime(OffsetDateTime.now(ZoneOffset.UTC));
             auditLog.setReason(rejectionReason);
             
             // Create order details snapshot as JSON
             OrderDetails details = new OrderDetails(orderId, orderType, quantity, limitPrice, OrderStatus.REJECTED);
             auditLog.setDetails(objectMapper.writeValueAsString(details));
             
-            auditLog.setCreatedAt(LocalDateTime.now());
+            auditLog.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
             
             auditLogRepository.save(auditLog);
             logger.info("Successfully logged rejected order {} for account {}", orderId, accountId);
@@ -69,14 +70,14 @@ public class AuditTrailService {
             auditLog.setAccountId(accountId);
             auditLog.setClientId(clientId);
             auditLog.setEventType("PENDING");
-            auditLog.setEventTime(LocalDateTime.now());
+            auditLog.setEventTime(OffsetDateTime.now(ZoneOffset.UTC));
             auditLog.setReason("Order created and queued for fulfillment");
             
             // Create order details snapshot as JSON
             OrderDetails details = new OrderDetails(orderId, orderType, quantity, limitPrice, OrderStatus.PENDING);
             auditLog.setDetails(objectMapper.writeValueAsString(details));
             
-            auditLog.setCreatedAt(LocalDateTime.now());
+            auditLog.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
             
             auditLogRepository.save(auditLog);
             logger.info("Successfully logged created order {} for account {}", orderId, accountId);
@@ -99,14 +100,14 @@ public class AuditTrailService {
             auditLog.setAccountId(accountId);
             auditLog.setClientId(clientId);
             auditLog.setEventType("FILLED");
-            auditLog.setEventTime(LocalDateTime.now());
+            auditLog.setEventTime(OffsetDateTime.now(ZoneOffset.UTC));
             auditLog.setReason("Order filled at price: " + filledPrice);
             
             // Create order details snapshot as JSON with filled price
             OrderDetails details = new OrderDetails(orderId, orderType, quantity, filledPrice, OrderStatus.FILLED);
             auditLog.setDetails(objectMapper.writeValueAsString(details));
             
-            auditLog.setCreatedAt(LocalDateTime.now());
+            auditLog.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
             
             auditLogRepository.save(auditLog);
             logger.info("Successfully logged filled order {} for account {}", orderId, accountId);
@@ -130,14 +131,14 @@ public class AuditTrailService {
             auditLog.setAccountId(accountId);
             auditLog.setClientId(clientId);
             auditLog.setEventType("CANCELLED");
-            auditLog.setEventTime(LocalDateTime.now());
+            auditLog.setEventTime(OffsetDateTime.now(ZoneOffset.UTC));
             auditLog.setReason(cancellationReason);
             
             // Create order details snapshot as JSON
             OrderDetails details = new OrderDetails(orderId, orderType, quantity, limitPrice, OrderStatus.CANCELLED);
             auditLog.setDetails(objectMapper.writeValueAsString(details));
             
-            auditLog.setCreatedAt(LocalDateTime.now());
+            auditLog.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
             
             auditLogRepository.save(auditLog);
             logger.info("Successfully logged cancelled order {} for account {}", orderId, accountId);

@@ -123,9 +123,21 @@ Started AgentsBackendApplication in 2.7 seconds
 
 ## Project Structure
 
+### Monorepo Architecture
+This repository contains the core trading backend service. Related services are maintained as separate repositories:
+
+| Service | Repository | Purpose | Tech Stack |
+|---------|------------|---------|------------|
+| **agents-backend** (this repo) | [ahmedleap/agents-backend](https://github.com/ahmedleap/agents-backend) | Core trading platform (orders, accounts, holdings) | Spring Boot 3.3.1, Java 21, MyBatis, PostgreSQL |
+| **agents-frontend** | [ahmedleap/agents-frontend](https://github.com/ahmedleap/agents-frontend) | Angular UI for traders (TBD) | Angular 17+, TypeScript, RxJS |
+| **agents-middleware** | [ahmedleap/agents-middleware](https://github.com/ahmedleap/agents-middleware) | API Gateway, auth, rate limiting (TBD) | NestJS, Node.js, Express |
+| **agents-ticker** | [ahmedleap/agents-ticker](https://github.com/ahmedleap/agents-ticker) | Real-time price feeds & market data | Python, FastAPI |
+| Future services | TBD | Portfolio analytics, risk modeling, etc. | TBD |
+
+### Backend Directory Layout
 ```
 agents-backend/
-├── pom.xml                          # Maven configuration
+├── pom.xml                          # Maven configuration (MyBatis, Spring Boot, PostgreSQL)
 ├── schema.sql                       # PostgreSQL schema (ENUMS + tables + indexes)
 ├── .env                             # Environment variables (local, git-ignored)
 ├── .gitignore                       # Git exclusions (target/, *.jar, build.ps1, etc.)
@@ -134,42 +146,99 @@ agents-backend/
 │   ├── java/com/agentsbackend/
 │   │   ├── AgentsBackendApplication.java    # Spring Boot entry point
 │   │   │
-│   │   ├── config/                          # MyBatis configuration
-│   │   │   ├── UUIDTypeHandler.java         # UUID ↔ PostgreSQL UUID
-│   │   │   ├── AdminRoleTypeHandler.java    # Enum ↔ PostgreSQL ENUM
-│   │   │   └── MyBatisTypeHandlerConfigurer.java  # Handler registration
+│   │   ├── config/                          # MyBatis configuration & type handlers
+│   │   │   ├── MyBatisTypeHandlerConfigurer.java  # Registers 9 type handlers
+│   │   │   ├── UUIDTypeHandler.java         # UUID ↔ PostgreSQL UUID conversion
+│   │   │   ├── AdminRoleTypeHandler.java    # AdminRole enum ↔ PostgreSQL ENUM
+│   │   │   ├── OrderStatusTypeHandler.java  # OrderStatus enum ↔ PostgreSQL ENUM
+│   │   │   ├── OrderTypeTypeHandler.java    # OrderType enum ↔ PostgreSQL ENUM
+│   │   │   ├── AccountStatusTypeHandler.java
+│   │   │   ├── AssetClassTypeHandler.java
+│   │   │   ├── PortfolioSizeRangeTypeHandler.java
+│   │   │   ├── RiskToleranceTypeHandler.java
+│   │   │   └── TransactionTypeTypeHandler.java
 │   │   │
-│   │   ├── entities/                        # JPA @Entity beans (getters/setters only)
-│   │   │   ├── Admin.java
-│   │   │   ├── Account.java
-│   │   │   ├── Client.java
-│   │   │   ├── Order.java
-│   │   │   ├── Holding.java
-│   │   │   ├── Instrument.java
-│   │   │   ├── InstrumentPrice.java
-│   │   │   ├── Transaction.java
-│   │   │   └── HistoricalSnapshot.java
+│   │   ├── entities/                        # Pure POJOs (no JPA annotations)
+│   │   │   ├── Account.java                 # Trading accounts
+│   │   │   ├── Admin.java                   # Platform admins
+│   │   │   ├── AuditLog.java                # Audit trail
+│   │   │   ├── Client.java                  # Retail traders
+│   │   │   ├── HistoricalSnapshot.java      # EOD portfolio snapshots
+│   │   │   ├── Holding.java                 # Stock/ETF positions
+│   │   │   ├── Instrument.java              # Securities (bid/ask/mid_price)
+│   │   │   ├── InstrumentPrice.java         # Legacy pricing (deprecated)
+│   │   │   ├── InstrumentPriceHistory.java  # Daily OHLCV bars (NEW - v0.5.1)
+│   │   │   ├── Order.java                   # BUY/SELL orders (limit & market)
+│   │   │   ├── Transaction.java             # Deposits/withdrawals
+│   │   │   └── Watchlist.java               # Client watchlists
 │   │   │
-│   │   ├── enums/                           # Java enums (AdminRole, OrderStatus, etc.)
+│   │   ├── enums/                           # Java enums (mapped to PostgreSQL ENUM types)
 │   │   │   ├── AdminRole.java
 │   │   │   ├── AccountStatus.java
 │   │   │   ├── AssetClass.java
 │   │   │   ├── OrderStatus.java
 │   │   │   ├── OrderType.java
-│   │   │   ├── TransactionType.java
+│   │   │   ├── PortfolioSizeRange.java
 │   │   │   ├── RiskTolerance.java
-│   │   │   └── PortfolioSizeRange.java
+│   │   │   └── TransactionType.java
 │   │   │
-│   │   ├── repos/                           # MyBatis @Mapper interfaces
-│   │   │   ├── AdminRepository.java         # SQL annotations + type hints
-│   │   │   └── (OrderRepository, etc. - TBD)
+│   │   ├── repos/                           # MyBatis @Mapper interfaces (SQL layer)
+│   │   │   ├── AccountRepository.java       # Account CRUD & queries
+│   │   │   ├── AdminRepository.java         # Admin CRUD
+│   │   │   ├── AuditTrailRepository.java    # Audit log persistence
+│   │   │   ├── ClientRepository.java        # Client CRUD
+│   │   │   ├── HoldingRepository.java       # Holdings CRUD & calculations
+│   │   │   ├── InstrumentRepository.java    # Instrument/pricing CRUD
+│   │   │   ├── InstrumentPriceHistoryRepository.java  # Daily bars (NEW - v0.5.1)
+│   │   │   ├── OrderRepository.java         # Order CRUD & fulfillment
+│   │   │   ├── TransactionRepository.java   # Transaction CRUD
+│   │   │   └── WatchlistRepository.java     # Watchlist CRUD
 │   │   │
-│   │   ├── services/                        # Business logic layer
-│   │   │   ├── AdminService.java            # Interface
-│   │   │   └── AdminServiceImpl.java         # Implementation
+│   │   ├── services/                        # Business logic layer (MyBatis agnostic)
+│   │   │   ├── AccountService.java          # Account management interface
+│   │   │   ├── AccountServiceImpl.java       # Deposits, withdrawals, balance queries
+│   │   │   ├── AdminService.java            # Admin management interface
+│   │   │   ├── AdminServiceImpl.java         # Admin CRUD operations
+│   │   │   ├── AuditTrailService.java       # Audit logging
+│   │   │   ├── HoldingsService.java         # Holdings management
+│   │   │   ├── OrderFulfillmentService.java # Market order processing & execution
+│   │   │   ├── OrderService.java            # Order management interface
+│   │   │   ├── OrderServiceImpl.java         # Order CRUD & lifecycle
+│   │   │   ├── WatchlistService.java        # Watchlist management
+│   │   │   ├── ClientService.java           # Client profile management
+│   │   │   └── queue/OrderQueue.java        # Order processing queue
 │   │   │
-│   │   └── controllers/                     # REST API endpoints
-│   │       └── AdminController.java         # @RestController, @RequestMapping
+│   │   ├── controllers/                     # REST API layer (@RestController)
+│   │   │   ├── AccountController.java       # /api/accounts (PATCH deposit/withdraw)
+│   │   │   ├── AdminController.java         # /api/admins (POST create)
+│   │   │   ├── OrderController.java         # /api/v1/orders (DELETE cancel)
+│   │   │   ├── WatchlistController.java     # /api/v2/watchlists (already RESTful)
+│   │   │   └── ClientController.java        # /api/clients (TBD)
+│   │   │
+│   │   ├── DTO/                             # Data Transfer Objects
+│   │   │   ├── requests/                    # @RequestBody models
+│   │   │   │   ├── CreateOrderRequest.java
+│   │   │   │   ├── CancelOrderRequest.java
+│   │   │   │   ├── CreateAdminRequest.java
+│   │   │   │   ├── AccountsRequest.java     # Nested: Deposit, Withdrawal
+│   │   │   │   └── GetPendingOrdersRequest.java
+│   │   │   │
+│   │   │   └── response/                    # @ResponseBody models
+│   │   │       ├── CreateOrderResponse.java
+│   │   │       ├── CancelOrderResponse.java
+│   │   │       ├── OrderSummaryResponse.java
+│   │   │       ├── AccountsResponse.java    # Nested: Transaction
+│   │   │       └── AccountDetailsResponse.java
+│   │   │
+│   │   ├── exceptions/                      # Custom exception types
+│   │   │   ├── OrderNotFoundException.java
+│   │   │   ├── InvalidOrderParametersException.java
+│   │   │   ├── InsufficientFundsException.java
+│   │   │   └── AccountNotFoundException.java
+│   │   │
+│   │   └── queue/                           # Order processing queue
+│   │       ├── OrderQueue.java              # Interface for queue
+│   │       └── InMemoryOrderQueue.java      # In-memory implementation
 │   │
 │   └── resources/
 │       └── application.properties            # Spring Boot configuration
@@ -179,104 +248,41 @@ agents-backend/
 
 ---
 
-## Development Workflow
+## Architecture Overview
 
-### Creating New Features
-When adding new entities, repositories, and services:
-1. Define `@Entity` class with getters/setters (no Lombok)
-2. Create `@Mapper` interface with SQL annotations
-3. Implement `@Service` with business logic
-4. Create `@RestController` with API endpoints
-5. Test with Bruno or curl
+### Why MyBatis (Not JPA)?
+This project uses **MyBatis** for database access:
+- **Explicit SQL:** Clear, debuggable queries (no ORM magic)
+- **Type Handlers:** Custom handlers for UUID and Enum conversions
+- **Type Safety:** Compile-time checking of SQL parameters
+- **Performance:** Direct SQL mapping without ORM overhead
 
----
+### Related Services & Repositories
+When building features that depend on external services:
 
-## Key Design Decisions
+**Frontend:**
+- **[agents-frontend](https://github.com/ahmedleap/agents-frontend)** (TBD)
+  - Angular 17+ UI for traders
+  - TypeScript, RxJS for reactive programming
+  - Consumes REST APIs from agents-backend through middleware
 
-### Why MyBatis Instead of JPA/Hibernate?
-- **Performance**: Direct SQL control, no ORM overhead
-- **Simplicity**: Clear SQL mapping, easier debugging
-- **Predictability**: No magical query generation
+**API Gateway & Middleware:**
+- **[agents-middleware](https://github.com/ahmedleap/agents-middleware)** (TBD)
+  - NestJS + Node.js API Gateway
+  - Authentication, authorization, rate limiting
+  - Request validation & error handling
+  - Routes: `/api/*` → agents-backend, `/auth/*` → auth service
 
-### Why Exclude JPA Auto-Configuration?
-Spring Boot auto-includes JPA (HibernateJpaAutoConfiguration) even if not used:
-```java
-@SpringBootApplication(exclude = { 
-    HibernateJpaAutoConfiguration.class,
-    JpaRepositoriesAutoConfiguration.class
-})
-```
-This prevents unnecessary Spring beans and Hibernate initialization.
+**Market Data:**
+- **[agents-ticker](https://github.com/ahmedleap/agents-ticker)** - Real-time price feeds
+  - Provides bid/ask prices via Requests
+  - Updates `Instrument.bid`, `Instrument.ask`, `Instrument.priceUpdatedAt`
+  - Called from `OrderFulfillmentService` for live order fulfillment
 
-### Why Type Handlers?
-PostgreSQL has **native types** that don't map directly to Java:
-- **UUID**: PostgreSQL `UUID` column ≠ Java `String`
-- **ENUM**: PostgreSQL `admin_role` enum ≠ Java `String`
-
-Type handlers automatically convert between them at the MyBatis layer:
-```java
-// Automatic conversion
-Admin admin = new Admin();
-admin.setAdminId(UUID.randomUUID());  // Java UUID object
-admin.setRole(AdminRole.ADMIN);        // Java enum
-
-adminRepository.create(admin);         // Type handlers convert automatically
-// PostgreSQL receives: native UUID + native ENUM type
-```
-
----
-
-## Dependency Issues & Solutions
-
-### Issue 1: Lombok + Java 25 Incompatibility
-**Problem**: Lombok 1.18.30+ doesn't support Java 25's javac internal APIs (TypeTag :: UNKNOWN error)
-**What Changed**: Removed Lombok dependency from `pom.xml` and all entity classes
-**Why**: Lombok's annotation processor broke on Java 25; manually adding getters/setters via IDE is more stable
-
-### Issue 2: Spring Boot Auto-Including JPA
-**Problem**: `spring-boot-starter-web` transitively pulls `spring-boot-starter-data-jpa`, initializing Hibernate despite using MyBatis-only
-**What Changed**: Added exclusions to `@SpringBootApplication` annotation
-**Why**: Prevent unnecessary Hibernate initialization and Spring beans that conflict with MyBatis
-
-### Issue 3: MyBatis 3.0.2 Bean Factory Issues
-**Problem**: MyBatis 3.0.2 had incompatibilities with Spring 6.1.10 (IllegalArgumentException on bean factory setup)
-**What Changed**: Upgraded MyBatis dependency from 3.0.2 to 3.0.3 in `pom.xml`
-**Why**: 3.0.3 fixed Spring 6.1.10 compatibility issues with bean registration
-
-### Issue 4: Spring Boot 3.3.1 + Java 25 Bytecode Mismatch
-**Problem**: Spring Boot 3.3.1 ASM library can't parse Java 25 bytecode (major version 69)
-**What Changed**: Changed compilation target from Java 25 to Java 21 in `pom.xml` properties
-**Why**: Spring Boot 3.3.1 was released before Java 25 support; Java 21 bytecode runs fine on Java 25 JVM (forward compatible)
-
-### Issue 5: PostgreSQL UUID Type Mismatch
-**Problem**: MyBatis was passing UUIDs as VARCHAR strings, PostgreSQL UUID column expected native UUID type
-**What Changed**: Created `UUIDTypeHandler.java` and registered it in `MyBatisTypeHandlerConfigurer.java`
-**Why**: Type handlers are MyBatis standard practice for custom type conversions; ensures UUID is passed as native type to PostgreSQL
-
-### Issue 6: PostgreSQL ENUM Type Mismatch
-**Problem**: MyBatis was passing enums as VARCHAR strings, PostgreSQL admin_role ENUM column expected explicit CAST
-**What Changed**: Created `AdminRoleTypeHandler.java`, added `CAST()` to SQL queries, added explicit `@Param` annotations
-**Why**: PostgreSQL ENUMs are distinct types; requires explicit casting. Type handlers handle Java enum ↔ string conversion, SQL handles string → ENUM cast
-
----
-
-## Testing the API with Bruno
-
-### Create Admin Endpoint
-```
-POST http://localhost:8080/api/admins/create
-Content-Type: application/json
-
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john.doe@example.com",
-  "passwordHash": "hashed_password_here",
-  "role": "ADMIN"
-}
-```
-
-Service auto-generates `adminId` (UUID) and `createdAt` (timestamp).
+**Future Services:**
+- Portfolio analytics microservice
+- Risk modeling microservice
+- Historical analysis & reporting microservice
 
 ---
 
