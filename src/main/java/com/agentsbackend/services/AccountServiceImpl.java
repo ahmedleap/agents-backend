@@ -105,7 +105,7 @@ public class AccountServiceImpl implements AccountService {
 
         return new AccountsResponse.AccountDetail(
                 account.getAccountId(),
-                account.getClient().getClientId(),
+                account.getClientId(),
                 account.getName(),
                 account.getCashBalance(),
                 availableBalance,
@@ -312,7 +312,7 @@ public class AccountServiceImpl implements AccountService {
     private AccountsResponse.Account entityToResponse(Account account) {
         return new AccountsResponse.Account(
                 account.getAccountId(),
-                account.getClient().getClientId(),
+                account.getClientId(),
                 account.getName(),
                 account.getCashBalance(),
                 account.getStatus(),

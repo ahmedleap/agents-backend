@@ -37,7 +37,7 @@ public interface AccountRepository {
             "FROM accounts WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),
@@ -56,7 +56,7 @@ public interface AccountRepository {
             "FROM accounts WHERE client_id = #{clientId,jdbcType=VARCHAR} ORDER BY open_date DESC")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),
@@ -221,7 +221,7 @@ public interface AccountRepository {
     @Select("SELECT account_id, client_id, name, cash_balance, status, open_date FROM accounts ORDER BY open_date DESC")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),

@@ -90,6 +90,7 @@ public class OrderServiceImpl implements OrderService {
             // All validations passed - create and persist the order
             Order order = new Order();
             order.setOrderId(orderId);
+            order.setAccountId(request.getAccountId());
             
             Account account = new Account();
             account.setAccountId(request.getAccountId());
@@ -100,8 +101,6 @@ public class OrderServiceImpl implements OrderService {
             order.setInstrument(instrument);
             
             order.setQuantity(new BigDecimal(request.getQuantity()));
-            // Only set limitPrice for LIMIT orders (when price was provided by client)
-            // For MARKET orders, limitPrice stays null
             order.setLimitPrice(request.getPrice());
             order.setOrderType(request.getOrderType());
             order.setStatus(OrderStatus.PENDING);
