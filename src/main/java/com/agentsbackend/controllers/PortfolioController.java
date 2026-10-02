@@ -13,7 +13,7 @@ import java.util.UUID;
 
 
 @RestController 
-@RequestMapping("/api/portfolio")
+@RequestMapping("/api/portfolio/v1")
 public class PortfolioController {
     private final PortfolioService portfolioService;
     

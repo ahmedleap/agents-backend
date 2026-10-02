@@ -18,7 +18,7 @@ import java.util.UUID;
 
 
 @RestController 
-@RequestMapping ("/api/holding")
+@RequestMapping ("/api/holding/v1")
 public class HoldingController {
     
     private final HoldingService holdingService;
