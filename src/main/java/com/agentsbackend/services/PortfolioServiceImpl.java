@@ -12,7 +12,7 @@ import com.agentsbackend.exceptions.UnauthorizedAccountAccessException;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.ClientRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
+import com.agentsbackend.repos.InstrumentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -27,16 +27,16 @@ import java.util.stream.Collectors;
 public class PortfolioServiceImpl implements PortfolioService{
     private final AccountRepository accountRepository;
     private final HoldingService holdingService;
-    private final InstrumentPriceRepository instrumentPriceRepository;
+    private final InstrumentRepository instrumentRepository;
     private final ClientRepository clientRepository;
 
     public PortfolioServiceImpl(AccountRepository accountRepository,
                              HoldingService holdingService,
-                             InstrumentPriceRepository instrumentPriceRepository,
+                             InstrumentRepository instrumentRepository,
                              ClientRepository clientRepository) {
         this.accountRepository = accountRepository;
         this.holdingService = holdingService;
-        this.instrumentPriceRepository = instrumentPriceRepository;
+        this.instrumentRepository = instrumentRepository;
         this.clientRepository = clientRepository;
     }
 
@@ -188,7 +188,8 @@ public class PortfolioServiceImpl implements PortfolioService{
     private BigDecimal calculateTotalValue(List<Holding> holdings) {
         return holdings.stream()
             .map(holding -> {
-                BigDecimal price = instrumentPriceRepository.getLatestPrice(holding.getInstrument().getInstrumentId())
+                BigDecimal price = instrumentRepository.findById(holding.getInstrument().getInstrumentId())
+                    .map(instrument -> instrument.getMidPrice())
                     .orElse(BigDecimal.ZERO);
                 return holding.getQuantity().multiply(price);
             })
@@ -213,7 +214,8 @@ public class PortfolioServiceImpl implements PortfolioService{
                 Collectors.reducing(
                     BigDecimal.ZERO,
                     holding -> {
-                        BigDecimal price = instrumentPriceRepository.getLatestPrice(holding.getInstrument().getInstrumentId())
+                        BigDecimal price = instrumentRepository.findById(holding.getInstrument().getInstrumentId())
+                            .map(instrument -> instrument.getMidPrice())
                             .orElse(BigDecimal.ZERO);
                         return holding.getQuantity().multiply(price);
                     },
@@ -251,7 +253,8 @@ public class PortfolioServiceImpl implements PortfolioService{
                 Collectors.reducing(
                     BigDecimal.ZERO,
                     holding -> {
-                        BigDecimal price = instrumentPriceRepository.getLatestPrice(holding.getInstrument().getInstrumentId())
+                        BigDecimal price = instrumentRepository.findById(holding.getInstrument().getInstrumentId())
+                            .map(instrument -> instrument.getMidPrice())
                             .orElse(BigDecimal.ZERO);
                         return holding.getQuantity().multiply(price);
                     },

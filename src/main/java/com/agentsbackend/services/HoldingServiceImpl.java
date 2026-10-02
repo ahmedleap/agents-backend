@@ -6,7 +6,6 @@ import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.repos.HoldingRepository;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
@@ -26,16 +25,13 @@ public class HoldingServiceImpl implements HoldingService {
     private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
-    private final InstrumentPriceRepository instrumentPriceRepository;
 
     public HoldingServiceImpl(HoldingRepository holdingRepository,
                              AccountRepository accountRepository,
-                             InstrumentRepository instrumentRepository,
-                             InstrumentPriceRepository instrumentPriceRepository) {
+                             InstrumentRepository instrumentRepository) {
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
-        this.instrumentPriceRepository = instrumentPriceRepository;
     }
     
     @Override
@@ -45,7 +41,8 @@ public class HoldingServiceImpl implements HoldingService {
 
     @Override
     public BigDecimal getCurrentPrice(UUID instrumentId){
-        return instrumentPriceRepository.getLatestPrice(instrumentId)
+        return instrumentRepository.findById(instrumentId)
+            .map(instrument -> instrument.getMidPrice())
             .orElse(BigDecimal.ZERO);
     }
 
