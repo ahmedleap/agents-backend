@@ -2,6 +2,7 @@ package com.agentsbackend.DTO.requests;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import org.springframework.lang.Nullable;
 import java.util.UUID;
 
 /**
@@ -9,12 +10,15 @@ import java.util.UUID;
  */
 public class GetPendingOrdersRequest {
 
+    @Nullable
     private UUID accountId;
 
+    @Nullable
     @Min(value = 0, message = "Limit must be at least 0")
     @Max(value = 1000, message = "Limit cannot exceed 1000")
     private Integer limit;
 
+    @Nullable
     @Min(value = 0, message = "Offset must be at least 0")
     private Integer offset;
 
@@ -25,8 +29,16 @@ public class GetPendingOrdersRequest {
 
     public GetPendingOrdersRequest(UUID accountId, Integer limit, Integer offset) {
         this.accountId = accountId;
-        this.limit = limit != null ? limit : 50;
-        this.offset = offset != null ? offset : 0;
+        if (limit != null) {
+            this.limit = limit;
+        } else {
+            this.limit = 50;
+        }
+        if (offset != null) {
+            this.offset = offset;
+        } else {
+            this.offset = 0;
+        }
     }
 
     // Getters and Setters
@@ -43,7 +55,11 @@ public class GetPendingOrdersRequest {
     }
 
     public void setLimit(Integer limit) {
-        this.limit = limit != null ? limit : 50;
+        if (limit != null) {
+            this.limit = limit;
+        } else {
+            this.limit = 50;
+        }
     }
 
     public Integer getOffset() {
@@ -51,6 +67,10 @@ public class GetPendingOrdersRequest {
     }
 
     public void setOffset(Integer offset) {
-        this.offset = offset != null ? offset : 0;
+        if (offset != null) {
+            this.offset = offset;
+        } else {
+            this.offset = 0;
+        }
     }
 }

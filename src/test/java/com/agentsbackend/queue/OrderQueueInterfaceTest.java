@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -219,7 +220,7 @@ class OrderQueueInterfaceTest {
         instrument.setInstrumentId(UUID.randomUUID());
         order.setInstrument(instrument);
 
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         return order;
     }

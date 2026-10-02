@@ -1,38 +1,23 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.TransactionType;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "transactions")
 public class Transaction {
 
-    @Id
-    @Column(name = "transaction_id", columnDefinition = "UUID")
     private UUID transactionId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false)
     private Account account;
-
-    @Column(name = "txn_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private TransactionType txnType;
-
-    @Column(name = "amount", nullable = false, precision = 18, scale = 2, columnDefinition = "NUMERIC(18,2) CHECK (amount > 0)")
     private BigDecimal amount;
-
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     public Transaction() {
     }
 
     public Transaction(UUID transactionId, Account account, TransactionType txnType,
-                      BigDecimal amount, LocalDateTime createdAt) {
+                      BigDecimal amount, OffsetDateTime createdAt) {
         this.transactionId = transactionId;
         this.account = account;
         this.txnType = txnType;
@@ -72,11 +57,11 @@ public class Transaction {
         this.amount = amount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

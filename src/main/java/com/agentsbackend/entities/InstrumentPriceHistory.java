@@ -1,47 +1,26 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "instrument_price_history", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"instrument_id", "timestamp"})
-})
-public class InstrumentPrice {
+public class InstrumentPriceHistory {
 
-    @Id
-    @Column(name = "price_history_id", columnDefinition = "UUID")
     private UUID priceHistoryId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;
-
-    @Column(name = "timestamp", nullable = false)
-    private LocalDateTime timestamp;
-
-    @Column(name = "open", nullable = false, precision = 18, scale = 4)
+    private OffsetDateTime timestamp;
     private BigDecimal open;
-
-    @Column(name = "high", nullable = false, precision = 18, scale = 4)
     private BigDecimal high;
-
-    @Column(name = "low", nullable = false, precision = 18, scale = 4)
     private BigDecimal low;
-
-    @Column(name = "close", nullable = false, precision = 18, scale = 4)
     private BigDecimal close;
+    private Integer volume;
 
-    @Column(name = "volume", nullable = false)
-    private Long volume;
-
-    public InstrumentPrice() {
+    public InstrumentPriceHistory() {
     }
 
-    public InstrumentPrice(UUID priceHistoryId, Instrument instrument, LocalDateTime timestamp, 
-                          BigDecimal open, BigDecimal high, BigDecimal low, BigDecimal close, Long volume) {
+    public InstrumentPriceHistory(UUID priceHistoryId, Instrument instrument, OffsetDateTime timestamp,
+                                  BigDecimal open, BigDecimal high, BigDecimal low,
+                                  BigDecimal close, Integer volume) {
         this.priceHistoryId = priceHistoryId;
         this.instrument = instrument;
         this.timestamp = timestamp;
@@ -68,11 +47,11 @@ public class InstrumentPrice {
         this.instrument = instrument;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(OffsetDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -108,11 +87,11 @@ public class InstrumentPrice {
         this.close = close;
     }
 
-    public Long getVolume() {
+    public Integer getVolume() {
         return volume;
     }
 
-    public void setVolume(Long volume) {
+    public void setVolume(Integer volume) {
         this.volume = volume;
     }
 }

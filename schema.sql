@@ -134,7 +134,7 @@ CREATE TABLE watchlists (
     watchlist_id    UUID PRIMARY KEY,
     client_id       UUID NOT NULL,
     instrument_id   UUID NOT NULL,
-    added_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    added_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_watchlists_client
         FOREIGN KEY (client_id)
         REFERENCES clients (client_id)
@@ -244,7 +244,7 @@ CREATE TABLE audit_logs (
     event_time      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     reason          TEXT,
     details         JSONB,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_audit_logs_client
         FOREIGN KEY (client_id)
         REFERENCES clients (client_id)
