@@ -3,6 +3,7 @@ package com.agentsbackend.controllers;
 import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.services.AccountService;
+import com.agentsbackend.services.TransactionsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +21,11 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountService accountService;
+    private final TransactionsService transactionsService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, TransactionsService transactionsService) {
         this.accountService = accountService;
+        this.transactionsService = transactionsService;
     }
 
     /**
@@ -93,6 +96,25 @@ public class AccountController {
             @RequestParam(value = "period", defaultValue = "1Y") String period) {
         AccountsResponse.Performance performance = accountService.getAccountPerformance(accountId, period);
         return ResponseEntity.ok(performance);
+    }
+
+    /**
+     * Retrieve recent transactions (deposits and withdrawals) for an account.
+     * GET /api/accounts/{accountId}/transactions?limit=10
+     *
+     * Query Parameters:
+     * - limit: Maximum number of recent transactions to return (default: 10)
+     *
+     * @param accountId UUID of the account
+     * @param limit Maximum number of transactions to return (default: 10)
+     * @return ResponseEntity with list of TransactionItem ordered by most recent first (HTTP 200)
+     */
+    @GetMapping("/{accountId}/transactions")
+    public ResponseEntity<List<AccountsResponse.TransactionItem>> getRecentTransactions(
+            @PathVariable UUID accountId,
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        List<AccountsResponse.TransactionItem> transactions = transactionsService.getRecentTransactions(accountId, limit);
+        return ResponseEntity.ok(transactions);
     }
 
     /**
