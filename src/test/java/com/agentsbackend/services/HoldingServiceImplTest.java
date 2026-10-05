@@ -9,7 +9,6 @@ import com.agentsbackend.enums.AssetClass;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.HoldingRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
 import com.agentsbackend.repos.InstrumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,9 +39,6 @@ class HoldingServiceImplTest {
 
     @Mock
     private InstrumentRepository instrumentRepository;
-
-    @Mock
-    private InstrumentPriceRepository instrumentPriceRepository;
 
     @InjectMocks
     private HoldingServiceImpl holdingService;
@@ -127,29 +123,33 @@ class HoldingServiceImplTest {
     @DisplayName("Should get current price from instrument")
     void testGetCurrentPrice_WithPrice() {
         BigDecimal expectedPrice = new BigDecimal("150.50");
+        instrument1.setMidPrice(expectedPrice);
 
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(expectedPrice));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         BigDecimal result = holdingService.getCurrentPrice(instrumentId1);
 
         assertEquals(expectedPrice, result);
-        verify(instrumentPriceRepository).getLatestPrice(instrumentId1);
+        verify(instrumentRepository).findById(instrumentId1);
     }
 
     @Test
     @DisplayName("Should return zero when no price available")
     void testGetCurrentPrice_NoPrice() {
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.empty());
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.empty());
 
         BigDecimal result = holdingService.getCurrentPrice(instrumentId1);
 
         assertEquals(BigDecimal.ZERO, result);
-        verify(instrumentPriceRepository).getLatestPrice(instrumentId1);
+        verify(instrumentRepository).findById(instrumentId1);
     }
 
     @Test
     @DisplayName("Should get holdings DTOs by account ID with multiple holdings")
     void testGetHoldingsDTOByAccountId_MultipleHoldings() {
+        instrument1.setMidPrice(new BigDecimal("160.00"));
+        instrument2.setMidPrice(new BigDecimal("300.00"));
+
         Holding holding1 = new Holding();
         holding1.setHoldingId(holdingId1);
         holding1.setQuantity(new BigDecimal("100"));
@@ -165,8 +165,8 @@ class HoldingServiceImplTest {
         holding2.setInstrument(instrument2);
 
         when(holdingRepository.findByAccountId(accountId)).thenReturn(List.of(holding1, holding2));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("160.00")));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId2)).thenReturn(Optional.of(new BigDecimal("300.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(instrument2));
 
         List<GetHoldingResponseDTO> results = holdingService.getHoldingsDTOByAccountId(accountId);
 
@@ -192,6 +192,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should get single holding DTO successfully")
     void testGetOneHoldingDTO_Success() {
+        instrument1.setMidPrice(new BigDecimal("160.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("100"));
@@ -200,7 +202,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("160.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -223,6 +225,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should calculate holding DTO with positive gain")
     void testHoldingToDTO_WithGain() {
+        instrument1.setMidPrice(new BigDecimal("150.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("100"));
@@ -231,7 +235,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("150.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -247,6 +251,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should calculate holding DTO with negative gain (loss)")
     void testHoldingToDTO_WithLoss() {
+        instrument1.setMidPrice(new BigDecimal("150.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("100"));
@@ -255,7 +261,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("150.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -271,6 +277,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should handle holding DTO with zero cost basis")
     void testHoldingToDTO_ZeroCostBasis() {
+        instrument1.setMidPrice(new BigDecimal("150.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("100"));
@@ -279,7 +287,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("150.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -295,6 +303,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should handle holding with fractional quantity")
     void testHoldingToDTO_FractionalQuantity() {
+        instrument1.setMidPrice(new BigDecimal("200.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("0.5"));
@@ -303,7 +313,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("200.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -319,6 +329,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should handle gain loss percent with very large values")
     void testHoldingToDTO_LargeValues() {
+        instrument1.setMidPrice(new BigDecimal("10500.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("1000"));
@@ -327,7 +339,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("10500.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -343,6 +355,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should calculate gain loss percent with precision")
     void testGainLossPercent_WithPrecision() {
+        instrument1.setMidPrice(new BigDecimal("105.50"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("33.333"));
@@ -351,7 +365,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("105.50")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
@@ -363,6 +377,8 @@ class HoldingServiceImplTest {
     @Test
     @DisplayName("Should call getCurrentPrice multiple times in DTO conversion")
     void testHoldingToDTO_CallsGetCurrentPrice() {
+        instrument1.setMidPrice(new BigDecimal("160.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("100"));
@@ -371,18 +387,20 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("160.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 
         // getCurrentPrice should be called once during holdingToDTO conversion
-        verify(instrumentPriceRepository, times(1)).getLatestPrice(instrumentId1);
+        verify(instrumentRepository, times(1)).findById(instrumentId1);
         assertNotNull(result);
     }
 
     @Test
     @DisplayName("Should map all fields correctly in holding DTO")
     void testHoldingToDTO_FieldMapping() {
+        instrument1.setMidPrice(new BigDecimal("210.00"));
+
         Holding holding = new Holding();
         holding.setHoldingId(holdingId1);
         holding.setQuantity(new BigDecimal("50.5"));
@@ -391,7 +409,7 @@ class HoldingServiceImplTest {
         holding.setInstrument(instrument1);
 
         when(holdingRepository.findOneHolding(holdingId1, accountId)).thenReturn(Optional.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("210.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument1));
 
         GetHoldingResponseDTO result = holdingService.getOneHoldingDTO(accountId, holdingId1);
 

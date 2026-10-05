@@ -14,7 +14,7 @@ import com.agentsbackend.exceptions.ClientNotFoundException;
 import com.agentsbackend.exceptions.UnauthorizedAccountAccessException;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.ClientRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
+import com.agentsbackend.repos.InstrumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +44,7 @@ class PortfolioServiceImplTest {
     private HoldingService holdingService;
 
     @Mock
-    private InstrumentPriceRepository instrumentPriceRepository;
+    private InstrumentRepository instrumentRepository;
 
     @Mock
     private ClientRepository clientRepository;
@@ -62,7 +62,7 @@ class PortfolioServiceImplTest {
         portfolioService = new PortfolioServiceImpl(
             accountRepository,
             holdingService,
-            instrumentPriceRepository,
+            instrumentRepository,
             clientRepository
         );
 
@@ -256,6 +256,7 @@ class PortfolioServiceImplTest {
         instrument.setInstrumentId(instrumentId1);
         instrument.setIndustry("Technology");
         instrument.setAssetClass(AssetClass.STOCK);
+        instrument.setMidPrice(new BigDecimal("50.00"));
 
         Holding holding = new Holding();
         holding.setHoldingId(UUID.randomUUID());
@@ -265,7 +266,7 @@ class PortfolioServiceImplTest {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(testClient));
         when(accountRepository.findByClientId(clientId)).thenReturn(List.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("50.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument));
 
         GetAllocationResponseDTO result = portfolioService.getPortfolioAllocation(clientId);
 
@@ -302,11 +303,19 @@ class PortfolioServiceImplTest {
         holding2.setQuantity(new BigDecimal("100"));
         holding2.setInstrument(instrument2);
 
+        Instrument instr1 = new Instrument();
+        instr1.setInstrumentId(instrumentId1);
+        instr1.setMidPrice(new BigDecimal("50.00"));
+        
+        Instrument instr2 = new Instrument();
+        instr2.setInstrumentId(instrumentId2);
+        instr2.setMidPrice(new BigDecimal("50.00"));
+        
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(testClient));
         when(accountRepository.findByClientId(clientId)).thenReturn(List.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding1, holding2));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("50.00")));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId2)).thenReturn(Optional.of(new BigDecimal("50.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instr1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(instr2));
 
         GetAllocationResponseDTO result = portfolioService.getPortfolioAllocation(clientId);
 
@@ -324,6 +333,7 @@ class PortfolioServiceImplTest {
         instrument.setInstrumentId(instrumentId1);
         instrument.setIndustry(null);
         instrument.setAssetClass(AssetClass.STOCK);
+        instrument.setMidPrice(new BigDecimal("50.00"));
 
         Holding holding = new Holding();
         holding.setHoldingId(UUID.randomUUID());
@@ -333,7 +343,7 @@ class PortfolioServiceImplTest {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(testClient));
         when(accountRepository.findByClientId(clientId)).thenReturn(List.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("50.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument));
 
         GetAllocationResponseDTO result = portfolioService.getPortfolioAllocation(clientId);
 
@@ -378,7 +388,7 @@ class PortfolioServiceImplTest {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(testClient));
         when(accountRepository.findByClientId(clientId)).thenReturn(List.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.empty());
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.empty());
 
         GetAllocationResponseDTO result = portfolioService.getPortfolioAllocation(clientId);
 
@@ -402,9 +412,13 @@ class PortfolioServiceImplTest {
         holding.setQuantity(new BigDecimal("100"));
         holding.setInstrument(instrument1);
 
+        Instrument instrument = new Instrument();
+        instrument.setInstrumentId(instrumentId1);
+        instrument.setMidPrice(new BigDecimal("50.00"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("50.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -472,10 +486,18 @@ class PortfolioServiceImplTest {
         holding2.setQuantity(new BigDecimal("50"));
         holding2.setInstrument(instrument2);
 
+        Instrument inst1 = new Instrument();
+        inst1.setInstrumentId(instrumentId1);
+        inst1.setMidPrice(new BigDecimal("100.00"));
+        
+        Instrument inst2 = new Instrument();
+        inst2.setInstrumentId(instrumentId2);
+        inst2.setMidPrice(new BigDecimal("100.00"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding1, holding2));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("100.00")));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId2)).thenReturn(Optional.of(new BigDecimal("100.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(inst1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(inst2));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -498,6 +520,7 @@ class PortfolioServiceImplTest {
         instrument.setInstrumentId(instrumentId1);
         instrument.setIndustry("Technology");
         instrument.setAssetClass(AssetClass.STOCK);
+        instrument.setMidPrice(new BigDecimal("3.00"));
 
         Holding holding = new Holding();
         holding.setHoldingId(UUID.randomUUID());
@@ -506,7 +529,7 @@ class PortfolioServiceImplTest {
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("3.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instrument));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -530,9 +553,13 @@ class PortfolioServiceImplTest {
         holding.setQuantity(new BigDecimal("0.5"));
         holding.setInstrument(instrument);
 
+        Instrument instr = new Instrument();
+        instr.setInstrumentId(instrumentId1);
+        instr.setMidPrice(new BigDecimal("1000.00"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("1000.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instr));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -564,10 +591,18 @@ class PortfolioServiceImplTest {
         holding2.setQuantity(new BigDecimal("100"));
         holding2.setInstrument(instrument2);
 
+        Instrument ins1 = new Instrument();
+        ins1.setInstrumentId(instrumentId1);
+        ins1.setMidPrice(new BigDecimal("50.00"));
+        
+        Instrument ins2 = new Instrument();
+        ins2.setInstrumentId(instrumentId2);
+        ins2.setMidPrice(new BigDecimal("50.00"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding1, holding2));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("50.00")));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId2)).thenReturn(Optional.of(new BigDecimal("50.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(ins1));
+        when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(ins2));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -592,9 +627,13 @@ class PortfolioServiceImplTest {
         holding.setQuantity(new BigDecimal("0.01"));
         holding.setInstrument(instrument);
 
+        Instrument instSmall = new Instrument();
+        instSmall.setInstrumentId(instrumentId1);
+        instSmall.setMidPrice(new BigDecimal("0.001"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("0.001")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instSmall));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 
@@ -615,9 +654,13 @@ class PortfolioServiceImplTest {
         holding.setQuantity(new BigDecimal("1000000"));
         holding.setInstrument(instrument);
 
+        Instrument instLarge = new Instrument();
+        instLarge.setInstrumentId(instrumentId1);
+        instLarge.setMidPrice(new BigDecimal("10000.00"));
+        
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
         when(holdingService.getHoldingsByAccountId(accountId)).thenReturn(List.of(holding));
-        when(instrumentPriceRepository.getLatestPrice(instrumentId1)).thenReturn(Optional.of(new BigDecimal("10000.00")));
+        when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(instLarge));
 
         GetAllocationResponseDTO result = portfolioService.getAccountAllocation(clientId, accountId);
 

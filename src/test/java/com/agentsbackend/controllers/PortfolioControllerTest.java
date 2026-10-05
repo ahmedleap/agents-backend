@@ -58,7 +58,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioByAccountId(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}/{accountId}", clientId, accountId)
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}/{accountId}", clientId, accountId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(accountId.toString()))
@@ -77,7 +77,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getEntirePortfolioByClientId(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}", clientId)
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}", clientId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clientId").value(clientId.toString()))
@@ -108,7 +108,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioAllocation(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}", clientId)
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}", clientId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.industryBreakdown").isArray())
@@ -142,7 +142,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getAccountAllocation(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}/{accountId}", clientId, accountId)
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}/{accountId}", clientId, accountId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.industryBreakdown").isArray())
@@ -162,7 +162,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioByAccountId(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}/{accountId}", clientId, accountId))
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}/{accountId}", clientId, accountId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -176,7 +176,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getEntirePortfolioByClientId(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}", clientId))
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}", clientId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -190,7 +190,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioAllocation(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}", clientId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}", clientId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -204,7 +204,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getAccountAllocation(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}/{accountId}", clientId, accountId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}/{accountId}", clientId, accountId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -217,7 +217,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioByAccountId(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}/{accountId}", clientId, accountId));
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}/{accountId}", clientId, accountId));
 
         verify(portfolioService, times(1)).getPortfolioByAccountId(clientId, accountId);
         verifyNoMoreInteractions(portfolioService);
@@ -231,7 +231,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getEntirePortfolioByClientId(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}", clientId));
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}", clientId));
 
         verify(portfolioService, times(1)).getEntirePortfolioByClientId(clientId);
         verifyNoMoreInteractions(portfolioService);
@@ -246,7 +246,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioAllocation(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}", clientId));
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}", clientId));
 
         verify(portfolioService, times(1)).getPortfolioAllocation(clientId);
         verifyNoMoreInteractions(portfolioService);
@@ -261,7 +261,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getAccountAllocation(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}/{accountId}", clientId, accountId));
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}/{accountId}", clientId, accountId));
 
         verify(portfolioService, times(1)).getAccountAllocation(clientId, accountId);
         verifyNoMoreInteractions(portfolioService);
@@ -274,7 +274,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioByAccountId(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/{clientId}/{accountId}", clientId, accountId));
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}/{accountId}", clientId, accountId));
 
         verify(portfolioService).getPortfolioByAccountId(clientId, accountId);
     }
@@ -302,7 +302,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getPortfolioAllocation(clientId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}", clientId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}", clientId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.industryBreakdown").isArray())
                 .andExpect(jsonPath("$.industryBreakdown", hasSize(2)))
@@ -333,7 +333,7 @@ class PortfolioControllerTest {
 
         when(portfolioService.getAccountAllocation(clientId, accountId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}/{accountId}", clientId, accountId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}/{accountId}", clientId, accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assetClassBreakdown", hasSize(2)))
                 .andExpect(jsonPath("$.assetClassBreakdown[0].assetClass").value("STOCK"))
@@ -348,16 +348,16 @@ class PortfolioControllerTest {
         when(portfolioService.getPortfolioAllocation(any())).thenReturn(new GetAllocationResponseDTO());
         when(portfolioService.getAccountAllocation(any(), any())).thenReturn(new GetAllocationResponseDTO());
 
-        mockMvc.perform(get("/api/portfolio/{clientId}/{accountId}", clientId, accountId))
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}/{accountId}", clientId, accountId))
                 .andExpect(status().is(200));
 
-        mockMvc.perform(get("/api/portfolio/{clientId}", clientId))
+        mockMvc.perform(get("/api/portfolio/v1/{clientId}", clientId))
                 .andExpect(status().is(200));
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}", clientId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}", clientId))
                 .andExpect(status().is(200));
 
-        mockMvc.perform(get("/api/portfolio/allocation/{clientId}/{accountId}", clientId, accountId))
+        mockMvc.perform(get("/api/portfolio/v1/allocation/{clientId}/{accountId}", clientId, accountId))
                 .andExpect(status().is(200));
     }
 }

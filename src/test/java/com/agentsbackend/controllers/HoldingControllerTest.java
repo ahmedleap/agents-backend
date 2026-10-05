@@ -51,7 +51,7 @@ class HoldingControllerTest {
 
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(List.of(holding1, holding2));
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId)
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -67,7 +67,7 @@ class HoldingControllerTest {
     void testGetHoldings_EmptyList() throws Exception {
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(0)));
@@ -80,7 +80,7 @@ class HoldingControllerTest {
     void testGetHoldings_Status200() throws Exception {
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().is(200));
     }
 
@@ -89,7 +89,7 @@ class HoldingControllerTest {
     void testGetHoldings_ContentType() throws Exception {
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -101,7 +101,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId)
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticker").value("GOOGL"))
@@ -117,7 +117,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId))
                 .andExpect(status().is(200));
     }
 
@@ -128,7 +128,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -138,7 +138,7 @@ class HoldingControllerTest {
     void testGetHoldings_ServiceMethodCalledOnce() throws Exception {
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId));
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId));
 
         verify(holdingService, times(1)).getHoldingsDTOByAccountId(accountId);
         verifyNoMoreInteractions(holdingService);
@@ -151,7 +151,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId));
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId));
 
         verify(holdingService, times(1)).getOneHoldingDTO(accountId, holdingId);
         verifyNoMoreInteractions(holdingService);
@@ -162,7 +162,7 @@ class HoldingControllerTest {
     void testGetHoldings_CorrectPathVariables() throws Exception {
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId));
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId));
 
         verify(holdingService).getHoldingsDTOByAccountId(accountId);
     }
@@ -174,7 +174,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId));
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId));
 
         verify(holdingService).getOneHoldingDTO(accountId, holdingId);
     }
@@ -186,7 +186,7 @@ class HoldingControllerTest {
 
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(List.of(holding));
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].ticker").value("NVDA"))
                 .andExpect(jsonPath("$[0].name").value("NVIDIA Inc"))
@@ -211,7 +211,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.holdingId").value(holdingId.toString()))
                 .andExpect(jsonPath("$.accountId").value(accountId.toString()))
@@ -233,7 +233,7 @@ class HoldingControllerTest {
 
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(List.of(holding));
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].quantity").value(0.5));
     }
@@ -245,7 +245,7 @@ class HoldingControllerTest {
 
         when(holdingService.getHoldingsDTOByAccountId(accountId)).thenReturn(List.of(holding));
 
-        mockMvc.perform(get("/api/holding/{accountId}", accountId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].quantity").value(1000));
     }
@@ -261,7 +261,7 @@ class HoldingControllerTest {
 
         when(holdingService.getOneHoldingDTO(accountId, holdingId)).thenReturn(holding);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holdingId))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holdingId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currentValue").value(500000));
     }
@@ -277,11 +277,11 @@ class HoldingControllerTest {
         when(holdingService.getHoldingsDTOByAccountId(account1)).thenReturn(List.of(holding1));
         when(holdingService.getHoldingsDTOByAccountId(account2)).thenReturn(List.of(holding2));
 
-        mockMvc.perform(get("/api/holding/{accountId}", account1))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", account1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].ticker").value("AAPL"));
 
-        mockMvc.perform(get("/api/holding/{accountId}", account2))
+        mockMvc.perform(get("/api/holding/v1/{accountId}", account2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].ticker").value("GOOGL"));
     }
@@ -297,11 +297,11 @@ class HoldingControllerTest {
         when(holdingService.getOneHoldingDTO(accountId, holding1Id)).thenReturn(holding1);
         when(holdingService.getOneHoldingDTO(accountId, holding2Id)).thenReturn(holding2);
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holding1Id))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holding1Id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticker").value("MSFT"));
 
-        mockMvc.perform(get("/api/holding/{accountId}/{holdingId}", accountId, holding2Id))
+        mockMvc.perform(get("/api/holding/v1/{accountId}/{holdingId}", accountId, holding2Id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticker").value("TSLA"));
     }
