@@ -85,20 +85,6 @@ public interface AccountRepository {
     void updateCashBalance(@Param("accountId") UUID accountId, @Param("newBalance") BigDecimal newBalance);
 
     /**
-     * Record a cash transaction (deposit or withdrawal).
-     * Inserts transaction record into transactions table with auto-generated UUID.
-     *
-     * @param accountId UUID of the account
-     * @param amount Amount of the transaction
-     * @param transactionType "DEPOSIT" or "WITHDRAWAL"
-     */
-    @Insert("INSERT INTO transactions (transaction_id, account_id, txn_type, amount) " +
-            "VALUES (gen_random_uuid(), #{accountId,jdbcType=VARCHAR}, " +
-            "CAST(#{transactionType} AS transaction_type), #{amount,jdbcType=NUMERIC})")
-    void recordTransaction(@Param("accountId") UUID accountId, @Param("amount") BigDecimal amount,
-                          @Param("transactionType") String transactionType);
-
-    /**
      * Check if a client exists in the database.
      *
      * @param clientId UUID of the client

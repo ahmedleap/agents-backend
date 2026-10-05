@@ -643,4 +643,76 @@ public class AccountsResponse {
                     '}';
         }
     }
+
+    /**
+     * Transaction item response DTO for listing recent transactions.
+     * Represents a single cash movement (deposit or withdrawal) from the transactions table.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class TransactionItem {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private UUID transactionId;
+
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private String type;
+
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private BigDecimal amount;
+
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private OffsetDateTime createdAt;
+
+        // Constructors
+        public TransactionItem() {}
+
+        public TransactionItem(UUID transactionId, String type, BigDecimal amount, OffsetDateTime createdAt) {
+            this.transactionId = transactionId;
+            this.type = type;
+            this.amount = amount;
+            this.createdAt = createdAt;
+        }
+
+        // Getters and Setters
+        public UUID getTransactionId() {
+            return transactionId;
+        }
+
+        public void setTransactionId(UUID transactionId) {
+            this.transactionId = transactionId;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public BigDecimal getAmount() {
+            return amount;
+        }
+
+        public void setAmount(BigDecimal amount) {
+            this.amount = amount;
+        }
+
+        public OffsetDateTime getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(OffsetDateTime createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        @Override
+        public String toString() {
+            return "TransactionItem{" +
+                    "transactionId=" + transactionId +
+                    ", type='" + type + '\'' +
+                    ", amount=" + amount +
+                    ", createdAt=" + createdAt +
+                    '}';
+        }
+    }
 }
