@@ -5,6 +5,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.Instrument;
+import com.agentsbackend.entities.Order;
 import com.agentsbackend.enums.AssetClass;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.repos.AccountRepository;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -422,5 +425,366 @@ class HoldingServiceImplTest {
         assertEquals(0, new BigDecimal("50.5").compareTo(result.getQuantity()));
         assertEquals(0, new BigDecimal("200.00").compareTo(result.getAverageCostBasis()));
         assertEquals(0, new BigDecimal("210.00").compareTo(result.getCurrentPrice()));
+    }
+
+    // ==================== BUY ORDER TESTS ====================
+
+    @Test
+    @DisplayName("Should create new holding when buying and no holding exists")
+    void testUpdateHoldingsForBuy_CreateNewHolding() {
+        BigDecimal filledPrice = new BigDecimal("50.00");
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("100.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(null);
+
+        holdingService.updateHoldingsForBuy(order, filledPrice);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding savedHolding = captor.getValue();
+        assertNotNull(savedHolding.getHoldingId());
+        assertEquals(new BigDecimal("100.00"), savedHolding.getQuantity());
+        assertEquals(filledPrice, savedHolding.getAverageCostBasis());
+        assertEquals(accountId, savedHolding.getAccount().getAccountId());
+        assertEquals(instrumentId1, savedHolding.getInstrument().getInstrumentId());
+    }
+
+    @Test
+    @DisplayName("Should update existing holding when buying and holding exists")
+    void testUpdateHoldingsForBuy_UpdateExistingHolding() {
+        BigDecimal filledPrice = new BigDecimal("50.00");
+        BigDecimal existingQuantity = new BigDecimal("50.00");
+        BigDecimal existingCostBasis = new BigDecimal("40.00");
+
+        Holding existingHolding = new Holding();
+        existingHolding.setHoldingId(UUID.randomUUID());
+        existingHolding.setQuantity(existingQuantity);
+        existingHolding.setAverageCostBasis(existingCostBasis);
+        existingHolding.setAccount(testAccount);
+        existingHolding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("100.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(existingHolding);
+
+        holdingService.updateHoldingsForBuy(order, filledPrice);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("150.00"), updatedHolding.getQuantity());
+
+        // Verify average cost basis calculation: (50 * 40 + 100 * 50) / 150 = 46.6667
+        BigDecimal expectedCostBasis = new BigDecimal("2000.00")
+                .add(new BigDecimal("5000.00"))
+                .divide(new BigDecimal("150.00"), 4, RoundingMode.HALF_UP);
+        assertEquals(expectedCostBasis, updatedHolding.getAverageCostBasis());
+    }
+
+    @Test
+    @DisplayName("Should handle fractional quantities in buy order")
+    void testUpdateHoldingsForBuy_FractionalQuantity() {
+        BigDecimal filledPrice = new BigDecimal("75.50");
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("50.25"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(null);
+
+        holdingService.updateHoldingsForBuy(order, filledPrice);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding savedHolding = captor.getValue();
+        assertEquals(new BigDecimal("50.25"), savedHolding.getQuantity());
+        assertEquals(filledPrice, savedHolding.getAverageCostBasis());
+    }
+
+    @Test
+    @DisplayName("Should handle high precision prices in buy order")
+    void testUpdateHoldingsForBuy_HighPrecisionPrice() {
+        BigDecimal filledPrice = new BigDecimal("123.456789");
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("100.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(null);
+
+        holdingService.updateHoldingsForBuy(order, filledPrice);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding savedHolding = captor.getValue();
+        assertEquals(filledPrice, savedHolding.getAverageCostBasis());
+    }
+
+    @Test
+    @DisplayName("Should recalculate cost basis with multiple buys at different prices")
+    void testUpdateHoldingsForBuy_MultipleBuysRecalculateCostBasis() {
+        // First buy: 100 shares at $50
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.00"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        // Second buy: 50 shares at $60
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("50.00"));
+        BigDecimal filledPrice = new BigDecimal("60.00");
+
+        holdingService.updateHoldingsForBuy(order, filledPrice);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("150.00"), updatedHolding.getQuantity());
+
+        // Cost basis: (100 * 50 + 50 * 60) / 150 = 8000 / 150 = 53.3333
+        BigDecimal expectedCostBasis = new BigDecimal("8000.00")
+                .divide(new BigDecimal("150.00"), 4, RoundingMode.HALF_UP);
+        assertEquals(expectedCostBasis, updatedHolding.getAverageCostBasis());
+    }
+
+    // ==================== SELL ORDER TESTS ====================
+
+    @Test
+    @DisplayName("Should delete holding when selling entire position (quantity becomes zero)")
+    void testUpdateHoldingsForSell_DeleteWhenQuantityBecomesZero() {
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.00"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("100.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        verify(holdingRepository).deleteByAccountAndInstrument(accountId, instrumentId1);
+        verify(holdingRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should update holding quantity when selling partial position")
+    void testUpdateHoldingsForSell_UpdateQuantityPartialSell() {
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.00"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("30.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("70.00"), updatedHolding.getQuantity());
+        assertEquals(new BigDecimal("50.00"), updatedHolding.getAverageCostBasis());
+        verify(holdingRepository, never()).deleteByAccountAndInstrument(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should handle selling fractional shares")
+    void testUpdateHoldingsForSell_FractionalShares() {
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.75"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("25.25"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("75.50"), updatedHolding.getQuantity());
+    }
+
+    @Test
+    @DisplayName("Should not update when selling and holding does not exist")
+    void testUpdateHoldingsForSell_HoldingNotFound() {
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("100.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(null);
+
+        holdingService.updateHoldingsForSell(order);
+
+        verify(holdingRepository, never()).save(any());
+        verify(holdingRepository, never()).deleteByAccountAndInstrument(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should handle multiple sells reducing position over time")
+    void testUpdateHoldingsForSell_MultipleSells() {
+        // Initial holding: 100 shares
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.00"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        // First sell: 30 shares
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("30.00"));
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+        assertEquals(new BigDecimal("70.00"), captor.getValue().getQuantity());
+    }
+
+    @Test
+    @DisplayName("Should preserve cost basis when selling")
+    void testUpdateHoldingsForSell_PreserveCostBasis() {
+        BigDecimal costBasis = new BigDecimal("75.50");
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("200.00"));
+        holding.setAverageCostBasis(costBasis);
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("80.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(costBasis, updatedHolding.getAverageCostBasis());
+    }
+
+    @Test
+    @DisplayName("Should handle selling very small fractional quantity")
+    void testUpdateHoldingsForSell_VerySmallFraction() {
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("100.00"));
+        holding.setAverageCostBasis(new BigDecimal("50.00"));
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("0.01"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("99.99"), updatedHolding.getQuantity());
+    }
+
+    @Test
+    @DisplayName("Should handle zero cost basis during sell")
+    void testUpdateHoldingsForSell_ZeroCostBasis() {
+        Holding holding = new Holding();
+        holding.setHoldingId(UUID.randomUUID());
+        holding.setQuantity(new BigDecimal("50.00"));
+        holding.setAverageCostBasis(BigDecimal.ZERO);
+        holding.setAccount(testAccount);
+        holding.setInstrument(instrument1);
+
+        com.agentsbackend.entities.Order order = new com.agentsbackend.entities.Order();
+        order.setOrderId(UUID.randomUUID());
+        order.setAccount(testAccount);
+        order.setInstrument(instrument1);
+        order.setQuantity(new BigDecimal("20.00"));
+
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1))
+                .thenReturn(holding);
+
+        holdingService.updateHoldingsForSell(order);
+
+        ArgumentCaptor<Holding> captor = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(captor.capture());
+
+        Holding updatedHolding = captor.getValue();
+        assertEquals(new BigDecimal("30.00"), updatedHolding.getQuantity());
+        assertEquals(BigDecimal.ZERO, updatedHolding.getAverageCostBasis());
     }
 }

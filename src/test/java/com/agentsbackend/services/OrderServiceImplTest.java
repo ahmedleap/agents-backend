@@ -16,7 +16,7 @@ import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
 import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.HoldingsRepository;
+import com.agentsbackend.repos.HoldingRepository;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
 import com.agentsbackend.queue.OrderQueue;
@@ -44,7 +44,7 @@ class OrderServiceImplTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private HoldingsRepository holdingsRepository;
+    private HoldingRepository holdingRepository;
 
     @Mock
     private AccountRepository accountRepository;
@@ -65,7 +65,7 @@ class OrderServiceImplTest {
         MockitoAnnotations.openMocks(this);
         orderService = new OrderServiceImpl(
             orderRepository,
-            holdingsRepository,
+            holdingRepository,
             accountRepository,
             instrumentRepository,
             orderQueue,
@@ -528,9 +528,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -575,9 +575,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -620,9 +620,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -837,7 +837,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("600"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -870,7 +870,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null); // No holdings
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null); // No holdings
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -906,7 +906,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act & Assert
         assertThrows(InvalidOrderParametersException.class, () -> orderService.createOrder(request));
@@ -940,7 +940,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act & Assert
@@ -975,7 +975,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         // Act & Assert
@@ -1009,9 +1009,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
@@ -1045,9 +1045,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1088,8 +1088,8 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         // Should pass at exactly 150% (boundary is inclusive)
@@ -1125,8 +1125,8 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         // Should pass at exactly 50% (boundary is inclusive)
@@ -1165,12 +1165,12 @@ class OrderServiceImplTest {
         request.setQuantity(10);
         request.setPrice(null);
 
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(holdings);
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1232,13 +1232,13 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(holdings);
         when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(price1));
         when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.of(price2));
         when(instrumentRepository.findById(instrumentId3)).thenReturn(Optional.of(price3));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1273,11 +1273,11 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("5"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1324,12 +1324,12 @@ class OrderServiceImplTest {
         request.setPrice(null);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(holdings);
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(holdings);
         when(instrumentRepository.findById(instrumentId1)).thenReturn(Optional.of(price1));
         when(instrumentRepository.findById(instrumentId2)).thenReturn(Optional.empty()); // No price for second holding
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId1, new BigDecimal("10"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId1)).thenReturn(holding1);
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1365,9 +1365,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("1"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act & Assert
         assertThrows(InsufficientFundsException.class, () -> orderService.createOrder(request));
@@ -1405,9 +1405,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1482,9 +1482,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1518,7 +1518,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.empty()); // Account not found
 
         // Act & Assert
@@ -1549,7 +1549,7 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("10"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
         when(accountRepository.findById(accountId)).thenReturn(Optional.empty()); // Not found in validateMinimumBalance
 
         // Act & Assert
@@ -1612,9 +1612,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), limitPrice)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1653,9 +1653,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("50"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(null);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1737,9 +1737,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(existingHolding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(existingHolding);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
@@ -1780,9 +1780,9 @@ class OrderServiceImplTest {
         when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
         when(accountRepository.findClientDateOfBirthByAccountId(accountId)).thenReturn(LocalDate.now().minusYears(25));
         when(orderRepository.countDuplicateOrders(accountId, instrumentId, new BigDecimal("100"), null)).thenReturn(0);
-        when(holdingsRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
+        when(holdingRepository.findByAccountAndInstrument(accountId, instrumentId)).thenReturn(holding);
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-        when(holdingsRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
+        when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
         // Act
         CreateOrderResponse response = orderService.createOrder(request);
