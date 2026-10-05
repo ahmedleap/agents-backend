@@ -58,6 +58,9 @@ class OrderServiceImplTest {
     @Mock
     private AuditTrailService auditTrailService;
 
+    @Mock
+    private OrderSubmissionService orderSubmissionService;
+
     private OrderServiceImpl orderService;
 
     @BeforeEach
@@ -69,7 +72,8 @@ class OrderServiceImplTest {
             accountRepository,
             instrumentRepository,
             orderQueue,
-            auditTrailService
+            auditTrailService,
+            orderSubmissionService
         );
     }
 
@@ -542,7 +546,7 @@ class OrderServiceImplTest {
         assertEquals(OrderType.BUY, response.getOrderType());
         assertEquals(OrderStatus.PENDING, response.getStatus());
         verify(orderRepository).save(any(Order.class));
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
         verify(auditTrailService).logOrderCreated(any(), any(), any(), any(), anyInt(), any());
     }
 
@@ -1056,7 +1060,7 @@ class OrderServiceImplTest {
         assertNotNull(response);
         assertEquals(OrderStatus.PENDING, response.getStatus());
         verify(orderRepository).save(any(Order.class));
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
     }
 
     @Test
@@ -1662,7 +1666,7 @@ class OrderServiceImplTest {
 
         // Assert
         assertNotNull(response);
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
     }
 
     @Test
