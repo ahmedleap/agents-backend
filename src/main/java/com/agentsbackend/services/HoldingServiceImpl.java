@@ -232,8 +232,7 @@ public class HoldingServiceImpl implements HoldingService {
                 logger.debug("Holding deleted for account {} instrument {} (quantity 0)", 
                     order.getAccount().getAccountId(), order.getInstrument().getInstrumentId());
             } else {
-                // PARTIAL SALE: Update quantity to reflect remaining shares
-                // Note: Average cost basis stays the same for gain/loss tracking
+                // Update quantity - ensure Account and Instrument IDs are properly set
                 holding.setQuantity(newQuantity);
                 
                 Account account = new Account();
