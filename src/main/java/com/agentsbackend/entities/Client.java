@@ -31,6 +31,15 @@ public class Client {
     @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
 
+    @Column(name = "phone", length = 32, unique = true)
+    private String phone;
+
+    @Column(name = "country", length = 2)
+    private String country;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
@@ -48,6 +57,9 @@ public class Client {
     @Enumerated(EnumType.STRING)
     private RiskTolerance riskTolerance;
 
+    @Column(name = "refresh_token", length = 500)
+    private String refreshToken;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;
 
@@ -56,7 +68,7 @@ public class Client {
 
     public Client(UUID clientId, String firstName, String middleName, String lastName, String email,
                   String passwordHash, LocalDate dateOfBirth, LocalDateTime joinDate, String ssnLast4,
-                  PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, List<Account> accounts) {
+                  PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, String refreshToken, List<Account> accounts) {
         this.clientId = clientId;
         this.firstName = firstName;
         this.middleName = middleName;
@@ -68,6 +80,7 @@ public class Client {
         this.ssnLast4 = ssnLast4;
         this.portfolioSizeRange = portfolioSizeRange;
         this.riskTolerance = riskTolerance;
+        this.refreshToken = refreshToken;
         this.accounts = accounts;
     }
 
@@ -119,6 +132,30 @@ public class Client {
         this.passwordHash = passwordHash;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
     public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
@@ -157,6 +194,16 @@ public class Client {
 
     public void setRiskTolerance(RiskTolerance riskTolerance) {
         this.riskTolerance = riskTolerance;
+    }
+
+    // Retrieves the OAuth/API refresh token for this client
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    // Sets the OAuth/API refresh token for this client
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public List<Account> getAccounts() {

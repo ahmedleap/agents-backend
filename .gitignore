@@ -16,7 +16,6 @@ Thumbs.db
 
 .env
 target
-src/main/resources
 
 # Build scripts
 build.ps1
@@ -26,3 +25,5 @@ build.ps1
 .vscode/
 .vs/
 *.code-workspace
+
+.env
