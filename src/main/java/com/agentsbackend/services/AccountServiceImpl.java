@@ -6,6 +6,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.TransactionsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -25,9 +26,11 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+    private final TransactionsRepository transactionsRepository;
 
-    public AccountServiceImpl(AccountRepository accountRepository) {
+    public AccountServiceImpl(AccountRepository accountRepository, TransactionsRepository transactionsRepository) {
         this.accountRepository = accountRepository;
+        this.transactionsRepository = transactionsRepository;
     }
 
     /**
@@ -253,7 +256,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.updateCashBalance(accountId, newBalance);
 
         // Record transaction in database
-        accountRepository.recordTransaction(accountId, amount, "DEPOSIT");
+        transactionsRepository.recordTransaction(accountId, amount, "DEPOSIT");
 
         return new AccountsResponse.Transaction(
                 "Deposit successful. Amount: " + amount,
@@ -297,7 +300,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.updateCashBalance(accountId, newBalance);
 
         // Record transaction in database
-        accountRepository.recordTransaction(accountId, amount, "WITHDRAWAL");
+        transactionsRepository.recordTransaction(accountId, amount, "WITHDRAWAL");
 
         return new AccountsResponse.Transaction(
                 "Withdrawal successful. Amount: " + amount,
