@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: agents-backend
+  datasource:
+    url: jdbc:postgresql://localhost:15432/agents_of_leap
+    username: postgres
+    password: n3u3d4!
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: NULL
+  mapper-locations: classpath:mappers/**/*.xml
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.agentsbackend: DEBUG
+    org.mybatis: DEBUG

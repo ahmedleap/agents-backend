@@ -38,7 +38,7 @@ class OrderFulfillmentServiceTest {
     private AuditTrailService auditTrailService;
 
     @Mock
-    private HoldingsService holdingsService;
+    private HoldingService holdingService;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +49,7 @@ class OrderFulfillmentServiceTest {
             accountRepository,
             instrumentRepository,
             auditTrailService,
-            holdingsService
+            holdingService
         );
     }
 
@@ -97,7 +97,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
+        verify(holdingService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
         verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.BUY), eq(100), eq(askPrice));
     }
@@ -129,7 +129,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForSell(order);
+        verify(holdingService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
         verify(auditTrailService).logOrderFilled(eq(orderId), eq(accountId), eq(clientId), eq(OrderType.SELL), eq(50), eq(bidPrice));  // SELL uses BID price
     }
@@ -160,7 +160,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY orders use ASK price
+        verify(holdingService).updateHoldingsForBuy(order, askPrice);  // BUY orders use ASK price
     }
 
     @Test
@@ -213,7 +213,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository).updateOrder(any(Order.class));
         verify(orderQueue).remove(order);
-        verify(holdingsService).updateHoldingsForSell(order);
+        verify(holdingService).updateHoldingsForSell(order);
     }
 
     @Test
@@ -305,7 +305,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
+        verify(holdingService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -339,7 +339,7 @@ class OrderFulfillmentServiceTest {
         // Assert
         verify(orderRepository, times(2)).updateOrder(any());
         verify(orderQueue, times(2)).remove(any());
-        verify(holdingsService, times(2)).updateHoldingsForBuy(any(), eq(askPrice));  // BUY orders use ASK price
+        verify(holdingService, times(2)).updateHoldingsForBuy(any(), eq(askPrice));  // BUY orders use ASK price
     }
 
     @Test
@@ -364,7 +364,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForSell(order);
+        verify(holdingService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -390,7 +390,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForSell(order);
+        verify(holdingService).updateHoldingsForSell(order);
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -417,7 +417,7 @@ class OrderFulfillmentServiceTest {
         orderFulfillmentService.processPendingOrders();
 
         // Assert
-        verify(holdingsService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
+        verify(holdingService).updateHoldingsForBuy(order, askPrice);  // BUY uses ASK price
         verify(accountRepository).save(any(Account.class));
     }
 
