@@ -122,6 +122,7 @@ CREATE TABLE instruments (
     industry            VARCHAR(100),
     bid                 NUMERIC(18,4) CHECK (bid > 0),
     ask                 NUMERIC(18,4) CHECK (ask > 0),
+    mid_price           NUMERIC(18,4) GENERATED ALWAYS AS ((bid + ask) / 2) STORED,
     price_updated_at    TIMESTAMP WITH TIME ZONE
 );
 

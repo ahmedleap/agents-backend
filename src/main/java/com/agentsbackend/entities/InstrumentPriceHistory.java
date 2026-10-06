@@ -13,14 +13,14 @@ public class InstrumentPriceHistory {
     private BigDecimal high;
     private BigDecimal low;
     private BigDecimal close;
-    private Long volume;
+    private Integer volume;
 
     public InstrumentPriceHistory() {
     }
 
     public InstrumentPriceHistory(UUID priceHistoryId, UUID instrumentId, OffsetDateTime timestamp,
                                   BigDecimal open, BigDecimal high, BigDecimal low,
-                                  BigDecimal close, Long volume) {
+                                  BigDecimal close, Integer volume) {
         this.priceHistoryId = priceHistoryId;
         this.instrumentId = instrumentId;
         this.timestamp = timestamp;
@@ -87,11 +87,11 @@ public class InstrumentPriceHistory {
         this.close = close;
     }
 
-    public Long getVolume() {
+    public Integer getVolume() {
         return volume;
     }
 
-    public void setVolume(Long volume) {
+    public void setVolume(Integer volume) {
         this.volume = volume;
     }
 }

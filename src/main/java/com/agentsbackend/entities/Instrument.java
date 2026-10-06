@@ -15,8 +15,9 @@ public class Instrument {
     private String industry;
     private BigDecimal bid;
     private BigDecimal ask;
+    private BigDecimal midPrice;
     private OffsetDateTime priceUpdatedAt;
-    private List<InstrumentPrice> prices;
+    private List<InstrumentPriceHistory> priceHistory;
     private List<Order> orders;
     private List<Holding> holdings;
 
@@ -24,9 +25,9 @@ public class Instrument {
     }
 
     public Instrument(UUID instrumentId, String ticker, String name, AssetClass assetClass,
-                      String industry, BigDecimal bid, BigDecimal ask, OffsetDateTime priceUpdatedAt,
-                      List<InstrumentPrice> prices, List<Order> orders,
-                      List<Holding> holdings) {
+                      String industry, BigDecimal bid, BigDecimal ask, BigDecimal midPrice,
+                      OffsetDateTime priceUpdatedAt, List<InstrumentPriceHistory> priceHistory,
+                      List<Order> orders, List<Holding> holdings) {
         this.instrumentId = instrumentId;
         this.ticker = ticker;
         this.name = name;
@@ -34,8 +35,9 @@ public class Instrument {
         this.industry = industry;
         this.bid = bid;
         this.ask = ask;
+        this.midPrice = midPrice;
         this.priceUpdatedAt = priceUpdatedAt;
-        this.prices = prices;
+        this.priceHistory = priceHistory;
         this.orders = orders;
         this.holdings = holdings;
     }
@@ -134,29 +136,5 @@ public class Instrument {
 
     public void setHoldings(List<Holding> holdings) {
         this.holdings = holdings;
-    }
-
-    public BigDecimal getBid() {
-        return bid;
-    }
-
-    public void setBid(BigDecimal bid) {
-        this.bid = bid;
-    }
-
-    public BigDecimal getAsk() {
-        return ask;
-    }
-
-    public void setAsk(BigDecimal ask) {
-        this.ask = ask;
-    }
-
-    public OffsetDateTime getPriceUpdatedAt() {
-        return priceUpdatedAt;
-    }
-
-    public void setPriceUpdatedAt(OffsetDateTime priceUpdatedAt) {
-        this.priceUpdatedAt = priceUpdatedAt;
     }
 }

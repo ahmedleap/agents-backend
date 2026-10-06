@@ -22,7 +22,7 @@ public interface InstrumentRepository {
      * @param query Search query (minimum 1 character, maximum 50)
      * @return List of Instrument objects matching the query
      */
-    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, price_updated_at " +
+    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
             "FROM instruments " +
             "WHERE LOWER(ticker) LIKE LOWER(CONCAT('%', #{query}, '%')) " +
             "   OR LOWER(name) LIKE LOWER(CONCAT('%', #{query}, '%')) " +
@@ -37,9 +37,20 @@ public interface InstrumentRepository {
      * @param ticker Stock ticker symbol (e.g., "AAPL")
      * @return Optional containing Instrument if found, empty otherwise
      */
-    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, price_updated_at " +
+    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
             "FROM instruments WHERE ticker = #{ticker}")
     Optional<Instrument> findByTicker(@Param("ticker") String ticker);
+
+    /**
+     * Find instrument by ID.
+     * Returns current pricing data (bid, ask, mid_price).
+     *
+     * @param instrumentId UUID of the instrument
+     * @return Optional containing Instrument if found, empty otherwise
+     */
+    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
+            "FROM instruments WHERE instrument_id = #{instrumentId}")
+    Optional<Instrument> findById(@Param("instrumentId") UUID instrumentId);
 
     /**
      * Update instrument with latest market pricing from Alpaca API.

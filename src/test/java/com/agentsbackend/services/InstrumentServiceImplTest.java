@@ -325,7 +325,7 @@ class InstrumentServiceImplTest {
         history.setHigh(new BigDecimal("250.50"));
         history.setLow(new BigDecimal("244.00"));
         history.setClose(new BigDecimal("248.12"));
-        history.setVolume(1500000L);
+        history.setVolume(1500000);
 
         when(instrumentRepository.findByTicker(ticker.toUpperCase()))
             .thenReturn(Optional.of(mockInstrument));
@@ -430,7 +430,7 @@ class InstrumentServiceImplTest {
         bar1.setHigh(new BigDecimal("250.50"));
         bar1.setLow(new BigDecimal("244.00"));
         bar1.setClose(new BigDecimal("248.12"));
-        bar1.setVolume(1500000L);
+        bar1.setVolume(1500000);
 
         InstrumentPriceHistory bar2 = new InstrumentPriceHistory();
         bar2.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC).minusHours(1));
@@ -438,7 +438,7 @@ class InstrumentServiceImplTest {
         bar2.setHigh(new BigDecimal("252.00"));
         bar2.setLow(new BigDecimal("247.50"));
         bar2.setClose(new BigDecimal("250.75"));
-        bar2.setVolume(1200000L);
+        bar2.setVolume(1200000);
 
         InstrumentPriceHistory bar3 = new InstrumentPriceHistory();
         bar3.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC));
@@ -446,7 +446,7 @@ class InstrumentServiceImplTest {
         bar3.setHigh(new BigDecimal("255.00"));
         bar3.setLow(new BigDecimal("250.00"));
         bar3.setClose(new BigDecimal("252.30"));
-        bar3.setVolume(1000000L);
+        bar3.setVolume(1000000);
 
         when(instrumentRepository.findByTicker(ticker.toUpperCase()))
             .thenReturn(Optional.of(mockInstrument));
@@ -495,7 +495,7 @@ class InstrumentServiceImplTest {
         history.setHigh(new BigDecimal("250.50"));
         history.setLow(new BigDecimal("244.00"));
         history.setClose(new BigDecimal("248.12"));
-        history.setVolume(1500000L);
+        history.setVolume(1500000);
 
         when(instrumentRepository.findByTicker(ticker.toUpperCase()))
             .thenReturn(Optional.of(mockInstrument));

@@ -162,7 +162,7 @@ public class InstrumentServiceImpl implements InstrumentService {
                 .high(priceHistory.getHigh())
                 .low(priceHistory.getLow())
                 .close(priceHistory.getClose())
-                .volume(priceHistory.getVolume())
+                .volume(priceHistory.getVolume() != null ? priceHistory.getVolume().longValue() : 0L)
                 .build())
             .toList();
 
