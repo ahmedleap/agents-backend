@@ -56,19 +56,6 @@ public class InstrumentResponse {
         private String name;
         private String assetClass;
         private String industry;
-        
-        @JsonProperty("securityProfile")
-        private SecurityProfile securityProfile;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class SecurityProfile {
-        private Long sharesOutstanding;
-        private BigDecimal marketCap;
-        private BigDecimal dividendYield;
     }
 
     // ============================================================

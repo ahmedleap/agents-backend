@@ -51,26 +51,4 @@ public interface InstrumentRepository {
             "SET bid = #{bid}, ask = #{ask}, price_updated_at = #{priceUpdatedAt} " +
             "WHERE instrument_id = #{instrumentId}")
     void updateInstrumentPricing(Instrument instrument);
-
-    /**
-     * Find historical OHLCV price data for an instrument within a date range.
-     * Used by GET /instruments/{ticker}/history?period=
-     * Results ordered by timestamp DESC (most recent first).
-     *
-     * @param instrumentId UUID of the instrument
-     * @param startTime Start of the date range (inclusive)
-     * @param endTime End of the date range (inclusive)
-     * @return List of price history records ordered by timestamp DESC
-     */
-    @Select("SELECT price_history_id, instrument_id, timestamp, open, high, low, close, volume " +
-            "FROM instrument_price_history " +
-            "WHERE instrument_id = #{instrumentId} " +
-            "  AND timestamp >= #{startTime} " +
-            "  AND timestamp <= #{endTime} " +
-            "ORDER BY timestamp DESC")
-    List<Instrument> findHistoricalPrices(
-        @Param("instrumentId") UUID instrumentId,
-        @Param("startTime") LocalDateTime startTime,
-        @Param("endTime") LocalDateTime endTime
-    );
 }

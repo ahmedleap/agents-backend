@@ -2,12 +2,14 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
 import com.agentsbackend.repos.InstrumentRepository;
+import com.agentsbackend.repos.InstrumentPriceHistoryRepository;
 import com.agentsbackend.entities.Instrument;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +31,13 @@ import java.util.stream.Collectors;
 public class InstrumentServiceImpl implements InstrumentService {
 
     private final InstrumentRepository instrumentRepository;
+    private final InstrumentPriceHistoryRepository priceHistoryRepository;
     // AlpacaClient will be injected after Phase 5 is created
 
-    public InstrumentServiceImpl(InstrumentRepository instrumentRepository) {
+    public InstrumentServiceImpl(InstrumentRepository instrumentRepository,
+                               InstrumentPriceHistoryRepository priceHistoryRepository) {
         this.instrumentRepository = instrumentRepository;
+        this.priceHistoryRepository = priceHistoryRepository;
     }
 
     /**
@@ -69,20 +74,11 @@ public class InstrumentServiceImpl implements InstrumentService {
         Instrument instrument = instrumentRepository.findByTicker(ticker.toUpperCase())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found: " + ticker));
 
-        // TODO: In Phase 6 (Alpaca integration), fetch sharesOutstanding, marketCap, dividendYield
-        // For now, return null for security profile
-        InstrumentResponse.SecurityProfile profile = InstrumentResponse.SecurityProfile.builder()
-            .sharesOutstanding(null)
-            .marketCap(null)
-            .dividendYield(null)
-            .build();
-
         return InstrumentResponse.InstrumentDetail.builder()
             .ticker(instrument.getTicker())
             .name(instrument.getName())
-            .assetClass(instrument.getAssetClass() != null ? instrument.getAssetClass().toString() : null)
+            .assetClass(instrument.getAssetClass().toString())
             .industry(instrument.getIndustry())
-            .securityProfile(profile)
             .build();
     }
 
@@ -100,7 +96,7 @@ public class InstrumentServiceImpl implements InstrumentService {
         // TODO: In Phase 5 (Alpaca integration), call AlpacaClient.getLatestQuote(ticker)
         // For now, return database values with isStale=true
         boolean isStale = instrument.getPriceUpdatedAt() == null || 
-                         LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1).isAfter(instrument.getPriceUpdatedAt());
+                         OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(1).isAfter(instrument.getPriceUpdatedAt());
 
         return InstrumentResponse.Quote.builder()
             .ticker(instrument.getTicker())
@@ -110,7 +106,7 @@ public class InstrumentServiceImpl implements InstrumentService {
             .priceChange(BigDecimal.ZERO)
             .priceChangePercent(BigDecimal.ZERO)
             .volume(0L)
-            .timestamp(instrument.getPriceUpdatedAt())
+            .timestamp(instrument.getPriceUpdatedAt() != null ? instrument.getPriceUpdatedAt().toLocalDateTime() : null)
             .isStale(isStale)
             .build();
     }
@@ -154,18 +150,48 @@ public class InstrumentServiceImpl implements InstrumentService {
                 throw new IllegalArgumentException("Invalid period: " + period + ". Must be: 1D, 1W, 1M, 3M, 6M, 1Y, or ALL");
         }
 
-        // TODO: In Phase 6, fetch from instrument_price_history table
-        // For now, return empty history
-        List<InstrumentResponse.HistoricalBar> bars = List.of();
+        // Fetch historical price data from database
+        List<InstrumentResponse.HistoricalBar> bars = priceHistoryRepository.findHistoricalPrices(
+                instrument.getInstrumentId(),
+                startTime,
+                endTime
+            ).stream()
+            .map(priceHistory -> InstrumentResponse.HistoricalBar.builder()
+                .timestamp(priceHistory.getTimestamp() != null ? priceHistory.getTimestamp().toLocalDateTime() : null)
+                .open(priceHistory.getOpen())
+                .high(priceHistory.getHigh())
+                .low(priceHistory.getLow())
+                .close(priceHistory.getClose())
+                .volume(priceHistory.getVolume())
+                .build())
+            .toList();
+
+        // Calculate summary statistics
+        BigDecimal highest = bars.isEmpty() ? BigDecimal.ZERO : 
+            bars.stream().map(InstrumentResponse.HistoricalBar::getHigh)
+                .max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+        
+        BigDecimal lowest = bars.isEmpty() ? BigDecimal.ZERO : 
+            bars.stream().map(InstrumentResponse.HistoricalBar::getLow)
+                .min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+        
+        BigDecimal startPrice = bars.isEmpty() ? BigDecimal.ZERO : bars.get(bars.size() - 1).getOpen();
+        BigDecimal endPrice = bars.isEmpty() ? BigDecimal.ZERO : bars.get(0).getClose();
+        BigDecimal change = endPrice.subtract(startPrice);
+        BigDecimal changePercent = startPrice.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO :
+            change.divide(startPrice, 4, java.math.RoundingMode.HALF_UP).multiply(new BigDecimal("100"));
+        
+        Long avgVolume = bars.isEmpty() ? 0L : 
+            (long) bars.stream().mapToLong(InstrumentResponse.HistoricalBar::getVolume).average().orElse(0L);
 
         InstrumentResponse.PeriodSummary summary = InstrumentResponse.PeriodSummary.builder()
-            .highest(BigDecimal.ZERO)
-            .lowest(BigDecimal.ZERO)
-            .startPrice(BigDecimal.ZERO)
-            .endPrice(BigDecimal.ZERO)
-            .change(BigDecimal.ZERO)
-            .changePercent(BigDecimal.ZERO)
-            .avgVolume(0L)
+            .highest(highest)
+            .lowest(lowest)
+            .startPrice(startPrice)
+            .endPrice(endPrice)
+            .change(change)
+            .changePercent(changePercent)
+            .avgVolume(avgVolume)
             .build();
 
         return InstrumentResponse.HistoryResponse.builder()
