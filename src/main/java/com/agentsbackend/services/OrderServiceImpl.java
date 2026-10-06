@@ -26,7 +26,7 @@ import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
 import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.HoldingsRepository;
+import com.agentsbackend.repos.HoldingRepository;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
 import org.springframework.stereotype.Service;
@@ -39,19 +39,19 @@ public class OrderServiceImpl implements OrderService {
     private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     private final OrderRepository orderRepository;
-    private final HoldingsRepository holdingsRepository;
+    private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
     private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
     private final OrderSubmissionService orderSubmissionService;
 
-    public OrderServiceImpl(OrderRepository orderRepository, HoldingsRepository holdingsRepository, 
+    public OrderServiceImpl(OrderRepository orderRepository, HoldingRepository holdingRepository, 
                           AccountRepository accountRepository, InstrumentRepository instrumentRepository,
                           OrderQueue orderQueue, AuditTrailService auditTrailService,
                           OrderSubmissionService orderSubmissionService) {
         this.orderRepository = orderRepository;
-        this.holdingsRepository = holdingsRepository;
+        this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.orderQueue = orderQueue;
@@ -336,7 +336,7 @@ public class OrderServiceImpl implements OrderService {
 
     // Validates that current holding + new quantity does not exceed 10,000 shares
     private void validatePositionLimit(CreateOrderRequest request) {
-        Holding currentHolding = holdingsRepository.findByAccountAndInstrument(
+        Holding currentHolding = holdingRepository.findByAccountAndInstrument(
             request.getAccountId(), 
             request.getInstrumentId()
         );
@@ -359,7 +359,7 @@ public class OrderServiceImpl implements OrderService {
 
     // Validates that account has sufficient shares to sell
     private void validateSellingHoldings(CreateOrderRequest request) {
-        Holding currentHolding = holdingsRepository.findByAccountAndInstrument(
+        Holding currentHolding = holdingRepository.findByAccountAndInstrument(
             request.getAccountId(), 
             request.getInstrumentId()
         );
@@ -486,7 +486,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal holdingsValue = BigDecimal.ZERO;
         
         // Fetch all holdings for this account
-        List<Holding> holdings = holdingsRepository.findAllByAccount(accountId);
+        List<Holding> holdings = holdingRepository.findAllByAccount(accountId);
         
         // Calculate value of each holding using current market price
         for (Holding holding : holdings) {

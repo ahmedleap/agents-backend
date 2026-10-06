@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.agentsbackend</groupId>
     <artifactId>agents-backend</artifactId>
-    <version>0.4.3</version>
+    <version>0.7.0</version>
     <packaging>jar</packaging>
     <name>Agents Backend</name>
     <description>Spring Boot Backend for Agents System</description>
@@ -59,6 +59,20 @@
             <artifactId>postgresql</artifactId>
             <version>42.6.0</version>
             <scope>runtime</scope>
+        </dependency>
+
+                <!-- Jakarta Validation -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
+        <!-- Hibernate Validator -->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>8.0.1.Final</version>
         </dependency>
 
         <!-- Testing -->

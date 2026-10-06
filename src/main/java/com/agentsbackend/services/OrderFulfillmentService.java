@@ -33,19 +33,19 @@ public class OrderFulfillmentService {
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
     private final AuditTrailService auditTrailService;
-    private final HoldingsService holdingsService;
+    private final HoldingService holdingService;
     
     public OrderFulfillmentService(OrderQueue orderQueue, OrderRepository orderRepository, 
                                   AccountRepository accountRepository,
                                   InstrumentRepository instrumentRepository,
                                   AuditTrailService auditTrailService,
-                                  HoldingsService holdingsService) {
+                                  HoldingService holdingService) {
         this.orderQueue = orderQueue;
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.auditTrailService = auditTrailService;
-        this.holdingsService = holdingsService;
+        this.holdingService = holdingService;
     }
     
     /**
@@ -159,10 +159,10 @@ public class OrderFulfillmentService {
         
         // Update holdings and account based on order type
         if (order.getOrderType().equals(OrderType.BUY)) {
-            holdingsService.updateHoldingsForBuy(order, filledPrice);
+            holdingService.updateHoldingsForBuy(order, filledPrice);
             updateCashForBuy(order, filledPrice);
         } else if (order.getOrderType().equals(OrderType.SELL)) {
-            holdingsService.updateHoldingsForSell(order);
+            holdingService.updateHoldingsForSell(order);
             updateCashForSell(order, filledPrice);
         }
         
