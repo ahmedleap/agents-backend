@@ -13,8 +13,7 @@ import com.agentsbackend.exceptions.InvalidOrderStatusException;
 import com.agentsbackend.exceptions.InvalidOrderParametersException;
 import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
-import com.agentsbackend.queue.OrderQueue;
-
+import com.agentsbackend.queue.OrderQueue;    import com.agentsbackend.services.OrderSubmissionService;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
@@ -45,16 +44,19 @@ public class OrderServiceImpl implements OrderService {
     private final InstrumentRepository instrumentRepository;
     private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
+    private final OrderSubmissionService orderSubmissionService;
 
     public OrderServiceImpl(OrderRepository orderRepository, HoldingRepository holdingRepository, 
                           AccountRepository accountRepository, InstrumentRepository instrumentRepository,
-                          OrderQueue orderQueue, AuditTrailService auditTrailService) {
+                          OrderQueue orderQueue, AuditTrailService auditTrailService,
+                          OrderSubmissionService orderSubmissionService) {
         this.orderRepository = orderRepository;
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.orderQueue = orderQueue;
         this.auditTrailService = auditTrailService;
+        this.orderSubmissionService = orderSubmissionService;
     }
 
     // Returns a list of pending orders for a specific account
@@ -109,8 +111,9 @@ public class OrderServiceImpl implements OrderService {
             // Save order to database
             orderRepository.save(order);
             
-            // Add order to queue for fulfillment processing
-            orderQueue.enqueue(order);
+            // Submit order for fulfillment processing (queue or Kafka based on configuration)
+            // orderQueue.enqueue(order);  // [OLD - queue logic, now handled by QueueOrderSubmissionService]
+            orderSubmissionService.submitOrder(order);
             
             // Log order creation to audit trail
             Account fullAccount = accountRepository.findById(request.getAccountId()).orElse(null);

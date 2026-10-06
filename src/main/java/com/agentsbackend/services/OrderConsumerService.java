@@ -5,125 +5,65 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
-import com.agentsbackend.queue.OrderQueue;
 import com.agentsbackend.repos.OrderRepository;
 import com.agentsbackend.repos.AccountRepository;
 import com.agentsbackend.repos.InstrumentRepository;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.ZoneId;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Service for processing orders from the queue and fulfilling them if prices match.
- * Uses instrument mid_price from the instruments table for market pricing.
+ * Kafka Consumer Service for processing orders asynchronously.
+ * Listens to the orders topic and fulfills orders if price conditions are met.
+ * Active only when order.processing.mode=kafka
  */
 @Service
-public class OrderFulfillmentService {
+@ConditionalOnProperty(
+    name = "order.processing.mode",
+    havingValue = "kafka"
+)
+public class OrderConsumerService {
     
-    private static final Logger logger = LoggerFactory.getLogger(OrderFulfillmentService.class);
+    private static final Logger logger = LoggerFactory.getLogger(OrderConsumerService.class);
     
-    private final OrderQueue orderQueue;
     private final OrderRepository orderRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
     private final AuditTrailService auditTrailService;
-    private final HoldingService holdingService;
+    private final HoldingService holdingsService;
     
-    public OrderFulfillmentService(OrderQueue orderQueue, OrderRepository orderRepository, 
-                                  AccountRepository accountRepository,
-                                  InstrumentRepository instrumentRepository,
-                                  AuditTrailService auditTrailService,
-                                  HoldingService holdingService) {
-        this.orderQueue = orderQueue;
+    public OrderConsumerService(OrderRepository orderRepository,
+                               AccountRepository accountRepository,
+                               InstrumentRepository instrumentRepository,
+                               AuditTrailService auditTrailService,
+                               HoldingService holdingsService) {
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.auditTrailService = auditTrailService;
-        this.holdingService = holdingService;
+        this.holdingsService = holdingsService;
     }
     
     /**
-     * Process pending orders from the queue every 5 seconds.
-     * Checks if current market price matches order prices and fills them.
+     * Consume orders from Kafka topic and attempt to fill them.
      */
-    @Scheduled(fixedDelay = 5000) // 5 seconds
-    public void processPendingOrders() {
-        List<Order> pendingOrders = orderQueue.getPendingOrders();
-        
-        if (pendingOrders.isEmpty()) {
-            return;
-        }
-        
-        logger.debug("Processing {} pending orders from queue", pendingOrders.size());
-        
-        for (Order order : pendingOrders) {
-            try {
-                if (tryFillOrder(order)) {
-                    orderQueue.remove(order);
-                    logger.info("Order {} filled and removed from queue", order.getOrderId());
-                }
-            } catch (Exception e) {
-                logger.error("Error processing order {}: {}", order.getOrderId(), e.getMessage());
+    @KafkaListener(topics = "order-fulfillment", groupId = "order-fulfillment-group")
+    public void processOrder(Order order) {
+        try {
+            logger.info("Received order {} from Kafka", order.getOrderId());
+            if (tryFillOrder(order)) {
+                logger.info("Order {} filled successfully", order.getOrderId());
+            } else {
+                logger.info("Order {} could not be filled at current market price", order.getOrderId());
             }
+        } catch (Exception e) {
+            logger.error("Error processing order {}: {}", order.getOrderId(), e.getMessage(), e);
         }
-    }
-    
-    /**
-     * End-of-day cleanup: clear unfilled limit orders from queue at 4 PM.
-     * Market close: any limit order not filled is automatically cancelled.
-     */
-    @Scheduled(cron = "0 0 16 * * ?") // 4 PM daily (market close)
-    public void clearUnfilledLimitOrdersAtEOD() {
-        List<Order> pendingOrders = orderQueue.getPendingOrders();
-        
-        if (pendingOrders.isEmpty()) {
-            logger.info("EOD cleanup: No pending orders to clear");
-            return;
-        }
-        
-        int cancelledCount = 0;
-        for (Order order : pendingOrders) {
-            try {
-                // Cancel unfilled limit orders (only those with limit price set)
-                if (order.getLimitPrice() != null) {
-                    order.setStatus(OrderStatus.CANCELLED);
-                    orderRepository.updateOrder(order);
-                    orderQueue.remove(order);
-                    cancelledCount++;
-                    
-                    // Log order cancellation to audit trail
-                    Account fullAccount = accountRepository.findById(order.getAccount().getAccountId()).orElse(null);
-                    if (fullAccount != null && fullAccount.getClientId() != null) {
-                        auditTrailService.logOrderCancelled(
-                            order.getOrderId(),
-                            order.getAccount().getAccountId(),
-                            fullAccount.getClientId(),
-                            order.getOrderType(),
-                            order.getQuantity().intValue(),
-                            order.getLimitPrice(),
-                            "Order cancelled at market close (unfilled limit order)"
-                        );
-                    } else {
-                        logger.warn("Could not log order cancellation for order {}: Account or clientId not found", 
-                            order.getOrderId());
-                    }
-                    
-                    logger.info("EOD cleanup: Cancelled limit order {} at {}", 
-                        order.getOrderId(), OffsetDateTime.now(ZoneOffset.UTC));
-                }
-            } catch (Exception e) {
-                logger.error("Error cancelling order {} during EOD cleanup: {}", 
-                    order.getOrderId(), e.getMessage());
-            }
-        }
-        
-        logger.info("EOD cleanup complete: {} unfilled limit orders cancelled", cancelledCount);
     }
     
     /**
@@ -211,10 +151,10 @@ public class OrderFulfillmentService {
         
         // Update holdings and account based on order type
         if (order.getOrderType().equals(OrderType.BUY)) {
-            holdingService.updateHoldingsForBuy(order, filledPrice);
+            holdingsService.updateHoldingsForBuy(order, filledPrice);
             updateCashForBuy(order, filledPrice);
         } else if (order.getOrderType().equals(OrderType.SELL)) {
-            holdingService.updateHoldingsForSell(order);
+            holdingsService.updateHoldingsForSell(order);
             updateCashForSell(order, filledPrice);
         }
         
@@ -235,7 +175,6 @@ public class OrderFulfillmentService {
         
         logger.info("Order {} filled at price {}", order.getOrderId(), filledPrice);
     }
-    
     
     /**
      * Update account cash balance for BUY order - decrease cash
