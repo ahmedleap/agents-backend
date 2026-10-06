@@ -38,7 +38,7 @@ class OrderConsumerServiceTest {
     private AuditTrailService auditTrailService;
 
     @Mock
-    private HoldingsService holdingsService;
+    private HoldingService holdingsService;
 
     private OrderConsumerService orderConsumerService;
 

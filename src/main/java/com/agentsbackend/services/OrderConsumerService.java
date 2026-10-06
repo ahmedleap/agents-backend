@@ -35,13 +35,13 @@ public class OrderConsumerService {
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
     private final AuditTrailService auditTrailService;
-    private final HoldingsService holdingsService;
+    private final HoldingService holdingsService;
     
     public OrderConsumerService(OrderRepository orderRepository,
                                AccountRepository accountRepository,
                                InstrumentRepository instrumentRepository,
                                AuditTrailService auditTrailService,
-                               HoldingsService holdingsService) {
+                               HoldingService holdingsService) {
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
