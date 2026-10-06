@@ -2,7 +2,6 @@ package com.agentsbackend.repos;
 
 import com.agentsbackend.entities.AuthSession;
 import com.agentsbackend.entities.AuthUser;
-import com.agentsbackend.entities.OneTimeToken;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -11,7 +10,6 @@ import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +34,7 @@ public interface AuthRepository {
     @Insert("INSERT INTO clients (client_id, first_name, last_name, email, password_hash, phone, country, " +
             "email_verified, auth_status, date_of_birth, join_date, signup_ip, signup_device) " +
             "VALUES (#{clientId}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, #{phone}, #{country}, " +
-            "FALSE, 'PENDING_VERIFICATION', #{dateOfBirth}, #{joinDate}, " +
+            "TRUE, 'ACTIVE', #{dateOfBirth}, #{joinDate}, " +
             "CAST(NULLIF(#{signupIp}, '') AS INET), #{signupDevice})")
     void insertClient(@Param("clientId") UUID clientId, @Param("firstName") String firstName,
                       @Param("lastName") String lastName, @Param("email") String email,
@@ -120,36 +118,4 @@ public interface AuthRepository {
             "AND last_active > CURRENT_TIMESTAMP - INTERVAL '30 minutes' ORDER BY last_active DESC")
     List<AuthSession> findActiveSessions(@Param("clientId") UUID clientId);
 
-    @Select("SELECT token_id AS tokenId, client_id AS clientId, token_hash AS tokenHash, " +
-            "token_type AS tokenType, expires_at AS expiresAt, used_at AS usedAt " +
-            "FROM auth_one_time_tokens WHERE token_hash = #{hash} AND token_type = #{type}")
-    Optional<OneTimeToken> findToken(@Param("hash") String hash, @Param("type") String type);
-
-    @Select("SELECT COUNT(*) FROM auth_one_time_tokens WHERE client_id = #{clientId} " +
-            "AND token_type = #{type} AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 hour'")
-    int countRecentTokens(@Param("clientId") UUID clientId, @Param("type") String type);
-
-    @Insert("INSERT INTO auth_one_time_tokens (token_id, client_id, token_hash, token_type, created_at, expires_at) " +
-            "VALUES (#{tokenId}, #{clientId}, #{tokenHash}, #{tokenType}, #{createdAt}, #{expiresAt})")
-    void insertToken(@Param("tokenId") UUID tokenId, @Param("clientId") UUID clientId,
-                     @Param("tokenHash") String tokenHash, @Param("tokenType") String tokenType,
-                     @Param("createdAt") OffsetDateTime createdAt, @Param("expiresAt") OffsetDateTime expiresAt);
-
-    @Update("UPDATE auth_one_time_tokens SET used_at = CURRENT_TIMESTAMP WHERE token_id = #{tokenId} " +
-            "AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP")
-    int consumeToken(@Param("tokenId") UUID tokenId);
-
-    @Update("UPDATE auth_one_time_tokens SET used_at = CURRENT_TIMESTAMP WHERE client_id = #{clientId} " +
-            "AND token_type = #{type} AND used_at IS NULL")
-    int invalidateTokens(@Param("clientId") UUID clientId, @Param("type") String type);
-
-    @Update("UPDATE clients SET email_verified = TRUE, " +
-            "auth_status = CASE WHEN auth_status = 'PENDING_VERIFICATION' THEN 'ACTIVE' ELSE auth_status END " +
-            "WHERE client_id = #{clientId}")
-    int verifyEmail(@Param("clientId") UUID clientId);
-
-    @Update("UPDATE clients SET password_hash = #{passwordHash}, failed_login_attempts = 0, locked_until = NULL, " +
-            "auth_status = CASE WHEN auth_status = 'LOCKED' AND email_verified = TRUE THEN 'ACTIVE' ELSE auth_status END " +
-            "WHERE client_id = #{clientId}")
-    int updatePassword(@Param("clientId") UUID clientId, @Param("passwordHash") String passwordHash);
 }

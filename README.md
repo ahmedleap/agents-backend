@@ -57,8 +57,9 @@ CREATE DATABASE agents_of_leap;
 \i schema.sql
 ```
 
-For an existing database created before authentication was added, apply the additive,
-rerunnable migration with `\i auth_schema.sql` after `schema.sql`.
+For an existing database, do not rerun `schema.sql` over production data; manage its
+changes with reviewed migrations. The auth token/session tables remain in the schema
+for compatibility during this transition, but this Spring service no longer uses them.
 
 #### Verify Schema
 ```sql
@@ -79,19 +80,10 @@ DB_NAME=agents_of_leap
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
-# SMTP is required to deliver verification and password-reset tokens.
-# Use any SMTP relay/provider (not tied to Gmail); recipient email domains can be different.
-SPRING_MAIL_HOST=smtp.your-provider.example
-SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME=your-smtp-user
-SPRING_MAIL_PASSWORD=your-smtp-password
-SPRING_MAIL_FROM=no-reply@your-verified-domain.example
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true
-SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=false
-AUTH_EMAIL_ENABLED=true
-AUTH_PUBLIC_BASE_URL=https://api.example.com
+# JWT verification configuration from the NestJS authentication service
+AUTH_JWT_JWKS_URI=http://localhost:3000/.well-known/jwks.json
+AUTH_JWT_ISSUER=http://localhost:3000
+AUTH_JWT_AUDIENCE=mission-service
 
 # Optional
 JAVA_OPTS=-Xmx512m
@@ -111,18 +103,11 @@ mybatis.configuration.map-underscore-to-camel-case=true
 logging.level.com.agentsbackend=DEBUG
 ```
 
-### Authentication API
+### JWT-protected Mission API
 
-- `POST /auth/register` — requires `firstName`, `lastName`, `dateOfBirth` (ISO date), `email`, `password`, and a two-letter `country`; optional `phone` must use E.164 format. Creates the client and an initial trading account, then sends an email-verification token.
-- `POST /auth/verify-email` — accepts `{ "token": "..." }`.
-- `POST /auth/login` and `POST /auth/refresh` — issue and rotate opaque bearer access/refresh tokens.
-- `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/sessions`, and `DELETE /auth/sessions/{sessionId}` — session management.
-- `POST /auth/password/reset-request`, `POST /auth/password/reset`, and authenticated `POST /auth/password/change` — password lifecycle.
-- `GET /users/me` — authenticated profile and own trading accounts.
+This Spring Boot application is the Mission/resource service, not the centralized identity provider. Register, login, password hashing, refresh-token handling, and JWT signing belong in the NestJS authentication service. Spring validates NestJS-issued access JWTs using the public JWKS URL and configured issuer/audience; it never stores or receives the signing private key. `/users/me` and `/api/**` require a valid JWT. Resource ownership and trading permissions must be enforced by the relevant Mission service operations.
 
-Mail transport is provider-neutral JavaMail SMTP: configure the host, port, credentials, TLS mode, and verified sender address for the SMTP relay you choose (for example, a transactional mail service). The relay can deliver to client addresses at Gmail, Outlook, or other domains; this backend does not require the recipient to use the same provider. For implicit TLS providers on port 465, set `SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true` and both STARTTLS settings to `false`; for STARTTLS providers on port 587, use the defaults shown above. Configure SPF/DKIM for your sender domain as required by the relay.
-
-Passwords require at least 12 characters, uppercase, lowercase, a number, and a special character; BCrypt's 72-byte UTF-8 input limit is enforced. Access tokens expire in 15 minutes; refresh tokens rotate and expire after 30 days. Sessions time out after 30 minutes of inactivity, and the fourth consecutive bad password locks the account for 30 minutes. Password-reset requests are limited to three per account per hour. SMTP is required to complete registration and deliver reset links. MFA, SMS verification, IP geolocation, and IP-level rate limiting are not configured yet.
+For transition/testing only, this branch retains Spring `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, and `GET /auth/sessions`. These legacy Spring endpoints issue opaque session tokens and are not the final NestJS/JWT flow. Email verification, SMTP, password reset, and password-change endpoints are out of scope and are not exposed here.
 
 ### 4. Build and Run
 

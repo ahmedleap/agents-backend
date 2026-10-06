@@ -15,11 +15,6 @@ public final class AuthModels {
                                   String email, String password, String country, String phone) {}
     public record LoginRequest(String email, String password) {}
     public record RefreshRequest(String refreshToken) {}
-    public record EmailTokenRequest(String token) {}
-    public record ResetRequest(String email) {}
-    public record ResetPasswordRequest(String token, String newPassword) {}
-    public record ChangePasswordRequest(String currentPassword, String newPassword) {}
-
     public record TokenResponse(@JsonProperty("access_token") String accessToken,
                                 @JsonProperty("refresh_token") String refreshToken,
                                 @JsonProperty("expires_in") long expiresIn,

@@ -3,9 +3,7 @@ package com.agentsbackend.services;
 import com.agentsbackend.controllers.AuthModels;
 import com.agentsbackend.entities.AuthSession;
 import com.agentsbackend.entities.AuthUser;
-import com.agentsbackend.entities.OneTimeToken;
 import com.agentsbackend.repos.AuthRepository;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,8 +15,6 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
@@ -32,22 +28,17 @@ public class AuthService {
     private static final long ACCESS_TOKEN_SECONDS = 900;
     private static final int ACCESS_TOKEN_MINUTES = 15;
     private static final int REFRESH_TOKEN_DAYS = 30;
-    private static final int EMAIL_TOKEN_HOURS = 24;
-    private static final int RESET_TOKEN_MINUTES = 30;
     private static final int INACTIVITY_MINUTES = 30;
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+[1-9]\\d{7,14}$");
 
     private final AuthRepository repository;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectProvider<AuthEmailService> emailServiceProvider;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public AuthService(AuthRepository repository, PasswordEncoder passwordEncoder,
-                       ObjectProvider<AuthEmailService> emailServiceProvider) {
+    public AuthService(AuthRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
-        this.emailServiceProvider = emailServiceProvider;
     }
 
     @Transactional
@@ -75,9 +66,7 @@ public class AuthService {
         } catch (DuplicateKeyException exception) {
             throw new AuthException(HttpStatus.CONFLICT, "An account with that email or phone already exists.");
         }
-        String verificationToken = createOneTimeToken(clientId, "EMAIL_VERIFICATION", EMAIL_TOKEN_HOURS * 60L);
-        sendEmail(email, verificationToken, EmailPurpose.VERIFY);
-        return new AuthModels.MessageResponse("Account created. Check your email to verify the account before logging in.");
+        return new AuthModels.MessageResponse("Account created successfully.");
     }
 
     @Transactional(noRollbackFor = AuthException.class)
@@ -94,10 +83,7 @@ public class AuthService {
             repository.recordFailedLogin(user.getClientId());
             throw unauthorized();
         }
-        if (!"ACTIVE".equals(user.getAuthStatus()) || !user.isEmailVerified()) {
-            if ("PENDING_VERIFICATION".equals(user.getAuthStatus())) {
-                throw new AuthException(HttpStatus.FORBIDDEN, "Verify your email before logging in.");
-            }
+        if (!"ACTIVE".equals(user.getAuthStatus())) {
             if ("LOCKED".equals(user.getAuthStatus())) {
                 throw new AuthException(HttpStatus.LOCKED, "Account is locked. Try again after 30 minutes.");
             }
@@ -127,7 +113,7 @@ public class AuthService {
         AuthSession session = repository.findByRefreshHash(sha256(refreshToken)).orElseThrow(AuthService::unauthorized);
         validateSession(session, true);
         AuthUser user = repository.findById(session.getClientId()).orElseThrow(AuthService::unauthorized);
-        if (!"ACTIVE".equals(user.getAuthStatus()) || !user.isEmailVerified()) throw unauthorized();
+        if (!"ACTIVE".equals(user.getAuthStatus())) throw unauthorized();
         String newAccess = newOpaqueToken();
         String newRefresh = newOpaqueToken();
         LocalDateTime now = LocalDateTime.now();
@@ -144,7 +130,7 @@ public class AuthService {
         AuthSession session = repository.findByAccessHash(sha256(accessToken)).orElseThrow(AuthService::unauthorized);
         validateSession(session, false);
         AuthUser user = repository.findById(session.getClientId()).orElseThrow(AuthService::unauthorized);
-        if (!"ACTIVE".equals(user.getAuthStatus()) || !user.isEmailVerified()) throw unauthorized();
+        if (!"ACTIVE".equals(user.getAuthStatus())) throw unauthorized();
         if (repository.touchSession(session.getSessionId()) != 1) throw unauthorized();
         return user.getClientId();
     }
@@ -160,71 +146,10 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthModels.MessageResponse requestPasswordReset(AuthModels.ResetRequest request) {
-        if (request == null || blank(request.email())) throw badRequest("Email is required.");
-        requireEmailService();
-        String email = normalizeEmail(request.email());
-        repository.findByEmail(email).ifPresent(user -> {
-            if (repository.countRecentTokens(user.getClientId(), "PASSWORD_RESET") >= 3) return;
-            repository.invalidateTokens(user.getClientId(), "PASSWORD_RESET");
-            String token = createOneTimeToken(user.getClientId(), "PASSWORD_RESET", RESET_TOKEN_MINUTES);
-            sendEmail(email, token, EmailPurpose.RESET);
-        });
-        return new AuthModels.MessageResponse("If an account exists for that email, password reset instructions have been sent.");
-    }
-
-    @Transactional
-    public AuthModels.MessageResponse resetPassword(AuthModels.ResetPasswordRequest request) {
-        if (request == null || blank(request.token())) throw badRequest("A reset token is required.");
-        validatePassword(request.newPassword());
-        OneTimeToken token = validOneTimeToken(request.token(), "PASSWORD_RESET");
-        if (repository.consumeToken(token.getTokenId()) != 1) throw badRequest("Reset token is invalid or expired.");
-        repository.updatePassword(token.getClientId(), passwordEncoder.encode(request.newPassword()));
-        repository.invalidateTokens(token.getClientId(), "PASSWORD_RESET");
-        repository.revokeAllSessions(token.getClientId());
-        AuthUser user = repository.findById(token.getClientId()).orElseThrow(AuthService::unauthorized);
-        sendPasswordChanged(user.getEmail());
-        return new AuthModels.MessageResponse("Password reset successfully. Please log in again.");
-    }
-
-    @Transactional
-    public AuthModels.MessageResponse changePassword(UUID clientId, AuthModels.ChangePasswordRequest request) {
-        if (request == null) throw badRequest("Password details are required.");
-        validatePassword(request.newPassword());
-        AuthUser user = repository.findById(clientId).orElseThrow(AuthService::unauthorized);
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "Current password is incorrect.");
-        }
-        repository.updatePassword(clientId, passwordEncoder.encode(request.newPassword()));
-        repository.invalidateTokens(clientId, "PASSWORD_RESET");
-        repository.revokeAllSessions(clientId);
-        sendPasswordChanged(user.getEmail());
-        return new AuthModels.MessageResponse("Password changed. All sessions have been signed out.");
-    }
-
-    @Transactional
-    public AuthModels.MessageResponse verifyEmail(AuthModels.EmailTokenRequest request) {
-        if (request == null || blank(request.token())) throw badRequest("Verification token is required.");
-        OneTimeToken token = validOneTimeToken(request.token(), "EMAIL_VERIFICATION");
-        if (repository.consumeToken(token.getTokenId()) != 1) throw badRequest("Verification token is invalid or expired.");
-        repository.verifyEmail(token.getClientId());
-        repository.invalidateTokens(token.getClientId(), "EMAIL_VERIFICATION");
-        return new AuthModels.MessageResponse("Email verified. You can now log in.");
-    }
-
-    @Transactional
     public List<AuthModels.SessionResponse> sessions(UUID clientId) {
         return repository.findActiveSessions(clientId).stream()
                 .map(session -> new AuthModels.SessionResponse(session.getSessionId(), session.getDevice(),
                         session.getLocation(), session.getCreatedAt(), session.getLastActive())).toList();
-    }
-
-    @Transactional
-    public AuthModels.MessageResponse deleteSession(UUID clientId, UUID sessionId) {
-        if (repository.revokeSession(sessionId, clientId) != 1) {
-            throw new AuthException(HttpStatus.NOT_FOUND, "Session not found.");
-        }
-        return new AuthModels.MessageResponse("Session signed out.");
     }
 
     @Transactional(readOnly = true)
@@ -240,41 +165,6 @@ public class AuthService {
         if (session.getRevokedAt() != null || !session.getRefreshExpiresAt().isAfter(now)
                 || !session.getLastActive().isAfter(now.minusMinutes(INACTIVITY_MINUTES))) throw unauthorized();
         if (!refresh && !session.getAccessExpiresAt().isAfter(now)) throw unauthorized();
-    }
-
-    private OneTimeToken validOneTimeToken(String rawToken, String type) {
-        OneTimeToken token = repository.findToken(sha256(rawToken), type)
-                .orElseThrow(() -> badRequest("Token is invalid or expired."));
-        if (token.getUsedAt() != null || !token.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
-            throw badRequest("Token is invalid or expired.");
-        }
-        return token;
-    }
-
-    private String createOneTimeToken(UUID clientId, String type, long expiresInMinutes) {
-        String token = newOpaqueToken();
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        repository.insertToken(UUID.randomUUID(), clientId, sha256(token), type, now, now.plusMinutes(expiresInMinutes));
-        return token;
-    }
-
-    private void sendEmail(String email, String token, EmailPurpose purpose) {
-        AuthEmailService emailService = requireEmailService();
-        if (purpose == EmailPurpose.VERIFY) emailService.sendEmailVerification(email, token);
-        else emailService.sendPasswordReset(email, token);
-    }
-
-    private void sendPasswordChanged(String email) {
-        requireEmailService().sendPasswordChanged(email);
-    }
-
-    private AuthEmailService requireEmailService() {
-        AuthEmailService emailService = emailServiceProvider.getIfAvailable();
-        if (emailService == null) {
-            throw new AuthException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Email delivery is not configured. Configure spring.mail.host to enable verification and password reset.");
-        }
-        return emailService;
     }
 
     private String normalizeEmail(String email) {
@@ -316,5 +206,4 @@ public class AuthService {
     private boolean blank(String value) { return value == null || value.isBlank(); }
     private static AuthException unauthorized() { return new AuthException(HttpStatus.UNAUTHORIZED, "Invalid credentials or session."); }
     private static AuthException badRequest(String message) { return new AuthException(HttpStatus.BAD_REQUEST, message); }
-    private enum EmailPurpose { VERIFY, RESET }
 }

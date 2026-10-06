@@ -3,7 +3,6 @@ package com.agentsbackend.services;
 import com.agentsbackend.controllers.AuthModels;
 import com.agentsbackend.entities.AuthSession;
 import com.agentsbackend.entities.AuthUser;
-import com.agentsbackend.entities.OneTimeToken;
 import com.agentsbackend.repos.AuthRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -50,31 +46,24 @@ class AuthServiceTest {
 
     @Mock private AuthRepository repository;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private ObjectProvider<AuthEmailService> emailServiceProvider;
-    @Mock private AuthEmailService emailService;
-
     private AuthService service;
 
     @BeforeEach
     void setUp() {
-        service = new AuthService(repository, passwordEncoder, emailServiceProvider);
+        service = new AuthService(repository, passwordEncoder);
     }
 
     @Test
-    void registerCreatesClientAccountAndVerificationToken() {
+    void registerCreatesClientAndInitialAccountWithoutEmailVerification() {
         when(passwordEncoder.encode(PASSWORD)).thenReturn("bcrypt-hash");
-        when(emailServiceProvider.getIfAvailable()).thenReturn(emailService);
 
         AuthModels.MessageResponse response = service.register(validRegistration(), "127.0.0.1", "test-device");
 
-        assertTrue(response.message().contains("verify"));
+        assertTrue(response.message().contains("created"));
         verify(repository).insertClient(any(UUID.class), eq("Alex"), eq("Example"), eq("alex@example.com"),
                 eq("bcrypt-hash"), eq("+353123456789"), eq("IE"), eq(LocalDate.of(1990, 5, 20)),
                 any(LocalDateTime.class), eq("127.0.0.1"), eq("test-device"));
         verify(repository).insertInitialAccount(any(UUID.class), any(UUID.class), any(LocalDateTime.class));
-        verify(repository).insertToken(any(UUID.class), any(UUID.class), anyString(), eq("EMAIL_VERIFICATION"),
-                any(OffsetDateTime.class), any(OffsetDateTime.class));
-        verify(emailService).sendEmailVerification(eq("alex@example.com"), anyString());
     }
 
     @Test
@@ -125,17 +114,6 @@ class AuthServiceTest {
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatus());
         verify(repository, never()).insertInitialAccount(any(), any(), any());
-    }
-
-    @Test
-    void registerRequiresConfiguredEmailDelivery() {
-        when(passwordEncoder.encode(PASSWORD)).thenReturn("bcrypt-hash");
-        when(emailServiceProvider.getIfAvailable()).thenReturn(null);
-
-        AuthException exception = assertThrows(AuthException.class,
-                () -> service.register(validRegistration(), null, null));
-
-        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, exception.getStatus());
     }
 
     @Test
@@ -238,95 +216,6 @@ class AuthServiceTest {
     }
 
     @Test
-    void verifyEmailConsumesTokenAndActivatesClient() {
-        OneTimeToken token = validToken("EMAIL_VERIFICATION");
-        when(repository.findToken(sha256("verification-token"), "EMAIL_VERIFICATION")).thenReturn(Optional.of(token));
-        when(repository.consumeToken(token.getTokenId())).thenReturn(1);
-
-        AuthModels.MessageResponse response = service.verifyEmail(new AuthModels.EmailTokenRequest("verification-token"));
-
-        assertTrue(response.message().contains("verified"));
-        verify(repository).verifyEmail(CLIENT_ID);
-        verify(repository).invalidateTokens(CLIENT_ID, "EMAIL_VERIFICATION");
-    }
-
-    @Test
-    void verifyEmailRejectsExpiredToken() {
-        OneTimeToken token = validToken("EMAIL_VERIFICATION");
-        token.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(1));
-        when(repository.findToken(sha256("expired"), "EMAIL_VERIFICATION")).thenReturn(Optional.of(token));
-
-        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(AuthException.class,
-                () -> service.verifyEmail(new AuthModels.EmailTokenRequest("expired"))).getStatus());
-    }
-
-    @Test
-    void resetRequestIsGenericAndRateLimited() {
-        when(emailServiceProvider.getIfAvailable()).thenReturn(emailService);
-        when(repository.findByEmail("alex@example.com")).thenReturn(Optional.of(activeUser()));
-        when(repository.countRecentTokens(CLIENT_ID, "PASSWORD_RESET")).thenReturn(3);
-
-        AuthModels.MessageResponse response = service.requestPasswordReset(new AuthModels.ResetRequest("alex@example.com"));
-
-        assertTrue(response.message().contains("If an account exists"));
-        verify(repository, never()).insertToken(any(), any(), anyString(), anyString(), any(), any());
-        verify(emailService, never()).sendPasswordReset(anyString(), anyString());
-    }
-
-    @Test
-    void resetRequestSendsTokenWhenUnderLimit() {
-        when(emailServiceProvider.getIfAvailable()).thenReturn(emailService);
-        when(repository.findByEmail("alex@example.com")).thenReturn(Optional.of(activeUser()));
-        when(repository.countRecentTokens(CLIENT_ID, "PASSWORD_RESET")).thenReturn(0);
-
-        service.requestPasswordReset(new AuthModels.ResetRequest("alex@example.com"));
-
-        verify(repository).invalidateTokens(CLIENT_ID, "PASSWORD_RESET");
-        verify(emailService).sendPasswordReset(eq("alex@example.com"), anyString());
-    }
-
-    @Test
-    void resetPasswordUpdatesHashAndRevokesSessions() {
-        OneTimeToken token = validToken("PASSWORD_RESET");
-        when(repository.findToken(sha256("reset-token"), "PASSWORD_RESET")).thenReturn(Optional.of(token));
-        when(repository.consumeToken(token.getTokenId())).thenReturn(1);
-        when(passwordEncoder.encode(PASSWORD)).thenReturn("new-hash");
-        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(activeUser()));
-        when(emailServiceProvider.getIfAvailable()).thenReturn(emailService);
-
-        AuthModels.MessageResponse response = service.resetPassword(new AuthModels.ResetPasswordRequest("reset-token", PASSWORD));
-
-        assertTrue(response.message().contains("reset successfully"));
-        verify(repository).updatePassword(CLIENT_ID, "new-hash");
-        verify(repository).revokeAllSessions(CLIENT_ID);
-        verify(emailService).sendPasswordChanged("alex@example.com");
-    }
-
-    @Test
-    void changePasswordRejectsIncorrectCurrentPassword() {
-        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(activeUser()));
-        when(passwordEncoder.matches("wrong", "bcrypt-hash")).thenReturn(false);
-
-        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(AuthException.class,
-                () -> service.changePassword(CLIENT_ID, new AuthModels.ChangePasswordRequest("wrong", PASSWORD))).getStatus());
-        verify(repository, never()).updatePassword(any(), anyString());
-    }
-
-    @Test
-    void changePasswordChangesCredentialsAndSignsOutAllSessions() {
-        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(activeUser()));
-        when(passwordEncoder.matches(PASSWORD, "bcrypt-hash")).thenReturn(true);
-        when(passwordEncoder.encode("AnotherStrong123!")).thenReturn("updated-hash");
-        when(emailServiceProvider.getIfAvailable()).thenReturn(emailService);
-
-        service.changePassword(CLIENT_ID, new AuthModels.ChangePasswordRequest(PASSWORD, "AnotherStrong123!"));
-
-        verify(repository).updatePassword(CLIENT_ID, "updated-hash");
-        verify(repository).revokeAllSessions(CLIENT_ID);
-        verify(emailService).sendPasswordChanged("alex@example.com");
-    }
-
-    @Test
     void sessionsAndCurrentUserReturnClientScopedData() {
         AuthSession session = activeSession();
         when(repository.findActiveSessions(CLIENT_ID)).thenReturn(List.of(session));
@@ -337,14 +226,6 @@ class AuthServiceTest {
         AuthModels.UserResponse currentUser = service.currentUser(CLIENT_ID);
         assertEquals("alex@example.com", currentUser.email());
         assertEquals(1, currentUser.accounts().size());
-    }
-
-    @Test
-    void deleteSessionReturnsNotFoundForOtherOrUnknownSession() {
-        when(repository.revokeSession(SESSION_ID, CLIENT_ID)).thenReturn(0);
-
-        assertEquals(HttpStatus.NOT_FOUND, assertThrows(AuthException.class,
-                () -> service.deleteSession(CLIENT_ID, SESSION_ID)).getStatus());
     }
 
     private AuthModels.RegisterRequest validRegistration() {
@@ -379,15 +260,6 @@ class AuthServiceTest {
         session.setAccessExpiresAt(LocalDateTime.now().plusMinutes(15));
         session.setRefreshExpiresAt(LocalDateTime.now().plusDays(30));
         return session;
-    }
-
-    private OneTimeToken validToken(String type) {
-        OneTimeToken token = new OneTimeToken();
-        token.setTokenId(UUID.randomUUID());
-        token.setClientId(CLIENT_ID);
-        token.setTokenType(type);
-        token.setExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(10));
-        return token;
     }
 
     private static String sha256(String value) {
