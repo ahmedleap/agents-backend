@@ -75,6 +75,58 @@ public class OrderFulfillmentService {
     }
     
     /**
+     * End-of-day cleanup: clear unfilled limit orders from queue at 4 PM.
+     * Market close: any limit order not filled is automatically cancelled.
+     */
+    @Scheduled(cron = "0 0 16 * * ?") // 4 PM daily (market close)
+    public void clearUnfilledLimitOrdersAtEOD() {
+        List<Order> pendingOrders = orderQueue.getPendingOrders();
+        
+        if (pendingOrders.isEmpty()) {
+            logger.info("EOD cleanup: No pending orders to clear");
+            return;
+        }
+        
+        int cancelledCount = 0;
+        for (Order order : pendingOrders) {
+            try {
+                // Cancel unfilled limit orders (only those with limit price set)
+                if (order.getLimitPrice() != null) {
+                    order.setStatus(OrderStatus.CANCELLED);
+                    orderRepository.updateOrder(order);
+                    orderQueue.remove(order);
+                    cancelledCount++;
+                    
+                    // Log order cancellation to audit trail
+                    Account fullAccount = accountRepository.findById(order.getAccount().getAccountId()).orElse(null);
+                    if (fullAccount != null && fullAccount.getClientId() != null) {
+                        auditTrailService.logOrderCancelled(
+                            order.getOrderId(),
+                            order.getAccount().getAccountId(),
+                            fullAccount.getClientId(),
+                            order.getOrderType(),
+                            order.getQuantity().intValue(),
+                            order.getLimitPrice(),
+                            "Order cancelled at market close (unfilled limit order)"
+                        );
+                    } else {
+                        logger.warn("Could not log order cancellation for order {}: Account or clientId not found", 
+                            order.getOrderId());
+                    }
+                    
+                    logger.info("EOD cleanup: Cancelled limit order {} at {}", 
+                        order.getOrderId(), OffsetDateTime.now(ZoneOffset.UTC));
+                }
+            } catch (Exception e) {
+                logger.error("Error cancelling order {} during EOD cleanup: {}", 
+                    order.getOrderId(), e.getMessage());
+            }
+        }
+        
+        logger.info("EOD cleanup complete: {} unfilled limit orders cancelled", cancelledCount);
+    }
+    
+    /**
      * Attempt to fill an order if conditions are met.
      * Market orders (limit_price = NULL): fill immediately at current bid/ask (depending on order type)
      * Limit orders: fill based on bid/ask comparison with limit price

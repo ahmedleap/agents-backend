@@ -1788,7 +1788,7 @@ class OrderServiceImplTest {
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
-        // Act
+    
         CreateOrderResponse response = orderService.createOrder(request);
 
         // Assert - SELL doesn't check position limit
