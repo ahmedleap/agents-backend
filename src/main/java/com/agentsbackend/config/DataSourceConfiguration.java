@@ -58,6 +58,13 @@ public class DataSourceConfiguration {
             @Qualifier("warehouseDataSource") DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
+        
+        // Enable mapping of snake_case SQL column aliases to camelCase Java bean properties
+        // This is required for analytics queries that use aliases like 'trade_count' → 'tradeCount'
+        org.apache.ibatis.session.Configuration config = new org.apache.ibatis.session.Configuration();
+        config.setMapUnderscoreToCamelCase(true);
+        factoryBean.setConfiguration(config);
+        
         return factoryBean.getObject();
     }
 }
