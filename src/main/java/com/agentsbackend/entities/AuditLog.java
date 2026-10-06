@@ -1,48 +1,26 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "audit_logs")
 public class AuditLog {
 
-    @Id
-    @Column(name = "audit_log_id", columnDefinition = "UUID")
     private UUID auditLogId;
-
-    @Column(name = "order_id", columnDefinition = "UUID", nullable = false)
     private UUID orderId;
-
-    @Column(name = "account_id", columnDefinition = "UUID", nullable = false)
     private UUID accountId;
-
-    @Column(name = "client_id", columnDefinition = "UUID", nullable = false)
     private UUID clientId;
-
-    @Column(name = "event_type", nullable = false)
     private String eventType;
-
-    @Column(name = "event_time", nullable = false)
-    private LocalDateTime eventTime;
-
-    @Column(name = "reason", columnDefinition = "TEXT")
+    private OffsetDateTime eventTime;
     private String reason;
-
-    @Column(name = "details", columnDefinition = "JSONB")
     private String details;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     public AuditLog() {
     }
 
     public AuditLog(UUID auditLogId, UUID orderId, UUID accountId, UUID clientId, 
-                    String eventType, LocalDateTime eventTime, String reason, 
-                    String details, LocalDateTime createdAt) {
+                    String eventType, OffsetDateTime eventTime, String reason,
+                    String details, OffsetDateTime createdAt) {
         this.auditLogId = auditLogId;
         this.orderId = orderId;
         this.accountId = accountId;
@@ -94,11 +72,11 @@ public class AuditLog {
         this.eventType = eventType;
     }
 
-    public LocalDateTime getEventTime() {
+    public OffsetDateTime getEventTime() {
         return eventTime;
     }
 
-    public void setEventTime(LocalDateTime eventTime) {
+    public void setEventTime(OffsetDateTime eventTime) {
         this.eventTime = eventTime;
     }
 
@@ -118,11 +96,11 @@ public class AuditLog {
         this.details = details;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

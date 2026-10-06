@@ -7,7 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +38,7 @@ class AccountRepositoryTest {
         testAccount.setName("Test Account");
         testAccount.setCashBalance(new BigDecimal("50000.00"));
         testAccount.setStatus(AccountStatus.ACTIVE);
-        testAccount.setOpenDate(LocalDateTime.now());
+        testAccount.setOpenDate(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     // ===== Account Creation Tests =====
@@ -258,7 +259,7 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("Account open date can be updated")
     void testAccountOpenDateUpdate() {
-        LocalDateTime newDate = LocalDateTime.now().plusDays(1);
+        OffsetDateTime newDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
         testAccount.setOpenDate(newDate);
         assertEquals(newDate, testAccount.getOpenDate());
     }
@@ -281,7 +282,7 @@ class AccountRepositoryTest {
         String name = "Full State Account";
         BigDecimal balance = new BigDecimal("100000.00");
         AccountStatus status = AccountStatus.ACTIVE;
-        LocalDateTime date = LocalDateTime.now();
+        OffsetDateTime date = OffsetDateTime.now(ZoneOffset.UTC);
 
         Account account = new Account();
         account.setAccountId(accountId);

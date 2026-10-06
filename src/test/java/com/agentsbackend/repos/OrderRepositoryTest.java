@@ -1,8 +1,6 @@
 package com.agentsbackend.repos;
 
 import com.agentsbackend.entities.Order;
-import com.agentsbackend.entities.Account;
-import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +10,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,7 +41,7 @@ class OrderRepositoryTest {
         testOrder.setOrderType(OrderType.BUY);
         testOrder.setQuantity(new BigDecimal("100.00"));
         testOrder.setStatus(OrderStatus.PENDING);
-        testOrder.setCreatedAt(LocalDateTime.now());
+        testOrder.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     @Test
@@ -101,7 +100,7 @@ class OrderRepositoryTest {
         order2.setOrderType(OrderType.SELL);
         order2.setQuantity(new BigDecimal("50.00"));
         order2.setStatus(OrderStatus.PENDING);
-        order2.setCreatedAt(LocalDateTime.now());
+        order2.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         pendingOrders.add(order2);
 
         when(orderRepository.findPendingOrders()).thenReturn(pendingOrders);
@@ -145,7 +144,7 @@ class OrderRepositoryTest {
         filledOrder.setOrderType(OrderType.BUY);
         filledOrder.setQuantity(new BigDecimal("50.00"));
         filledOrder.setStatus(OrderStatus.FILLED);
-        filledOrder.setCreatedAt(LocalDateTime.now());
+        filledOrder.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         accountOrders.add(filledOrder);
 
         when(orderRepository.findAllByAccount(testAccountId)).thenReturn(accountOrders);
@@ -164,7 +163,7 @@ class OrderRepositoryTest {
         // Arrange
         testOrder.setStatus(OrderStatus.FILLED);
         testOrder.setFilledPrice(new BigDecimal("50.00"));
-        testOrder.setFilledAt(LocalDateTime.now());
+        testOrder.setFilledAt(OffsetDateTime.now(ZoneOffset.UTC));
         
         doNothing().when(orderRepository).updateOrder(any(Order.class));
 
@@ -270,7 +269,7 @@ class OrderRepositoryTest {
     void testUpdateOrderCancelled() {
         // Arrange
         testOrder.setStatus(OrderStatus.CANCELLED);
-        testOrder.setCancelledAt(LocalDateTime.now());
+        testOrder.setCancelledAt(OffsetDateTime.now(ZoneOffset.UTC));
         
         doNothing().when(orderRepository).updateOrder(any(Order.class));
 

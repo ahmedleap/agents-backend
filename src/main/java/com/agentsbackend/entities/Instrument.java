@@ -80,12 +80,44 @@ public class Instrument {
         this.industry = industry;
     }
 
-    public List<InstrumentPrice> getPrices() {
-        return prices;
+    public BigDecimal getBid() {
+        return bid;
     }
 
-    public void setPrices(List<InstrumentPrice> prices) {
-        this.prices = prices;
+    public void setBid(BigDecimal bid) {
+        this.bid = bid;
+    }
+
+    public BigDecimal getAsk() {
+        return ask;
+    }
+
+    public void setAsk(BigDecimal ask) {
+        this.ask = ask;
+    }
+
+    public BigDecimal getMidPrice() {
+        return midPrice;
+    }
+
+    public void setMidPrice(BigDecimal midPrice) {
+        this.midPrice = midPrice;
+    }
+
+    public OffsetDateTime getPriceUpdatedAt() {
+        return priceUpdatedAt;
+    }
+
+    public void setPriceUpdatedAt(OffsetDateTime priceUpdatedAt) {
+        this.priceUpdatedAt = priceUpdatedAt;
+    }
+
+    public List<InstrumentPriceHistory> getPriceHistory() {
+        return priceHistory;
+    }
+
+    public void setPriceHistory(List<InstrumentPriceHistory> priceHistory) {
+        this.priceHistory = priceHistory;
     }
 
     public List<Order> getOrders() {

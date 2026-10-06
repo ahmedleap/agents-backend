@@ -111,7 +111,7 @@ CREATE TABLE accounts (
 );
 
 -- ============================================================
--- INSTRUMENTS
+-- INSTRUMENTS (with current market pricing)
 -- ============================================================
 
 CREATE TABLE instruments (
@@ -126,20 +126,45 @@ CREATE TABLE instruments (
 );
 
 -- ============================================================
--- INSTRUMENT_PRICES (periodic pricing-API pulls, ~15 min cadence)
+-- WATCHLISTS
 -- ============================================================
 
-CREATE TABLE instrument_prices (
-    price_id        UUID PRIMARY KEY,
+CREATE TABLE watchlists (
+    watchlist_id    UUID PRIMARY KEY,
+    client_id       UUID NOT NULL,
     instrument_id   UUID NOT NULL,
-    price           NUMERIC(18,4) NOT NULL CHECK (price > 0),
-    as_of           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
-    CONSTRAINT fk_instrument_prices_instrument
+    added_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+    CONSTRAINT fk_watchlists_client
+        FOREIGN KEY (client_id)
+        REFERENCES clients (client_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_watchlists_instrument
         FOREIGN KEY (instrument_id)
         REFERENCES instruments (instrument_id)
         ON DELETE CASCADE,
-    CONSTRAINT uq_instrument_price_as_of
-        UNIQUE (instrument_id, as_of)
+    CONSTRAINT uq_watchlists_client_instrument
+        UNIQUE (client_id, instrument_id)
+);
+
+-- ============================================================
+-- INSTRUMENT PRICE HISTORY (daily OHLCV bars from Alpaca)
+-- ============================================================
+
+CREATE TABLE instrument_price_history (
+    price_history_id UUID PRIMARY KEY,
+    instrument_id    UUID NOT NULL,
+    timestamp        TIMESTAMP WITH TIME ZONE NOT NULL,
+    open             NUMERIC(18,4) NOT NULL CHECK (open > 0),
+    high             NUMERIC(18,4) NOT NULL CHECK (high > 0),
+    low              NUMERIC(18,4) NOT NULL CHECK (low > 0),
+    close            NUMERIC(18,4) NOT NULL CHECK (close > 0),
+    volume           INTEGER NOT NULL CHECK (volume >= 0),
+    CONSTRAINT fk_price_history_instrument
+        FOREIGN KEY (instrument_id)
+        REFERENCES instruments (instrument_id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_instrument_timestamp
+        UNIQUE (instrument_id, timestamp)
 );
 
 -- ============================================================
@@ -249,7 +274,7 @@ CREATE TABLE audit_logs (
     event_time      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     reason          TEXT,
     details         JSONB,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
     CONSTRAINT fk_audit_logs_client
         FOREIGN KEY (client_id)
         REFERENCES clients (client_id)
@@ -304,6 +329,9 @@ CREATE INDEX idx_audit_logs_client_event_time ON audit_logs (client_id, event_ti
 
 CREATE INDEX idx_holdings_instrument ON holdings (instrument_id);
 
+CREATE INDEX idx_watchlists_client ON watchlists (client_id);
+
 CREATE INDEX idx_transactions_account_created ON transactions (account_id, created_at);
 
-CREATE INDEX idx_instrument_prices_instrument_as_of ON instrument_prices (instrument_id, as_of DESC);
+CREATE INDEX idx_price_history_instrument_timestamp 
+    ON instrument_price_history (instrument_id, timestamp DESC);

@@ -3,7 +3,6 @@ import com.agentsbackend.entities.Order;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.entities.Account;
-import com.agentsbackend.entities.InstrumentPrice;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.AccountStatus;
@@ -16,7 +15,8 @@ import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
 import com.agentsbackend.queue.OrderQueue;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
@@ -27,12 +27,10 @@ import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
 import com.agentsbackend.DTO.response.OrderSummaryResponse;
 import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.HoldingsRepository;
+import com.agentsbackend.repos.HoldingRepository;
 import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.InstrumentPriceRepository;
+import com.agentsbackend.repos.InstrumentRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,19 +40,19 @@ public class OrderServiceImpl implements OrderService {
     private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     private final OrderRepository orderRepository;
-    private final HoldingsRepository holdingsRepository;
+    private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
-    private final InstrumentPriceRepository instrumentPriceRepository;
+    private final InstrumentRepository instrumentRepository;
     private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
 
-    public OrderServiceImpl(OrderRepository orderRepository, HoldingsRepository holdingsRepository, 
-                          AccountRepository accountRepository, InstrumentPriceRepository instrumentPriceRepository,
+    public OrderServiceImpl(OrderRepository orderRepository, HoldingRepository holdingRepository, 
+                          AccountRepository accountRepository, InstrumentRepository instrumentRepository,
                           OrderQueue orderQueue, AuditTrailService auditTrailService) {
         this.orderRepository = orderRepository;
-        this.holdingsRepository = holdingsRepository;
+        this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
-        this.instrumentPriceRepository = instrumentPriceRepository;
+        this.instrumentRepository = instrumentRepository;
         this.orderQueue = orderQueue;
         this.auditTrailService = auditTrailService;
     }
@@ -71,7 +69,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CreateOrderResponse createOrder(CreateOrderRequest request) {
         UUID orderId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         
         try {
             validateAccountStatus(request);
@@ -92,6 +90,7 @@ public class OrderServiceImpl implements OrderService {
             // All validations passed - create and persist the order
             Order order = new Order();
             order.setOrderId(orderId);
+            order.setAccountId(request.getAccountId());
             
             Account account = new Account();
             account.setAccountId(request.getAccountId());
@@ -102,8 +101,6 @@ public class OrderServiceImpl implements OrderService {
             order.setInstrument(instrument);
             
             order.setQuantity(new BigDecimal(request.getQuantity()));
-            // Only set limitPrice for LIMIT orders (when price was provided by client)
-            // For MARKET orders, limitPrice stays null
             order.setLimitPrice(request.getPrice());
             order.setOrderType(request.getOrderType());
             order.setStatus(OrderStatus.PENDING);
@@ -138,10 +135,14 @@ public class OrderServiceImpl implements OrderService {
                 // Limit order - use the provided price
                 totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
             } else {
-                // Market order - fetch current market price for estimated value
-                InstrumentPrice currentPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
-                if (currentPrice != null && currentPrice.getPrice() != null) {
-                    totalValue = currentPrice.getPrice().multiply(new BigDecimal(request.getQuantity()));
+                // Market order - use current mid_price from instrument
+                Instrument inst = instrumentRepository.findById(request.getInstrumentId()).orElse(null);
+                if (inst != null && inst.getMidPrice() != null) {
+                    totalValue = inst.getMidPrice().multiply(new BigDecimal(request.getQuantity()));
+                } else {
+                    // If instrument or mid_price not available, use zero
+                    totalValue = BigDecimal.ZERO;
+                    logger.warn("Could not retrieve mid_price for instrument {}", request.getInstrumentId());
                 }
             }
             
@@ -244,11 +245,19 @@ public class OrderServiceImpl implements OrderService {
     private void validateOrderPrice(CreateOrderRequest request) {
         BigDecimal price = request.getPrice();
         
-        InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
+        // Fetch current instrument pricing
+        Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
+            .orElse(null);
+        BigDecimal marketPrice;
+        if (instrument != null) {
+            marketPrice = instrument.getMidPrice();
+        } else {
+            marketPrice = null;
+        }
         
         if (price == null) {
             // MARKET ORDER - validate market price exists
-            if (latestPrice == null) {
+            if (marketPrice == null) {
                 throw new InvalidOrderParametersException(
                     "Market order cannot be executed. No market price available for instrument: " + 
                     request.getInstrumentId()
@@ -257,8 +266,7 @@ public class OrderServiceImpl implements OrderService {
         } else {
             // LIMIT ORDER - price > 0 already validated by @DecimalMin on DTO
             // Now validate it's within ±50% of market price
-            if (latestPrice != null) {
-                BigDecimal marketPrice = latestPrice.getPrice();
+            if (marketPrice != null) {
                 BigDecimal upperBound = marketPrice.multiply(new BigDecimal("1.50"));
                 BigDecimal lowerBound = marketPrice.multiply(new BigDecimal("0.50"));
                 
@@ -325,7 +333,7 @@ public class OrderServiceImpl implements OrderService {
 
     // Validates that current holding + new quantity does not exceed 10,000 shares
     private void validatePositionLimit(CreateOrderRequest request) {
-        Holding currentHolding = holdingsRepository.findByAccountAndInstrument(
+        Holding currentHolding = holdingRepository.findByAccountAndInstrument(
             request.getAccountId(), 
             request.getInstrumentId()
         );
@@ -348,7 +356,7 @@ public class OrderServiceImpl implements OrderService {
 
     // Validates that account has sufficient shares to sell
     private void validateSellingHoldings(CreateOrderRequest request) {
-        Holding currentHolding = holdingsRepository.findByAccountAndInstrument(
+        Holding currentHolding = holdingRepository.findByAccountAndInstrument(
             request.getAccountId(), 
             request.getInstrumentId()
         );
@@ -382,9 +390,10 @@ public class OrderServiceImpl implements OrderService {
         // For market orders (price == null), we need to fetch market price for validation
         BigDecimal priceForValidation = request.getPrice();
         if (priceForValidation == null) {
-            InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(request.getInstrumentId());
-            if (latestPrice != null) {
-                priceForValidation = latestPrice.getPrice();
+            Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
+                .orElse(null);
+            if (instrument != null) {
+                priceForValidation = instrument.getMidPrice();
             }
         }
         
@@ -474,13 +483,14 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal holdingsValue = BigDecimal.ZERO;
         
         // Fetch all holdings for this account
-        List<Holding> holdings = holdingsRepository.findAllByAccount(accountId);
+        List<Holding> holdings = holdingRepository.findAllByAccount(accountId);
         
         // Calculate value of each holding using current market price
         for (Holding holding : holdings) {
-            InstrumentPrice latestPrice = instrumentPriceRepository.findLatestPrice(holding.getInstrumentId());
-            if (latestPrice != null) {
-                BigDecimal holdingValue = holding.getQuantity().multiply(latestPrice.getPrice());
+            Instrument instrument = instrumentRepository.findById(holding.getInstrumentId())
+                .orElse(null);
+            if (instrument != null && instrument.getMidPrice() != null) {
+                BigDecimal holdingValue = holding.getQuantity().multiply(instrument.getMidPrice());
                 holdingsValue = holdingsValue.add(holdingValue);
             }
         }
@@ -517,7 +527,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancelReason(request.getCancellationReason());
-        order.setCancelledAt(LocalDateTime.now(ZoneId.of("UTC")));
+        order.setCancelledAt(OffsetDateTime.now(ZoneOffset.UTC));
         orderRepository.updateOrder(order);
         
         // Log order cancellation to audit trail

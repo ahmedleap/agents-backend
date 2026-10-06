@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,7 +92,7 @@ class OrderTest {
     void testOrderCreatedAt() {
         // Arrange
         Order order = new Order();
-        LocalDateTime createdAt = LocalDateTime.now();
+        OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         order.setCreatedAt(createdAt);
@@ -105,7 +106,7 @@ class OrderTest {
     void testOrderFilledAt() {
         // Arrange
         Order order = new Order();
-        LocalDateTime filledAt = LocalDateTime.now();
+        OffsetDateTime filledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         order.setFilledAt(filledAt);
@@ -119,7 +120,7 @@ class OrderTest {
     void testOrderCancelledAt() {
         // Arrange
         Order order = new Order();
-        LocalDateTime cancelledAt = LocalDateTime.now();
+        OffsetDateTime cancelledAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         order.setCancelledAt(cancelledAt);

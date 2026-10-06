@@ -1,48 +1,91 @@
-// Environment verification template — confirms the CI agent has Maven, a JDK, and
-// JUnit working together before any real application pipeline is written on top.
+// Spring Boot Backend CI/CD Pipeline
+// Stages: dependency check, build, test with coverage, Docker image build, artifact archive
 pipeline {
     agent any
 
+    tools {
+        jdk 'Java 21'
+    }
+
     environment {
-        IMAGE_NAME = "env-check"
+        // Extract version from pom.xml for consistency across builds
+        PROJECT_VERSION = sh(
+            script: "grep -m1 '<version>' pom.xml | sed 's/.*<version>\\([^<]*\\)<\\/version>.*/\\1/' | xargs",
+            returnStdout: true
+        ).toString().trim()
+        IMAGE_NAME = "agents-backend"
+        DOCKER_TAG = "${IMAGE_NAME}:${PROJECT_VERSION}-${BUILD_NUMBER}"
+        DOCKER_TAG_LATEST = "${IMAGE_NAME}:latest"
     }
 
     stages {
         stage('Checkout') {
             steps {
+                echo "Checking out code from branch: ${BRANCH_NAME}"
                 checkout scm
+                echo "Project version: ${PROJECT_VERSION}"
             }
         }
 
-        stage('Build Verification Image') {
+        stage('Dependency Verification') {
             steps {
-                // Building the image alone proves Maven/JDK/JUnit resolve and compile
-                // correctly, since the Dockerfile runs `mvn test` during the build.
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                echo "Verifying Maven dependencies and checking for updates..."
+                sh "mvn -B dependency:tree > dependency-tree.txt"
+                sh "mvn -B dependency:analyze"
             }
         }
 
-        stage('Report Versions') {
+        stage('Build & Test') {
             steps {
-                // Re-run against the built image so the tool versions show up
-                // directly in this stage's console output.
-                sh "docker run --rm --entrypoint sh ${IMAGE_NAME}:${BUILD_NUMBER} -c 'java -version && mvn -version'"
+                echo "Building project and running tests with coverage..."
+                sh "mvn -B -U clean verify"
             }
         }
 
-        stage('Test') {
+        stage('Report Test Coverage') {
             steps {
-                sh "docker run --rm ${IMAGE_NAME}:${BUILD_NUMBER}"
+                echo "Archiving JUnit test results and JaCoCo coverage reports..."
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image: ${DOCKER_TAG}"
+                sh "docker build --build-arg VERSION=${PROJECT_VERSION} -t ${DOCKER_TAG} -t ${DOCKER_TAG_LATEST} ."
+                sh "docker image inspect ${DOCKER_TAG} | head -20"
+            }
+        }
+
+        stage('Verify Image') {
+            steps {
+                echo "Verifying Docker image runs without errors..."
+                sh "docker run --rm ${DOCKER_TAG} java -version"
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                echo "Archiving build artifacts and test reports..."
+                archiveArtifacts artifacts: 'target/agents-backend.jar', allowEmptyArchive: false
+                archiveArtifacts artifacts: 'dependency-tree.txt', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'target/surefire-reports/**/*.xml', allowEmptyArchive: true
             }
         }
     }
 
     post {
+        always {
+            echo "Build completed for version: ${PROJECT_VERSION}"
+            echo "Docker image: ${DOCKER_TAG}"
+        }
         success {
-            echo "Environment check passed: Maven, JDK, and JUnit are installed and working."
+            echo "✓ Build successful"
+            echo "✓ All tests passed"
+            echo "✓ Docker image ready: ${DOCKER_TAG}"
         }
         failure {
-            echo "Environment check failed — see console output for the missing/broken tool."
+            echo "✗ Build failed — check logs above for details"
         }
     }
 }

@@ -28,7 +28,7 @@ public interface OrderRepository {
     void updateOrder(Order order);
 
     @Insert("INSERT INTO orders (order_id, account_id, instrument_id, quantity, limit_price, order_type, status, created_at) " +
-            "VALUES (#{orderId}, #{account.accountId}, #{instrument.instrumentId}, #{quantity}, #{limitPrice,jdbcType=NUMERIC}, #{orderType}::order_type, #{status}::order_status, #{createdAt})")
+            "VALUES (#{orderId}, #{accountId}, #{instrument.instrumentId}, #{quantity}, #{limitPrice,jdbcType=NUMERIC}, #{orderType}::order_type, #{status}::order_status, #{createdAt})")
     void save(Order order);
 
     @Select("SELECT COUNT(*) FROM orders WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} " +
