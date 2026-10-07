@@ -11,6 +11,7 @@ public class ActiveClientsResponse {
     private Double activeClientPercentage;
     private Long activeAccounts;
     private Long totalAccounts;
+    private Long newClientsToday;
 
     // Constructors
     public ActiveClientsResponse() {}
@@ -23,6 +24,18 @@ public class ActiveClientsResponse {
         this.activeClientPercentage = activeClientPercentage;
         this.activeAccounts = activeAccounts;
         this.totalAccounts = totalAccounts;
+        this.newClientsToday = 0L;
+    }
+
+    public ActiveClientsResponse(Long totalActiveClients, Long activeClientsLast30Days, Long totalClients,
+                               Double activeClientPercentage, Long activeAccounts, Long totalAccounts, Long newClientsToday) {
+        this.totalActiveClients = totalActiveClients;
+        this.activeClientsLast30Days = activeClientsLast30Days;
+        this.totalClients = totalClients;
+        this.activeClientPercentage = activeClientPercentage;
+        this.activeAccounts = activeAccounts;
+        this.totalAccounts = totalAccounts;
+        this.newClientsToday = newClientsToday;
     }
 
     // Getters and Setters
@@ -74,6 +87,14 @@ public class ActiveClientsResponse {
         this.totalAccounts = totalAccounts;
     }
 
+    public Long getNewClientsToday() {
+        return newClientsToday;
+    }
+
+    public void setNewClientsToday(Long newClientsToday) {
+        this.newClientsToday = newClientsToday;
+    }
+
     @Override
     public String toString() {
         return "ActiveClientsResponse{" +
@@ -83,6 +104,7 @@ public class ActiveClientsResponse {
                 ", activeClientPercentage=" + activeClientPercentage +
                 ", activeAccounts=" + activeAccounts +
                 ", totalAccounts=" + totalAccounts +
+                ", newClientsToday=" + newClientsToday +
                 '}';
     }
 }

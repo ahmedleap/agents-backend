@@ -84,6 +84,7 @@ public interface AnalyticsRepository {
             "SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)) as total_volume_value, " +
             "AVG(COALESCE(fo.filled_price, fo.limit_price)) as average_price, " +
             "di.mid_price as current_price, " +
+            "ROUND(100.0 * (di.mid_price - AVG(COALESCE(fo.filled_price, fo.limit_price))) / NULLIF(AVG(COALESCE(fo.filled_price, fo.limit_price)), 0), 2) as day_change_percent, " +
             "COUNT(DISTINCT fo.account_id) as unique_traders " +
             "FROM fact_orders fo " +
             "JOIN dim_instruments di ON fo.instrument_id = di.instrument_id " +
@@ -108,6 +109,7 @@ public interface AnalyticsRepository {
             "SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)) as total_volume_value, " +
             "AVG(COALESCE(fo.filled_price, fo.limit_price)) as average_price, " +
             "di.mid_price as current_price, " +
+            "ROUND(100.0 * (di.mid_price - AVG(COALESCE(fo.filled_price, fo.limit_price))) / NULLIF(AVG(COALESCE(fo.filled_price, fo.limit_price)), 0), 2) as day_change_percent, " +
             "COUNT(DISTINCT fo.account_id) as unique_traders " +
             "FROM fact_orders fo " +
             "JOIN dim_instruments di ON fo.instrument_id = di.instrument_id " +
@@ -286,7 +288,12 @@ public interface AnalyticsRepository {
             "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value_traded, " +
             "COUNT(CASE WHEN fo.status = 'FILLED' THEN 1 END) as total_orders_executed, " +
             "COALESCE(AVG(fo.quantity), 0) as average_order_quantity, " +
-            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value " +
+            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value, " +
+            "ROUND(100.0 * COALESCE(SUM(CASE WHEN DATE(fo.created_at) = CURRENT_DATE THEN fo.quantity * COALESCE(fo.filled_price, fo.limit_price) END), 0) / " +
+            "  NULLIF((SELECT COALESCE(AVG(daily_volume), 0) FROM " +
+            "    (SELECT SUM(quantity * COALESCE(filled_price, limit_price)) as daily_volume " +
+            "     FROM fact_orders WHERE status = 'FILLED' AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM CURRENT_DATE) " +
+            "     GROUP BY DATE(created_at)) ytd), 0) - 100.0, 2) as percent_change_ytd " +
             "FROM fact_orders fo " +
             "WHERE fo.status = 'FILLED'")
     TotalVolumeResponse getTotalVolume();
@@ -319,7 +326,8 @@ public interface AnalyticsRepository {
             "COUNT(DISTINCT dc.client_id) as total_clients, " +
             "ROUND(100.0 * COUNT(DISTINCT CASE WHEN fo.created_at >= NOW() - INTERVAL '30 days' THEN dc.client_id END) / NULLIF(COUNT(DISTINCT dc.client_id), 0), 2) as active_client_percentage, " +
             "COUNT(DISTINCT CASE WHEN fo.created_at >= NOW() - INTERVAL '30 days' THEN da.account_id END) as active_accounts, " +
-            "COUNT(DISTINCT da.account_id) as total_accounts " +
+            "COUNT(DISTINCT da.account_id) as total_accounts, " +
+            "0 as new_clients_today " +
             "FROM dim_clients dc " +
             "LEFT JOIN dim_accounts da ON dc.client_id = da.client_id " +
             "LEFT JOIN fact_orders fo ON da.account_id = fo.account_id")
@@ -339,7 +347,12 @@ public interface AnalyticsRepository {
             "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value_traded, " +
             "COUNT(CASE WHEN fo.status = 'FILLED' THEN 1 END) as total_orders_executed, " +
             "COALESCE(AVG(fo.quantity), 0) as average_order_quantity, " +
-            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value " +
+            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value, " +
+            "ROUND(100.0 * COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) / " +
+            "  NULLIF((SELECT COALESCE(AVG(daily_volume), 0) FROM " +
+            "    (SELECT SUM(quantity * COALESCE(filled_price, limit_price)) as daily_volume " +
+            "     FROM fact_orders WHERE status = 'FILLED' AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM #{date}) " +
+            "     GROUP BY DATE(created_at)) ytd), 0) - 100.0, 2) as percent_change_ytd " +
             "FROM fact_orders fo " +
             "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) = #{date}")
     TotalVolumeResponse getDailyTotalVolume(@Param("date") LocalDate date);
@@ -375,7 +388,8 @@ public interface AnalyticsRepository {
             "COUNT(DISTINCT dc.client_id) as total_clients, " +
             "ROUND(100.0 * COUNT(DISTINCT CASE WHEN DATE(fo.created_at) = #{date} THEN dc.client_id END) / NULLIF(COUNT(DISTINCT dc.client_id), 0), 2) as active_client_percentage, " +
             "COUNT(DISTINCT CASE WHEN DATE(fo.created_at) = #{date} THEN da.account_id END) as active_accounts, " +
-            "COUNT(DISTINCT da.account_id) as total_accounts " +
+            "COUNT(DISTINCT da.account_id) as total_accounts, " +
+            "COALESCE(COUNT(DISTINCT CASE WHEN DATE(fo.created_at) = #{date} AND fo.created_at = (SELECT MIN(created_at) FROM fact_orders WHERE account_id = fo.account_id) THEN dc.client_id END), 0) as new_clients_today " +
             "FROM dim_clients dc " +
             "LEFT JOIN dim_accounts da ON dc.client_id = da.client_id " +
             "LEFT JOIN fact_orders fo ON da.account_id = fo.account_id")
@@ -567,7 +581,7 @@ public interface AnalyticsRepository {
             "COUNT(CASE WHEN fo.status = 'PENDING' THEN 1 END) as pending_orders, " +
             "ROUND(100.0 * COUNT(CASE WHEN fo.status = 'FILLED' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as fulfillment_rate, " +
             "ROUND(100.0 * COUNT(CASE WHEN fo.status = 'CANCELLED' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as cancellation_rate, " +
-            "COALESCE(EXTRACT(EPOCH FROM (MAX(fo.updated_at) - MIN(fo.created_at)))::BIGINT / NULLIF(COUNT(*), 0), 0) as average_order_duration_seconds, " +
+            "0 as average_order_duration_seconds, " +
             "NULL as peak_trading_time " +
             "FROM fact_orders fo " +
             "WHERE DATE(fo.created_at) BETWEEN #{startDate} AND #{endDate} " +

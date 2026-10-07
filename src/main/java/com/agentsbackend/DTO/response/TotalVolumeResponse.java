@@ -10,6 +10,7 @@ public class TotalVolumeResponse {
     private Long totalOrdersExecuted;
     private Double averageOrderQuantity;
     private Double averageOrderValue;
+    private Double percentChangeYTD;
 
     // Constructors
     public TotalVolumeResponse() {}
@@ -21,6 +22,17 @@ public class TotalVolumeResponse {
         this.totalOrdersExecuted = totalOrdersExecuted;
         this.averageOrderQuantity = averageOrderQuantity;
         this.averageOrderValue = averageOrderValue;
+        this.percentChangeYTD = 0.0;
+    }
+
+    public TotalVolumeResponse(Long totalQuantityTraded, Double totalValueTraded, Long totalOrdersExecuted, 
+                             Double averageOrderQuantity, Double averageOrderValue, Double percentChangeYTD) {
+        this.totalQuantityTraded = totalQuantityTraded;
+        this.totalValueTraded = totalValueTraded;
+        this.totalOrdersExecuted = totalOrdersExecuted;
+        this.averageOrderQuantity = averageOrderQuantity;
+        this.averageOrderValue = averageOrderValue;
+        this.percentChangeYTD = percentChangeYTD;
     }
 
     // Getters and Setters
@@ -64,6 +76,14 @@ public class TotalVolumeResponse {
         this.averageOrderValue = averageOrderValue;
     }
 
+    public Double getPercentChangeYTD() {
+        return percentChangeYTD;
+    }
+
+    public void setPercentChangeYTD(Double percentChangeYTD) {
+        this.percentChangeYTD = percentChangeYTD;
+    }
+
     @Override
     public String toString() {
         return "TotalVolumeResponse{" +
@@ -72,6 +92,7 @@ public class TotalVolumeResponse {
                 ", totalOrdersExecuted=" + totalOrdersExecuted +
                 ", averageOrderQuantity=" + averageOrderQuantity +
                 ", averageOrderValue=" + averageOrderValue +
+                ", percentChangeYTD=" + percentChangeYTD +
                 '}';
     }
 }
