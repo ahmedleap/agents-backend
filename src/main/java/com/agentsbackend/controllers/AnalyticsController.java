@@ -13,6 +13,16 @@ import com.agentsbackend.DTO.response.TopInstrumentResponse;
 import com.agentsbackend.DTO.response.AssetClassMetricsResponse;
 import com.agentsbackend.DTO.response.OrderMetricsResponse;
 import com.agentsbackend.DTO.response.ClientSegmentationResponse;
+import com.agentsbackend.DTO.response.TotalVolumeResponse;
+import com.agentsbackend.DTO.response.TotalTradesResponse;
+import com.agentsbackend.DTO.response.ActiveClientsResponse;
+import com.agentsbackend.DTO.response.VolumeTrendResponse;
+import com.agentsbackend.DTO.response.InstrumentTrendResponse;
+import com.agentsbackend.DTO.response.ClientActivityTrendResponse;
+import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
+import com.agentsbackend.DTO.response.SegmentTrendResponse;
+import com.agentsbackend.DTO.response.FulfillmentTrendResponse;
+import com.agentsbackend.DTO.response.AssetClassTrendResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +68,7 @@ public class AnalyticsController {
      * GET /api/v1/analytics/instruments/top-traded
      * Get top traded instruments across the entire platform (by trade count).
      * Shows most popular stocks/assets being traded.
+     * Note: For dashboard, use /dashboard/most-active-instruments instead.
      */
     @GetMapping("/instruments/top-traded")
     public ResponseEntity<List<TopInstrumentResponse>> getTopTradedInstruments(
@@ -65,20 +76,6 @@ public class AnalyticsController {
         logger.info("GET /instruments/top-traded?limit={}", limit);
         
         List<TopInstrumentResponse> topInstruments = analyticsService.getTopTradedInstruments(limit);
-        return ResponseEntity.ok(topInstruments);
-    }
-
-    /**
-     * GET /api/v1/analytics/instruments/top-volume
-     * Get top instruments by trading volume (total dollar value).
-     * Shows instruments with highest monetary trading activity.
-     */
-    @GetMapping("/instruments/top-volume")
-    public ResponseEntity<List<TopInstrumentResponse>> getTopInstrumentsByVolume(
-            @RequestParam(value = "limit", required = false, defaultValue = "20") Integer limit) {
-        logger.info("GET /instruments/top-volume?limit={}", limit);
-        
-        List<TopInstrumentResponse> topInstruments = analyticsService.getTopInstrumentsByVolume(limit);
         return ResponseEntity.ok(topInstruments);
     }
 
@@ -97,43 +94,6 @@ public class AnalyticsController {
         
         List<AssetClassMetricsResponse> assetClassMetrics = analyticsService.getAssetClassMetrics();
         return ResponseEntity.ok(assetClassMetrics);
-    }
-
-    // ============================================================
-    // ORDER FULFILLMENT & EXECUTION METRICS ENDPOINTS
-    // ============================================================
-
-    /**
-     * GET /api/v1/analytics/orders/metrics
-     * Get platform-wide order fulfillment and execution metrics.
-     * Includes: fulfillment rate, cancellation rate, average order size, buy/sell split.
-     */
-    @GetMapping("/orders/metrics")
-    public ResponseEntity<OrderMetricsResponse> getOrderMetrics() {
-        logger.info("GET /orders/metrics");
-        
-        OrderMetricsResponse orderMetrics = analyticsService.getOrderMetrics();
-        return ResponseEntity.ok(orderMetrics);
-    }
-
-    /**
-     * GET /api/v1/analytics/orders/metrics-by-date
-     * Get order metrics for a specific date range.
-     * Allows analysis of order trends over time periods.
-     */
-    @GetMapping("/orders/metrics-by-date")
-    public ResponseEntity<OrderMetricsResponse> getOrderMetricsByDateRange(
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
-        logger.info("GET /orders/metrics-by-date?startDate={}&endDate={}", startDate, endDate);
-        
-        try {
-            OrderMetricsResponse orderMetrics = analyticsService.getOrderMetricsByDateRange(startDate, endDate);
-            return ResponseEntity.ok(orderMetrics);
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid date range for order metrics", e);
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     // ============================================================
@@ -180,6 +140,235 @@ public class AnalyticsController {
         
         List<ClientSegmentationResponse> activeClients = analyticsService.getMostActiveClients(limit);
         return ResponseEntity.ok(activeClients);
+    }
+
+    // ============================================================
+    // DASHBOARD TOP METRICS ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/total-volume
+     * Get total trading volume metrics for the analytics dashboard top section.
+     * Shows: total quantity traded, total value, order count, and averages.
+     * Optional: Query parameter 'date' for specific date (defaults to today).
+     */
+    @GetMapping("/dashboard/total-volume")
+    public ResponseEntity<TotalVolumeResponse> getTotalVolume(
+            @RequestParam(value = "date", required = false) LocalDate date) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        logger.info("GET /dashboard/total-volume?date={}", date);
+        
+        TotalVolumeResponse totalVolume = analyticsService.getDailyTotalVolume(date);
+        return ResponseEntity.ok(totalVolume);
+    }
+
+    /**
+     * GET /api/v1/analytics/dashboard/total-trades
+     * Get total trades metrics for the analytics dashboard top section.
+     * Shows: total trades, fulfillment rate, cancellation rate, buy/sell split.
+     * Optional: Query parameter 'date' for specific date (defaults to today).
+     */
+    @GetMapping("/dashboard/total-trades")
+    public ResponseEntity<TotalTradesResponse> getTotalTrades(
+            @RequestParam(value = "date", required = false) LocalDate date) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        logger.info("GET /dashboard/total-trades?date={}", date);
+        
+        TotalTradesResponse totalTrades = analyticsService.getDailyTotalTrades(date);
+        return ResponseEntity.ok(totalTrades);
+    }
+
+    /**
+     * GET /api/v1/analytics/dashboard/active-clients
+     * Get active clients metrics for the analytics dashboard top section.
+     * Shows: active clients (last 30 days), total clients, active percentage, and accounts.
+     * Optional: Query parameter 'date' for specific date (defaults to today).
+     */
+    @GetMapping("/dashboard/active-clients")
+    public ResponseEntity<ActiveClientsResponse> getActiveClients(
+            @RequestParam(value = "date", required = false) LocalDate date) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        logger.info("GET /dashboard/active-clients?date={}", date);
+        
+        ActiveClientsResponse activeClients = analyticsService.getDailyActiveClients(date);
+        return ResponseEntity.ok(activeClients);
+    }
+
+    // ============================================================
+    // DASHBOARD TREND ANALYSIS ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/volume-trend
+     * Get trading volume trend over a date range for the volume trends chart.
+     * Provides time series data for line/bar charts showing trading activity over time.
+     * Query parameters:
+     *   - startDate: Start date (YYYY-MM-DD) - required
+     *   - endDate: End date (YYYY-MM-DD) - required
+     * Returns daily aggregated volume data.
+     */
+    @GetMapping("/dashboard/volume-trend")
+    public ResponseEntity<List<VolumeTrendResponse>> getVolumeTrend(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        logger.info("GET /dashboard/volume-trend?startDate={}&endDate={}", startDate, endDate);
+        
+        try {
+            List<VolumeTrendResponse> volumeTrend = analyticsService.getVolumeTrend(startDate, endDate);
+            return ResponseEntity.ok(volumeTrend);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid date range for volume trend", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * GET /api/v1/analytics/dashboard/instrument-trend
+     * Get top instruments trading activity trend over a date range.
+     * Used for displaying which instruments have been most active over time.
+     * Query parameters:
+     *   - startDate: Start date (YYYY-MM-DD) - required
+     *   - endDate: End date (YYYY-MM-DD) - required
+     * Returns daily trading data for each instrument.
+     */
+    @GetMapping("/dashboard/instrument-trend")
+    public ResponseEntity<List<InstrumentTrendResponse>> getInstrumentTrend(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        logger.info("GET /dashboard/instrument-trend?startDate={}&endDate={}", startDate, endDate);
+        
+        try {
+            List<InstrumentTrendResponse> instrumentTrend = analyticsService.getInstrumentTrendByDateRange(startDate, endDate);
+            return ResponseEntity.ok(instrumentTrend);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid date range for instrument trend", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * GET /api/v1/analytics/dashboard/most-active-instruments
+     * Get the most active instruments for a specific date.
+     * Used for the "Most Active Instruments" section on dashboard.
+     * Query parameters:
+     *   - date: The date to analyze (YYYY-MM-DD) - optional (defaults to today)
+     *   - limit: Number of top instruments to return - optional (defaults to 20)
+     */
+    @GetMapping("/dashboard/most-active-instruments")
+    public ResponseEntity<List<InstrumentTrendResponse>> getMostActiveInstruments(
+            @RequestParam(value = "date", required = false) LocalDate date,
+            @RequestParam(value = "limit", required = false, defaultValue = "20") Integer limit) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        logger.info("GET /dashboard/most-active-instruments?date={}&limit={}", date, limit);
+        
+        List<InstrumentTrendResponse> activeInstruments = analyticsService.getTopInstrumentsForDate(date, limit);
+        return ResponseEntity.ok(activeInstruments);
+    }
+
+    // ============================================================
+    // PRIORITY 1: CLIENT ACTIVITY TRENDS ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/client-activity-trend
+     * Get client activity trends over a date range.
+     * Query params: startDate, endDate, limit
+     */
+    @GetMapping("/dashboard/client-activity-trend")
+    public ResponseEntity<List<ClientActivityTrendResponse>> clientActivityTrend(
+            @RequestParam(value = "startDate") LocalDate startDate,
+            @RequestParam(value = "endDate") LocalDate endDate,
+            @RequestParam(value = "limit", required = false, defaultValue = "10") Integer limit) {
+        logger.info("GET /dashboard/client-activity-trend?startDate={}&endDate={}&limit={}", startDate, endDate, limit);
+        
+        List<ClientActivityTrendResponse> trend = analyticsService.getClientActivityTrend(startDate, endDate, limit);
+        return ResponseEntity.ok(trend);
+    }
+
+    // ============================================================
+    // PRIORITY 2: INSTRUMENT ANALYSIS ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/instrument-analysis
+     * Get detailed analysis for a specific instrument over a date range.
+     * Query params: ticker, startDate, endDate
+     */
+    @GetMapping("/dashboard/instrument-analysis")
+    public ResponseEntity<InstrumentAnalysisResponse> instrumentAnalysis(
+            @RequestParam(value = "ticker") String ticker,
+            @RequestParam(value = "startDate") LocalDate startDate,
+            @RequestParam(value = "endDate") LocalDate endDate) {
+        logger.info("GET /dashboard/instrument-analysis?ticker={}&startDate={}&endDate={}", ticker, startDate, endDate);
+        
+        InstrumentAnalysisResponse analysis = analyticsService.getInstrumentAnalysis(ticker, startDate, endDate);
+        return ResponseEntity.ok(analysis);
+    }
+
+    // ============================================================
+    // PRIORITY 3: CLIENT SEGMENT TREND ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/segment-trends
+     * Get client segment trends by risk tolerance or portfolio size.
+     * Query params: segmentType, startDate, endDate
+     */
+    @GetMapping("/dashboard/segment-trends")
+    public ResponseEntity<List<SegmentTrendResponse>> segmentTrends(
+            @RequestParam(value = "segmentType") String segmentType,
+            @RequestParam(value = "startDate") LocalDate startDate,
+            @RequestParam(value = "endDate") LocalDate endDate) {
+        logger.info("GET /dashboard/segment-trends?segmentType={}&startDate={}&endDate={}", segmentType, startDate, endDate);
+        
+        List<SegmentTrendResponse> trends = analyticsService.getSegmentTrend(segmentType, startDate, endDate);
+        return ResponseEntity.ok(trends);
+    }
+
+    // ============================================================
+    // PRIORITY 4: FULFILLMENT TREND ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/fulfillment-trends
+     * Get order fulfillment trends over a date range.
+     * Query params: startDate, endDate
+     */
+    @GetMapping("/dashboard/fulfillment-trends")
+    public ResponseEntity<List<FulfillmentTrendResponse>> fulfillmentTrends(
+            @RequestParam(value = "startDate") LocalDate startDate,
+            @RequestParam(value = "endDate") LocalDate endDate) {
+        logger.info("GET /dashboard/fulfillment-trends?startDate={}&endDate={}", startDate, endDate);
+        
+        List<FulfillmentTrendResponse> trends = analyticsService.getFulfillmentTrend(startDate, endDate);
+        return ResponseEntity.ok(trends);
+    }
+
+    // ============================================================
+    // PRIORITY 5: ASSET CLASS TREND ENDPOINTS
+    // ============================================================
+
+    /**
+     * GET /api/v1/analytics/dashboard/asset-class-trends
+     * Get asset class trading trends over a date range.
+     * Query params: startDate, endDate
+     */
+    @GetMapping("/dashboard/asset-class-trends")
+    public ResponseEntity<List<AssetClassTrendResponse>> assetClassTrends(
+            @RequestParam(value = "startDate") LocalDate startDate,
+            @RequestParam(value = "endDate") LocalDate endDate) {
+        logger.info("GET /dashboard/asset-class-trends?startDate={}&endDate={}", startDate, endDate);
+        
+        List<AssetClassTrendResponse> trends = analyticsService.getAssetClassTrend(startDate, endDate);
+        return ResponseEntity.ok(trends);
     }
 
     // ============================================================
