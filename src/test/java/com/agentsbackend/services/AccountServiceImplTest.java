@@ -61,12 +61,12 @@ class AccountServiceImplTest {
     @Test
     @DisplayName("List all accounts successfully")
     void testListAccounts() {
-        when(accountRepository.findAll()).thenReturn(java.util.List.of(testAccount));
+        when(accountRepository.findByClientId(testClientId)).thenReturn(java.util.List.of(testAccount));
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getPortfolioValue(testAccountId)).thenReturn(new BigDecimal("30000.00"));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(BigDecimal.ZERO);
 
-        var result = accountService.listAccounts();
+        var result = accountService.listAccounts(testClientId);
 
         assertNotNull(result);
         assertEquals(1, result.size());

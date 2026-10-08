@@ -3,6 +3,9 @@ package com.agentsbackend.controllers;
 import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.services.AccountService;
+import com.agentsbackend.services.MissionAuthorizationService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +23,11 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountService accountService;
+    private final MissionAuthorizationService authorizationService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, MissionAuthorizationService authorizationService) {
         this.accountService = accountService;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -32,8 +37,8 @@ public class AccountController {
      * @return ResponseEntity with list of AccountListItem (HTTP 200)
      */
     @GetMapping
-    public ResponseEntity<List<AccountsResponse.AccountListItem>> listAccounts() {
-        List<AccountsResponse.AccountListItem> accounts = accountService.listAccounts();
+    public ResponseEntity<List<AccountsResponse.AccountListItem>> listAccounts(@AuthenticationPrincipal Jwt jwt) {
+        List<AccountsResponse.AccountListItem> accounts = accountService.listAccounts(clientId(jwt));
         return ResponseEntity.ok(accounts);
     }
 
@@ -45,7 +50,9 @@ public class AccountController {
      * @return ResponseEntity with created AccountsResponse.Account (HTTP 201)
      */
     @PostMapping
-    public ResponseEntity<AccountsResponse.Account> createAccount(@Valid @RequestBody AccountsRequest.CreateAccount request) {
+    public ResponseEntity<AccountsResponse.Account> createAccount(@AuthenticationPrincipal Jwt jwt,
+                                                                   @Valid @RequestBody AccountsRequest.CreateAccount request) {
+        authorizationService.requireOwnClient(clientId(jwt), request.getClientId());
         AccountsResponse.Account account = accountService.createAccount(request);
         return new ResponseEntity<>(account, HttpStatus.CREATED);
     }
@@ -58,7 +65,9 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.AccountDetail (HTTP 200)
      */
     @GetMapping("/{accountId}")
-    public ResponseEntity<AccountsResponse.AccountDetail> getAccountDetails(@PathVariable UUID accountId) {
+    public ResponseEntity<AccountsResponse.AccountDetail> getAccountDetails(@AuthenticationPrincipal Jwt jwt,
+                                                                             @PathVariable UUID accountId) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.AccountDetail account = accountService.getAccountDetails(accountId);
         return ResponseEntity.ok(account);
     }
@@ -71,7 +80,9 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.Summary showing portfolio valuation (HTTP 200)
      */
     @GetMapping("/{accountId}/summary")
-    public ResponseEntity<AccountsResponse.Summary> getAccountSummary(@PathVariable UUID accountId) {
+    public ResponseEntity<AccountsResponse.Summary> getAccountSummary(@AuthenticationPrincipal Jwt jwt,
+                                                                       @PathVariable UUID accountId) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Summary summary = accountService.getAccountSummary(accountId);
         return ResponseEntity.ok(summary);
     }
@@ -89,8 +100,10 @@ public class AccountController {
      */
     @GetMapping("/{accountId}/performance")
     public ResponseEntity<AccountsResponse.Performance> getAccountPerformance(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
             @RequestParam(value = "period", defaultValue = "1Y") String period) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Performance performance = accountService.getAccountPerformance(accountId, period);
         return ResponseEntity.ok(performance);
     }
@@ -105,8 +118,10 @@ public class AccountController {
      */
     @PutMapping("/{accountId}")
     public ResponseEntity<AccountsResponse.Account> updateAccount(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
             @Valid @RequestBody AccountsRequest.UpdateAccount request) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Account account = accountService.updateAccount(accountId, request);
         return ResponseEntity.ok(account);
     }
@@ -121,8 +136,10 @@ public class AccountController {
      */
     @PostMapping("/{accountId}/deposit")
     public ResponseEntity<AccountsResponse.Transaction> depositCash(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
             @Valid @RequestBody AccountsRequest.Deposit request) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Transaction response = accountService.depositCash(accountId, request.getAmount());
         return ResponseEntity.ok(response);
     }
@@ -138,9 +155,15 @@ public class AccountController {
      */
     @PostMapping("/{accountId}/withdraw")
     public ResponseEntity<AccountsResponse.Transaction> withdrawCash(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
             @Valid @RequestBody AccountsRequest.Withdrawal request) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Transaction response = accountService.withdrawCash(accountId, request.getAmount());
         return ResponseEntity.ok(response);
+    }
+
+    private UUID clientId(Jwt jwt) {
+        return UUID.fromString(jwt.getSubject());
     }
 }

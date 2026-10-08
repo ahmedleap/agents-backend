@@ -57,9 +57,8 @@ CREATE DATABASE agents_of_leap;
 \i schema.sql
 ```
 
-For an existing database, do not rerun `schema.sql` over production data; manage its
-changes with reviewed migrations. The auth token/session tables remain in the schema
-for compatibility during this transition, but this Spring service no longer uses them.
+For an existing database created before authentication was added, apply the additive,
+rerunnable migration with `\i auth_schema.sql` after `schema.sql`.
 
 #### Verify Schema
 ```sql
@@ -82,8 +81,8 @@ DB_PASSWORD=your_secure_password
 
 # JWT verification configuration from the NestJS authentication service
 AUTH_JWT_JWKS_URI=http://localhost:3000/.well-known/jwks.json
-AUTH_JWT_ISSUER=http://localhost:3000
-AUTH_JWT_AUDIENCE=mission-service
+AUTH_JWT_ISSUER=agents-of-leap
+AUTH_JWT_AUDIENCE=trading-middleware
 
 # Optional
 JAVA_OPTS=-Xmx512m
@@ -106,8 +105,6 @@ logging.level.com.agentsbackend=DEBUG
 ### JWT-protected Mission API
 
 This Spring Boot application is the Mission/resource service, not the centralized identity provider. Register, login, password hashing, refresh-token handling, and JWT signing belong in the NestJS authentication service. Spring validates NestJS-issued access JWTs using the public JWKS URL and configured issuer/audience; it never stores or receives the signing private key. `/users/me` and `/api/**` require a valid JWT. Resource ownership and trading permissions must be enforced by the relevant Mission service operations.
-
-For transition/testing only, this branch retains Spring `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, and `GET /auth/sessions`. These legacy Spring endpoints issue opaque session tokens and are not the final NestJS/JWT flow. Email verification, SMTP, password reset, and password-change endpoints are out of scope and are not exposed here.
 
 ### 4. Build and Run
 

@@ -116,6 +116,9 @@ public interface AccountRepository {
     @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM accounts WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     boolean existsById(@Param("accountId") UUID accountId);
 
+        @Select("SELECT EXISTS (SELECT 1 FROM accounts WHERE account_id = #{accountId} AND client_id = #{clientId})")
+        boolean existsByIdAndClientId(@Param("accountId") UUID accountId, @Param("clientId") UUID clientId);
+
     /**
      * Get count of holdings for an account.
      * Holdings represent current positions in instruments.

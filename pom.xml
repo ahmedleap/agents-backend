@@ -59,7 +59,7 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <!-- Verify access JWTs issued by the centralized NestJS auth service -->
+        <!-- Verify signed access JWTs from the trusted identity issuer -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
@@ -75,6 +75,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

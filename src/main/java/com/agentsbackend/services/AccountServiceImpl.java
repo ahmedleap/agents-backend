@@ -34,10 +34,8 @@ public class AccountServiceImpl implements AccountService {
      * Includes cash balance, available balance, and total portfolio value.
      */
     @Override
-    public List<AccountsResponse.AccountListItem> listAccounts() {
-        // TODO: Update to use authenticated client ID from security context
-        // For now, returning all accounts - in production this should filter by current client
-        List<Account> accounts = accountRepository.findAll();
+    public List<AccountsResponse.AccountListItem> listAccounts(UUID clientId) {
+        List<Account> accounts = accountRepository.findByClientId(clientId);
         
         return accounts.stream()
                 .map(account -> {
@@ -66,6 +64,9 @@ public class AccountServiceImpl implements AccountService {
      */
     @Override
     public AccountsResponse.Account createAccount(AccountsRequest.CreateAccount request) {
+        if (request.getClientId() == null) {
+            throw new IllegalArgumentException("Authenticated client ID is required");
+        }
         // Validate that client exists
         if (!accountRepository.clientExists(request.getClientId())) {
             throw new IllegalArgumentException("Client not found: " + request.getClientId());

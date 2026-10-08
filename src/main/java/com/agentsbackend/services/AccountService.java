@@ -18,7 +18,7 @@ public interface AccountService {
      *
      * @return List of AccountsResponse.AccountListItem objects
      */
-    List<AccountsResponse.AccountListItem> listAccounts();
+    List<AccountsResponse.AccountListItem> listAccounts(UUID clientId);
 
     /**
      * Create a new account for a client.

@@ -21,6 +21,9 @@ public interface OrderRepository {
     @Select("SELECT * FROM orders WHERE order_id = #{orderId}")
     Order findById(@Param("orderId") UUID orderId);
 
+        @Select("SELECT account_id FROM orders WHERE order_id = #{orderId}")
+        UUID findAccountIdByOrderId(@Param("orderId") UUID orderId);
+
     @Select("SELECT * FROM orders WHERE account_id = #{accountId} ORDER BY created_at DESC")
     List<Order> findAllByAccount(@Param("accountId") UUID accountId);
 

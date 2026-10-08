@@ -2,6 +2,7 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.WatchlistResponse;
 import com.agentsbackend.services.WatchlistService;
+import com.agentsbackend.services.MissionAuthorizationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
@@ -10,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,9 +42,14 @@ class WatchlistControllerTest {
         @Mock
     private WatchlistService watchlistService;
 
+    @Mock
+    private MissionAuthorizationService authorizationService;
+
         @BeforeEach
         void setUp() {
-                mockMvc = MockMvcBuilders.standaloneSetup(new WatchlistController(watchlistService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new WatchlistController(watchlistService, authorizationService))
+                    .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                    .build();
         }
 
     @Test
