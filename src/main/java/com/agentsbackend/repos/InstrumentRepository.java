@@ -28,7 +28,7 @@ public interface InstrumentRepository {
             "   OR LOWER(name) LIKE LOWER(CONCAT('%', #{query}, '%')) " +
             "ORDER BY ticker ASC " +
             "LIMIT 50")
-    List<Instrument> searchByQuery(@Param("query") String query);
+    List<Instrument> searchByTickerOrName(@Param("query") String query);
 
     /**
      * Find instrument by ticker symbol.

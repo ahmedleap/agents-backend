@@ -50,7 +50,7 @@ public class InstrumentServiceImpl implements InstrumentService {
             throw new IllegalArgumentException("Search query must be 1-50 characters");
         }
 
-        List<Instrument> results = instrumentRepository.searchByQuery(query.trim());
+        List<Instrument> results = instrumentRepository.searchByTickerOrName(query.trim());
         
         List<InstrumentResponse.SearchResult> searchResults = results.stream()
             .map(instrument -> InstrumentResponse.SearchResult.builder()
@@ -102,7 +102,7 @@ public class InstrumentServiceImpl implements InstrumentService {
             .ticker(instrument.getTicker())
             .bid(instrument.getBid())
             .ask(instrument.getAsk())
-            .lastPrice(instrument.getAsk() != null ? instrument.getAsk() : BigDecimal.ZERO)
+            .lastPrice(getLastPrice(instrument))
             .priceChange(BigDecimal.ZERO)
             .priceChangePercent(BigDecimal.ZERO)
             .volume(0L)
@@ -201,5 +201,13 @@ public class InstrumentServiceImpl implements InstrumentService {
             .bars(bars)
             .summary(summary)
             .build();
+    }
+
+    /**
+     * Get last price from instrument ask price.
+     * Returns ask price if available, otherwise defaults to ZERO.
+     */
+    private BigDecimal getLastPrice(Instrument instrument) {
+        return java.util.Optional.ofNullable(instrument.getAsk()).orElse(BigDecimal.ZERO);
     }
 }

@@ -66,7 +66,7 @@ class InstrumentServiceImplTest {
     void searchInstruments_ValidQuery_ReturnsResults() {
         // Arrange
         String query = "tech";
-        when(instrumentRepository.searchByQuery(query))
+        when(instrumentRepository.searchByTickerOrName(query))
             .thenReturn(Arrays.asList(mockInstrument));
 
         // Act
@@ -78,7 +78,7 @@ class InstrumentServiceImplTest {
         assertEquals("TECH", results.getResults().get(0).getTicker());
         assertEquals("Technology Stock", results.getResults().get(0).getName());
         assertEquals("STOCK", results.getResults().get(0).getAssetClass());
-        verify(instrumentRepository, times(1)).searchByQuery(query);
+        verify(instrumentRepository, times(1)).searchByTickerOrName(query);
     }
 
     @Test
@@ -86,7 +86,7 @@ class InstrumentServiceImplTest {
     void searchInstruments_NoMatches_ReturnsEmptyResults() {
         // Arrange
         String query = "xyz";
-        when(instrumentRepository.searchByQuery(query))
+        when(instrumentRepository.searchByTickerOrName(query))
             .thenReturn(Collections.emptyList());
 
         // Act
@@ -132,7 +132,7 @@ class InstrumentServiceImplTest {
     void searchInstruments_WithWhitespace_TrimmedAndReturnsResults() {
         // Arrange
         String query = "  tech  ";
-        when(instrumentRepository.searchByQuery("tech"))
+        when(instrumentRepository.searchByTickerOrName("tech"))
             .thenReturn(Arrays.asList(mockInstrument));
 
         // Act
@@ -140,7 +140,7 @@ class InstrumentServiceImplTest {
 
         // Assert
         assertEquals(1, results.getResults().size());
-        verify(instrumentRepository, times(1)).searchByQuery("tech");
+        verify(instrumentRepository, times(1)).searchByTickerOrName("tech");
     }
 
     @Test
@@ -160,7 +160,7 @@ class InstrumentServiceImplTest {
         inst2.setAssetClass(AssetClass.STOCK);
         inst2.setIndustry("Technology");
 
-        when(instrumentRepository.searchByQuery(query))
+        when(instrumentRepository.searchByTickerOrName(query))
             .thenReturn(Arrays.asList(inst1, inst2));
 
         // Act
