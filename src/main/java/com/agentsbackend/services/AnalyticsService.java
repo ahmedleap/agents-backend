@@ -98,13 +98,6 @@ public interface AnalyticsService {
      */
     List<ClientSegmentationResponse> getClientSegmentationByPortfolioSize();
 
-    /**
-     * Get most active clients in the last 30 days by order count.
-     * @param limit Maximum number of clients
-     * @return List of most active clients
-     */
-    List<ClientSegmentationResponse> getMostActiveClients(Integer limit);
-
     // ============================================================
     // DASHBOARD TOP METRICS
     // ============================================================
@@ -181,20 +174,6 @@ public interface AnalyticsService {
      * @return List of top instruments for that day
      */
     List<InstrumentTrendResponse> getTopInstrumentsForDate(LocalDate date, Integer limit);
-
-    // ============================================================
-    // PRIORITY 1: CLIENT ACTIVITY TRENDS
-    // ============================================================
-
-    /**
-     * Get client activity trends over a date range.
-     * Shows trading activity by individual clients over time.
-     * @param startDate Start date
-     * @param endDate End date
-     * @param limit Maximum number of top clients
-     * @return List of client activity trends
-     */
-    List<ClientActivityTrendResponse> getClientActivityTrend(LocalDate startDate, LocalDate endDate, Integer limit);
 
     // ============================================================
     // PRIORITY 2: INSTRUMENT ANALYSIS

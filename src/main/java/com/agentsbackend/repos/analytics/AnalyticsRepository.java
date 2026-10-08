@@ -249,32 +249,6 @@ public interface AnalyticsRepository {
             "ORDER BY client_count DESC")
     List<ClientSegmentationResponse> getClientSegmentationByPortfolioSize();
 
-    /**
-     * Get most active clients in the last 30 days by order count.
-     * @param limit Maximum number of clients to return
-     * @return List of most active clients
-     */
-    @Select("SELECT " +
-            "COALESCE(dc.first_name || ' ' || dc.last_name, 'Unknown') as segment, " +
-            "'ACTIVE_TRADER' as dimension, " +
-            "1 as client_count, " +
-            "COALESCE(SUM(fhs.total_value) / NULLIF(COUNT(DISTINCT da.account_id), 0), 0) as average_portfolio_value, " +
-            "COALESCE(SUM(fhs.total_value), 0) as total_assets_under_management, " +
-            "COALESCE(AVG(da.cash_balance), 0) as average_cash_balance, " +
-            "COUNT(DISTINCT fo.order_id) as total_orders, " +
-            "ROUND(100.0 * COUNT(CASE WHEN fo.status = 'FILLED' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as order_success_rate, " +
-            "COALESCE(COUNT(DISTINCT fo.order_id), 0) as avg_orders_per_client, " +
-            "COALESCE(AVG(EXTRACT(EPOCH FROM (NOW() - da.open_date)) / 86400.0), 0) as avg_account_age " +
-            "FROM fact_orders fo " +
-            "JOIN dim_accounts da ON fo.account_id = da.account_id " +
-            "JOIN dim_clients dc ON da.client_id = dc.client_id " +
-            "LEFT JOIN (SELECT DISTINCT ON (account_id) account_id, total_value FROM fact_historical_snapshots ORDER BY account_id, snapshot_date DESC) fhs ON da.account_id = fhs.account_id " +
-            "WHERE fo.created_at >= NOW() - INTERVAL '30 days' " +
-            "GROUP BY dc.client_id, dc.first_name, dc.last_name " +
-            "ORDER BY total_orders DESC " +
-            "LIMIT #{limit}")
-    List<ClientSegmentationResponse> getMostActiveClients(@Param("limit") Integer limit);
-
     // ============================================================
     // DASHBOARD TOP METRICS QUERIES
     // ============================================================
@@ -468,38 +442,6 @@ public interface AnalyticsRepository {
     List<InstrumentTrendResponse> getTopInstrumentsForDate(@Param("date") LocalDate date, @Param("limit") Integer limit);
 
     // ============================================================
-    // PRIORITY 1: CLIENT ACTIVITY TREND QUERIES
-    // ============================================================
-
-    /**
-     * Get client activity trends over a date range.
-     * Shows trading activity by individual clients over time.
-     * @param startDate Start date
-     * @param endDate End date
-     * @param limit Maximum number of top clients per day
-     * @return List of client activity trends
-     */
-    @Select("SELECT " +
-            "DATE(fo.created_at) as date, " +
-            "dc.client_id, " +
-            "dc.first_name || ' ' || dc.last_name as client_name, " +
-            "COUNT(*) as trade_count, " +
-            "COALESCE(SUM(fo.quantity), 0) as total_volume, " +
-            "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value, " +
-            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value, " +
-            "ROUND(100.0 * COUNT(CASE WHEN fo.status = 'FILLED' THEN 1 END) / NULLIF(COUNT(*), 0), 2) as order_success_rate " +
-            "FROM fact_orders fo " +
-            "JOIN dim_accounts da ON fo.account_id = da.account_id " +
-            "JOIN dim_clients dc ON da.client_id = dc.client_id " +
-            "WHERE DATE(fo.created_at) BETWEEN #{startDate} AND #{endDate} " +
-            "GROUP BY DATE(fo.created_at), dc.client_id, dc.first_name, dc.last_name " +
-            "ORDER BY DATE(fo.created_at) DESC, trade_count DESC " +
-            "LIMIT #{limit}")
-    List<ClientActivityTrendResponse> getClientActivityTrend(@Param("startDate") LocalDate startDate, 
-                                                              @Param("endDate") LocalDate endDate,
-                                                              @Param("limit") Integer limit);
-
-    // ============================================================
     // PRIORITY 2: INSTRUMENT ANALYSIS QUERIES
     // ============================================================
 
@@ -606,7 +548,7 @@ public interface AnalyticsRepository {
             "COUNT(*) as trade_count, " +
             "COALESCE(SUM(fo.quantity), 0) as total_volume, " +
             "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value, " +
-            "ROUND(100.0 * SUM(fo.quantity) / (SELECT COALESCE(SUM(quantity), 1) FROM fact_orders WHERE DATE(created_at) = DATE(fo.created_at) AND status = 'FILLED'), 2) as percent_of_total_volume, " +
+            "ROUND(100.0 * SUM(fo.quantity) / NULLIF(SUM(SUM(fo.quantity)) OVER (PARTITION BY DATE(fo.created_at)), 0), 2) as percent_of_total_volume, " +
             "COUNT(DISTINCT fo.account_id) as unique_traders " +
             "FROM fact_orders fo " +
             "JOIN dim_instruments di ON fo.instrument_id = di.instrument_id " +

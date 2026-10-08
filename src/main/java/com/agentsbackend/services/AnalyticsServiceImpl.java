@@ -121,17 +121,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return analyticsRepository.getClientSegmentationByPortfolioSize();
     }
 
-    @Override
-    public List<ClientSegmentationResponse> getMostActiveClients(Integer limit) {
-        logger.info("Fetching top {} most active clients in last 30 days", limit);
-        
-        if (limit == null || limit <= 0) {
-            limit = 10; // Default limit
-        }
-        
-        return analyticsRepository.getMostActiveClients(limit);
-    }
-
     // ============================================================
     // DASHBOARD TOP METRICS IMPLEMENTATION
     // ============================================================
@@ -211,25 +200,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         }
         
         return analyticsRepository.getTopInstrumentsForDate(date, limit);
-    }
-
-    // ============================================================
-    // PRIORITY 1: CLIENT ACTIVITY TRENDS IMPLEMENTATION
-    // ============================================================
-
-    @Override
-    public List<ClientActivityTrendResponse> getClientActivityTrend(LocalDate startDate, LocalDate endDate, Integer limit) {
-        logger.info("Fetching client activity trends from {} to {} for top {} clients", startDate, endDate, limit);
-        
-        if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("Start date must be before or equal to end date");
-        }
-        
-        if (limit == null || limit <= 0) {
-            limit = 10; // Default limit
-        }
-        
-        return analyticsRepository.getClientActivityTrend(startDate, endDate, limit);
     }
 
     // ============================================================

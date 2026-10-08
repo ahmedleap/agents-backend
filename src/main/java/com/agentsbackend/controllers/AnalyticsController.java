@@ -18,7 +18,6 @@ import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
-import com.agentsbackend.DTO.response.ClientActivityTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
 import com.agentsbackend.DTO.response.FulfillmentTrendResponse;
@@ -126,20 +125,6 @@ public class AnalyticsController {
         List<ClientSegmentationResponse> segmentation = 
             analyticsService.getClientSegmentationByPortfolioSize();
         return ResponseEntity.ok(segmentation);
-    }
-
-    /**
-     * GET /api/v1/analytics/clients/most-active
-     * Get the most active clients in the last 30 days (by order count).
-     * Shows top traders on the platform.
-     */
-    @GetMapping("/clients/most-active")
-    public ResponseEntity<List<ClientSegmentationResponse>> getMostActiveClients(
-            @RequestParam(value = "limit", required = false, defaultValue = "10") Integer limit) {
-        logger.info("GET /clients/most-active?limit={}", limit);
-        
-        List<ClientSegmentationResponse> activeClients = analyticsService.getMostActiveClients(limit);
-        return ResponseEntity.ok(activeClients);
     }
 
     // ============================================================
@@ -271,26 +256,6 @@ public class AnalyticsController {
         
         List<InstrumentTrendResponse> activeInstruments = analyticsService.getTopInstrumentsForDate(date, limit);
         return ResponseEntity.ok(activeInstruments);
-    }
-
-    // ============================================================
-    // PRIORITY 1: CLIENT ACTIVITY TRENDS ENDPOINTS
-    // ============================================================
-
-    /**
-     * GET /api/v1/analytics/dashboard/client-activity-trend
-     * Get client activity trends over a date range.
-     * Query params: startDate, endDate, limit
-     */
-    @GetMapping("/dashboard/client-activity-trend")
-    public ResponseEntity<List<ClientActivityTrendResponse>> clientActivityTrend(
-            @RequestParam(value = "startDate") LocalDate startDate,
-            @RequestParam(value = "endDate") LocalDate endDate,
-            @RequestParam(value = "limit", required = false, defaultValue = "10") Integer limit) {
-        logger.info("GET /dashboard/client-activity-trend?startDate={}&endDate={}&limit={}", startDate, endDate, limit);
-        
-        List<ClientActivityTrendResponse> trend = analyticsService.getClientActivityTrend(startDate, endDate, limit);
-        return ResponseEntity.ok(trend);
     }
 
     // ============================================================
