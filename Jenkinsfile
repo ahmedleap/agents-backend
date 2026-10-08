@@ -16,6 +16,8 @@ pipeline {
         IMAGE_NAME = "agents-backend"
         DOCKER_TAG = "${IMAGE_NAME}:${PROJECT_VERSION}-${BUILD_NUMBER}"
         DOCKER_TAG_LATEST = "${IMAGE_NAME}:latest"
+        SONAR_HOST_URL = credentials('sonarqube-url')
+        SONAR_LOGIN = credentials('sonarqube-token')
     }
 
     stages {
@@ -49,7 +51,23 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('SonarQube Code Quality Analysis') {
+            steps {
+                echo "Running SonarQube analysis..."
+                sh '''
+                    mvn -B -U sonar:sonar \
+                        -Dsonar.projectKey=agents-backend \
+                        -Dsonar.projectName="Agents Backend" \
+                        -Dsonar.host.url=${SONAR_HOST_URL} \
+                        -Dsonar.login=${SONAR_LOGIN} \
+                        -Dsonar.qualitygate.wait=true \
+                        -Dsonar.sources=src/main \
+                        -Dsonar.tests=src/test \
+                        -Dsonar.java.binaries=target/classes \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                '''
+            }
+        }
             steps {
                 echo "Building Docker image: ${DOCKER_TAG}"
                 sh "docker build --build-arg VERSION=${PROJECT_VERSION} -t ${DOCKER_TAG} -t ${DOCKER_TAG_LATEST} ."
