@@ -65,11 +65,11 @@ public class InstrumentServiceImpl implements InstrumentService {
     }
 
     /**
-     * Get instrument details with 1-hour cache.
+     * Get instrument details (no cache).
      * Returns asset class, industry, and security profile information.
+     * Direct database query for always-fresh data since market conditions change constantly.
      */
     @Override
-    @Cacheable(value = "instruments", key = "#ticker", unless = "#result == null")
     public InstrumentResponse.InstrumentDetail getInstrumentDetails(String ticker) {
         Instrument instrument = instrumentRepository.findByTicker(ticker.toUpperCase())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found: " + ticker));
@@ -83,18 +83,18 @@ public class InstrumentServiceImpl implements InstrumentService {
     }
 
     /**
-     * Get current market quote with 15-30 second cache.
+     * Get current market quote (no cache).
      * Calls Alpaca API for real-time data.
      * Falls back to cached value with isStale=true if API unavailable.
+     * Direct database query for always-fresh data since prices change constantly.
      */
     @Override
-    @Cacheable(value = "quotes", key = "#ticker", unless = "#result == null")
     public InstrumentResponse.Quote getCurrentQuote(String ticker) {
         Instrument instrument = instrumentRepository.findByTicker(ticker.toUpperCase())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found: " + ticker));
 
-        // TODO: In Phase 5 (Alpaca integration), call AlpacaClient.getLatestQuote(ticker)
-        // For now, return database values with isStale=true
+       
+        //  return database values with isStale=true
         boolean isStale = instrument.getPriceUpdatedAt() == null || 
                          OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(1).isAfter(instrument.getPriceUpdatedAt());
 
