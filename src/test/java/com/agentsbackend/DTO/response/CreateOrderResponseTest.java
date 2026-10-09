@@ -3,7 +3,8 @@ package com.agentsbackend.DTO.response;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,7 @@ class CreateOrderResponseTest {
         UUID orderId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
-        LocalDateTime createdAt = LocalDateTime.now();
+        OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         CreateOrderResponse response = new CreateOrderResponse(
@@ -77,7 +78,7 @@ class CreateOrderResponseTest {
     void testCreateOrderResponseCreatedAt() {
         // Arrange
         CreateOrderResponse response = new CreateOrderResponse();
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         response.setCreatedAt(now);
@@ -296,7 +297,7 @@ class CreateOrderResponseTest {
         CreateOrderResponse response = new CreateOrderResponse(
             orderId, accountId, instrumentId, 100, new BigDecimal("50.00"),
             new BigDecimal("5000.00"), OrderType.BUY, OrderStatus.PENDING,
-            LocalDateTime.now(), "Limit order created"
+            OffsetDateTime.now(ZoneOffset.UTC), "Limit order created"
         );
 
         // Assert
@@ -316,7 +317,7 @@ class CreateOrderResponseTest {
         CreateOrderResponse response = new CreateOrderResponse(
             orderId, accountId, instrumentId, 50, null,
             new BigDecimal("2500.00"), OrderType.SELL, OrderStatus.PENDING,
-            LocalDateTime.now(), "Market order created"
+            OffsetDateTime.now(ZoneOffset.UTC), "Market order created"
         );
 
         // Assert

@@ -1,64 +1,33 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.PortfolioSizeRange;
 import com.agentsbackend.enums.RiskTolerance;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Table(name = "clients")
 public class Client {
 
-    @Id
-    @Column(name = "client_id", columnDefinition = "UUID")
     private UUID clientId;
-
-    @Column(name = "first_name", length = 50, nullable = false)
     private String firstName;
-
-    @Column(name = "middle_name", length = 50)
     private String middleName;
-
-    @Column(name = "last_name", length = 50, nullable = false)
     private String lastName;
-
-    @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;
-
-    @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
-
-    @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
-
-    @Column(name = "join_date", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime joinDate;
-
-    @Column(name = "ssn_last4", length = 4)
+    private OffsetDateTime joinDate;
     private String ssnLast4;
-
-    @Column(name = "portfolio_size_range")
-    @Enumerated(EnumType.STRING)
     private PortfolioSizeRange portfolioSizeRange;
-
-    @Column(name = "risk_tolerance")
-    @Enumerated(EnumType.STRING)
     private RiskTolerance riskTolerance;
-
-    @Column(name = "refresh_token", length = 500)
     private String refreshToken;
-
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;
 
     public Client() {
     }
 
     public Client(UUID clientId, String firstName, String middleName, String lastName, String email,
-                  String passwordHash, LocalDate dateOfBirth, LocalDateTime joinDate, String ssnLast4,
+                  String passwordHash, LocalDate dateOfBirth, OffsetDateTime joinDate, String ssnLast4,
                   PortfolioSizeRange portfolioSizeRange, RiskTolerance riskTolerance, String refreshToken, List<Account> accounts) {
         this.clientId = clientId;
         this.firstName = firstName;
@@ -131,11 +100,11 @@ public class Client {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public LocalDateTime getJoinDate() {
+    public OffsetDateTime getJoinDate() {
         return joinDate;
     }
 
-    public void setJoinDate(LocalDateTime joinDate) {
+    public void setJoinDate(OffsetDateTime joinDate) {
         this.joinDate = joinDate;
     }
 

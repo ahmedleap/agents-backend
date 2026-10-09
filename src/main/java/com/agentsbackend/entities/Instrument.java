@@ -1,52 +1,43 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.AssetClass;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Table(name = "instruments")
 public class Instrument {
 
-    @Id
-    @Column(name = "instrument_id", columnDefinition = "UUID")
     private UUID instrumentId;
-
-    @Column(name = "ticker", length = 10, nullable = false, unique = true)
     private String ticker;
-
-    @Column(name = "name", length = 255, nullable = false)
     private String name;
-
-    @Column(name = "asset_class", nullable = false)
-    @Enumerated(EnumType.STRING)
     private AssetClass assetClass;
-
-    @Column(name = "industry", length = 100)
     private String industry;
-
-    @OneToMany(mappedBy = "instrument", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<InstrumentPrice> prices;
-
-    @OneToMany(mappedBy = "instrument", cascade = CascadeType.ALL)
+    private BigDecimal bid;
+    private BigDecimal ask;
+    private BigDecimal midPrice;
+    private OffsetDateTime priceUpdatedAt;
+    private List<InstrumentPriceHistory> priceHistory;
     private List<Order> orders;
-
-    @OneToMany(mappedBy = "instrument", cascade = CascadeType.ALL)
     private List<Holding> holdings;
 
     public Instrument() {
     }
 
     public Instrument(UUID instrumentId, String ticker, String name, AssetClass assetClass,
-                      String industry, List<InstrumentPrice> prices, List<Order> orders,
-                      List<Holding> holdings) {
+                      String industry, BigDecimal bid, BigDecimal ask, BigDecimal midPrice,
+                      OffsetDateTime priceUpdatedAt, List<InstrumentPriceHistory> priceHistory,
+                      List<Order> orders, List<Holding> holdings) {
         this.instrumentId = instrumentId;
         this.ticker = ticker;
         this.name = name;
         this.assetClass = assetClass;
         this.industry = industry;
-        this.prices = prices;
+        this.bid = bid;
+        this.ask = ask;
+        this.midPrice = midPrice;
+        this.priceUpdatedAt = priceUpdatedAt;
+        this.priceHistory = priceHistory;
         this.orders = orders;
         this.holdings = holdings;
     }
@@ -91,12 +82,44 @@ public class Instrument {
         this.industry = industry;
     }
 
-    public List<InstrumentPrice> getPrices() {
-        return prices;
+    public BigDecimal getBid() {
+        return bid;
     }
 
-    public void setPrices(List<InstrumentPrice> prices) {
-        this.prices = prices;
+    public void setBid(BigDecimal bid) {
+        this.bid = bid;
+    }
+
+    public BigDecimal getAsk() {
+        return ask;
+    }
+
+    public void setAsk(BigDecimal ask) {
+        this.ask = ask;
+    }
+
+    public BigDecimal getMidPrice() {
+        return midPrice;
+    }
+
+    public void setMidPrice(BigDecimal midPrice) {
+        this.midPrice = midPrice;
+    }
+
+    public OffsetDateTime getPriceUpdatedAt() {
+        return priceUpdatedAt;
+    }
+
+    public void setPriceUpdatedAt(OffsetDateTime priceUpdatedAt) {
+        this.priceUpdatedAt = priceUpdatedAt;
+    }
+
+    public List<InstrumentPriceHistory> getPriceHistory() {
+        return priceHistory;
+    }
+
+    public void setPriceHistory(List<InstrumentPriceHistory> priceHistory) {
+        this.priceHistory = priceHistory;
     }
 
     public List<Order> getOrders() {

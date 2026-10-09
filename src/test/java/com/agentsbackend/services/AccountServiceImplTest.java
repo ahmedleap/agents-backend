@@ -5,6 +5,7 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.TransactionsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,7 +34,9 @@ class AccountServiceImplTest {
     @Mock
     private AccountRepository accountRepository;
 
-    @InjectMocks
+    @Mock
+    private TransactionsRepository transactionsRepository;
+
     private AccountServiceImpl accountService;
 
     private Account testAccount;
@@ -54,7 +58,9 @@ class AccountServiceImplTest {
         testAccount.setName("Test Account");
         testAccount.setCashBalance(new BigDecimal("50000.00"));
         testAccount.setStatus(AccountStatus.ACTIVE);
-        testAccount.setOpenDate(LocalDateTime.now());
+        testAccount.setOpenDate(OffsetDateTime.now(ZoneOffset.UTC));
+
+        accountService = new AccountServiceImpl(accountRepository, transactionsRepository);
     }
 
     // ===== LIST ACCOUNTS TESTS =====
@@ -188,13 +194,14 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("5000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionsRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.depositCash(testAccountId, amount);
 
         assertNotNull(response);
         assertEquals("DEPOSIT", response.getTransactionType());
         assertTrue(response.getNewCashBalance().compareTo(new BigDecimal("50000.00")) > 0);
+        verify(transactionsRepository, times(1)).recordTransaction(testAccountId, amount, "DEPOSIT");
     }
 
     @Test
@@ -231,12 +238,13 @@ class AccountServiceImplTest {
         BigDecimal amount = new BigDecimal("500000.00");
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionsRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.depositCash(testAccountId, amount);
 
         assertNotNull(response);
         assertEquals("DEPOSIT", response.getTransactionType());
+        verify(transactionsRepository, times(1)).recordTransaction(testAccountId, amount, "DEPOSIT");
     }
 
     // ===== WITHDRAW CASH TESTS =====
@@ -247,12 +255,13 @@ class AccountServiceImplTest {
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(BigDecimal.ZERO);
         doNothing().when(accountRepository).updateCashBalance(any(UUID.class), any(BigDecimal.class));
-        doNothing().when(accountRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
+        doNothing().when(transactionsRepository).recordTransaction(any(UUID.class), any(BigDecimal.class), anyString());
 
         var response = accountService.withdrawCash(testAccountId, amount);
 
         assertNotNull(response);
         assertEquals("WITHDRAWAL", response.getTransactionType());
+        verify(transactionsRepository, times(1)).recordTransaction(testAccountId, amount, "WITHDRAWAL");
     }
 
     @Test

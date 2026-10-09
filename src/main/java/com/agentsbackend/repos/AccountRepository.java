@@ -37,7 +37,7 @@ public interface AccountRepository {
             "FROM accounts WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),
@@ -56,7 +56,7 @@ public interface AccountRepository {
             "FROM accounts WHERE client_id = #{clientId,jdbcType=VARCHAR} ORDER BY open_date DESC")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),
@@ -83,20 +83,6 @@ public interface AccountRepository {
     @Update("UPDATE accounts SET cash_balance = #{newBalance,jdbcType=NUMERIC} " +
             "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
     void updateCashBalance(@Param("accountId") UUID accountId, @Param("newBalance") BigDecimal newBalance);
-
-    /**
-     * Record a cash transaction (deposit or withdrawal).
-     * Inserts transaction record into transactions table with auto-generated UUID.
-     *
-     * @param accountId UUID of the account
-     * @param amount Amount of the transaction
-     * @param transactionType "DEPOSIT" or "WITHDRAWAL"
-     */
-    @Insert("INSERT INTO transactions (transaction_id, account_id, txn_type, amount) " +
-            "VALUES (gen_random_uuid(), #{accountId,jdbcType=VARCHAR}, " +
-            "CAST(#{transactionType} AS transaction_type), #{amount,jdbcType=NUMERIC})")
-    void recordTransaction(@Param("accountId") UUID accountId, @Param("amount") BigDecimal amount,
-                          @Param("transactionType") String transactionType);
 
     /**
      * Check if a client exists in the database.
@@ -166,10 +152,10 @@ public interface AccountRepository {
      * @param accountId UUID of the account
      * @return Total value of all holdings, or null if no holdings
      */
-    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.price, 0)), 0) FROM holdings h " +
-            "LEFT JOIN instrument_prices ip ON h.instrument_id = ip.instrument_id " +
+    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.close, 0)), 0) FROM holdings h " +
+            "LEFT JOIN instrument_price_history ip ON h.instrument_id = ip.instrument_id " +
             "WHERE h.account_id = #{accountId,jdbcType=VARCHAR} " +
-            "AND ip.as_of = (SELECT MAX(as_of) FROM instrument_prices WHERE instrument_id = h.instrument_id)")
+            "AND ip.timestamp = (SELECT MAX(timestamp) FROM instrument_price_history WHERE instrument_id = h.instrument_id)")
     BigDecimal getPortfolioValue(@Param("accountId") UUID accountId);
 
     /**
@@ -184,7 +170,7 @@ public interface AccountRepository {
             "WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND snapshot_date <= #{date,jdbcType=DATE} " +
             "ORDER BY snapshot_date DESC LIMIT 1")
-    BigDecimal getPortfolioValueAtDate(@Param("accountId") UUID accountId, @Param("date") java.time.LocalDateTime date);
+    BigDecimal getPortfolioValueAtDate(@Param("accountId") UUID accountId, @Param("date") java.time.OffsetDateTime date);
 
     /**
      * Get realized gain/loss for trades executed during a period.
@@ -199,7 +185,7 @@ public interface AccountRepository {
             "FROM orders o LEFT JOIN holdings h ON o.instrument_id = h.instrument_id " +
             "WHERE o.account_id = #{accountId,jdbcType=VARCHAR} " +
             "AND o.status = 'FILLED' AND o.created_at >= #{startDate,jdbcType=TIMESTAMP}")
-    BigDecimal getRealizedGainLoss(@Param("accountId") UUID accountId, @Param("startDate") java.time.LocalDateTime startDate);
+    BigDecimal getRealizedGainLoss(@Param("accountId") UUID accountId, @Param("startDate") java.time.OffsetDateTime startDate);
 
     /**
      * Get cost basis of current holdings (total amount paid for all holdings).
@@ -221,7 +207,7 @@ public interface AccountRepository {
     @Select("SELECT account_id, client_id, name, cash_balance, status, open_date FROM accounts ORDER BY open_date DESC")
     @Results({
             @Result(column = "account_id", property = "accountId"),
-            @Result(column = "client_id", property = "client.clientId"),
+            @Result(column = "client_id", property = "clientId"),
             @Result(column = "name", property = "name"),
             @Result(column = "cash_balance", property = "cashBalance"),
             @Result(column = "status", property = "status"),
