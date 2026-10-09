@@ -1,0 +1,832 @@
+===========================================
+ANALYTICS DASHBOARD - TREND ENDPOINTS
+Sample Requests & Responses
+===========================================
+
+Based on Warehouse Schema (fact_orders, dim_instruments, dim_clients)
+
+
+===========================================
+1. VOLUME TREND ENDPOINT
+===========================================
+
+Purpose: Show trading volume over time for line/area charts
+Returns: Daily aggregated volume data
+
+ENDPOINT: GET /api/v1/analytics/dashboard/volume-trend
+Query Parameters: startDate (required), endDate (required)
+
+
+--- SAMPLE REQUEST ---
+
+curl -X GET "http://localhost:8080/api/v1/analytics/dashboard/volume-trend" \
+  -H "Content-Type: application/json" \
+  -G \
+  --data-urlencode "startDate=2026-09-23" \
+  --data-urlencode "endDate=2026-10-07"
+
+
+--- SAMPLE RESPONSE (200 OK) ---
+
+[
+  {
+    "date": "2026-09-23",
+    "totalQuantityTraded": 245000,
+    "totalValueTraded": 18234500.50,
+    "tradeCount": 342,
+    "averageOrderValue": 53331.14,
+    "buyCount": 178,
+    "sellCount": 164
+  },
+  {
+    "date": "2026-09-24",
+    "totalQuantityTraded": 289000,
+    "totalValueTraded": 21456780.25,
+    "tradeCount": 425,
+    "averageOrderValue": 50485.37,
+    "buyCount": 234,
+    "sellCount": 191
+  },
+  {
+    "date": "2026-09-25",
+    "totalQuantityTraded": 198000,
+    "totalValueTraded": 16234450.75,
+    "tradeCount": 278,
+    "averageOrderValue": 58394.93,
+    "buyCount": 145,
+    "sellCount": 133
+  },
+  {
+    "date": "2026-09-26",
+    "totalQuantityTraded": 312000,
+    "totalValueTraded": 25678900.00,
+    "tradeCount": 489,
+    "averageOrderValue": 52500.20,
+    "buyCount": 267,
+    "sellCount": 222
+  },
+  {
+    "date": "2026-09-27",
+    "totalQuantityTraded": 156000,
+    "totalValueTraded": 12340250.50,
+    "tradeCount": 189,
+    "averageOrderValue": 65244.92,
+    "buyCount": 98,
+    "sellCount": 91
+  },
+  {
+    "date": "2026-09-30",
+    "totalQuantityTraded": 428000,
+    "totalValueTraded": 34567800.25,
+    "tradeCount": 634,
+    "averageOrderValue": 54543.76,
+    "buyCount": 358,
+    "sellCount": 276
+  },
+  {
+    "date": "2026-10-01",
+    "totalQuantityTraded": 234000,
+    "totalValueTraded": 19876540.00,
+    "tradeCount": 356,
+    "averageOrderValue": 55835.96,
+    "buyCount": 198,
+    "sellCount": 158
+  },
+  {
+    "date": "2026-10-02",
+    "totalQuantityTraded": 367000,
+    "totalValueTraded": 28945670.50,
+    "tradeCount": 512,
+    "averageOrderValue": 56532.48,
+    "buyCount": 289,
+    "sellCount": 223
+  },
+  {
+    "date": "2026-10-03",
+    "totalQuantityTraded": 289000,
+    "totalValueTraded": 23456780.75,
+    "tradeCount": 423,
+    "averageOrderValue": 55452.49,
+    "buyCount": 234,
+    "sellCount": 189
+  },
+  {
+    "date": "2026-10-04",
+    "totalQuantityTraded": 445000,
+    "totalValueTraded": 36789450.25,
+    "tradeCount": 678,
+    "averageOrderValue": 54291.89,
+    "buyCount": 378,
+    "sellCount": 300
+  },
+  {
+    "date": "2026-10-07",
+    "totalQuantityTraded": 312000,
+    "totalValueTraded": 25432100.00,
+    "tradeCount": 456,
+    "averageOrderValue": 55771.93,
+    "buyCount": 256,
+    "sellCount": 200
+  }
+]
+
+
+--- USAGE IN ANGULAR ---
+
+// Component TypeScript
+export class DashboardComponent implements OnInit {
+  volumeTrendData: VolumeTrendResponse[] = [];
+  
+  ngOnInit() {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 14); // Last 2 weeks
+    const endDate = new Date();
+    
+    this.analyticsService.getVolumeTrend(
+      this.formatDate(startDate),
+      this.formatDate(endDate)
+    ).subscribe(data => {
+      this.volumeTrendData = data;
+      this.renderVolumeChart();
+    });
+  }
+  
+  renderVolumeChart() {
+    // Chart.js / ng2-charts
+    const labels = this.volumeTrendData.map(d => d.date);
+    const volumeData = this.volumeTrendData.map(d => d.totalValueTraded);
+    const tradeCountData = this.volumeTrendData.map(d => d.tradeCount);
+    
+    this.volumeChart = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Total Volume ($)',
+          data: volumeData,
+          borderColor: '#0066cc',
+          backgroundColor: 'rgba(0, 102, 204, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: 'Trade Count',
+          data: tradeCountData,
+          borderColor: '#ff6b6b',
+          backgroundColor: 'rgba(255, 107, 107, 0.1)',
+          tension: 0.4,
+          yAxisID: 'y1'
+        }
+      ]
+    };
+  }
+  
+  private formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+}
+
+
+===========================================
+2. MOST ACTIVE INSTRUMENTS ENDPOINT
+===========================================
+
+Purpose: Show top instruments for a specific date
+Returns: Instruments ranked by trading volume/value
+
+ENDPOINT: GET /api/v1/analytics/dashboard/most-active-instruments
+Query Parameters: date (optional, defaults to today), limit (optional, default 20)
+
+
+--- SAMPLE REQUEST ---
+
+curl -X GET "http://localhost:8080/api/v1/analytics/dashboard/most-active-instruments" \
+  -H "Content-Type: application/json" \
+  -G \
+  --data-urlencode "date=2026-10-07" \
+  --data-urlencode "limit=20"
+
+
+--- SAMPLE RESPONSE (200 OK) ---
+
+[
+  {
+    "date": "2026-10-07",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 1245,
+    "totalQuantity": 45000,
+    "totalValue": 8234500.50,
+    "averagePrice": 182.99,
+    "uniqueTraders": 234
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 987,
+    "totalQuantity": 32100,
+    "totalValue": 7123400.25,
+    "averagePrice": 418.75,
+    "uniqueTraders": 198
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 856,
+    "totalQuantity": 28900,
+    "totalValue": 6987200.75,
+    "averagePrice": 241.84,
+    "uniqueTraders": 176
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "GOOGL",
+    "instrumentName": "Alphabet Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 734,
+    "totalQuantity": 22500,
+    "totalValue": 5432100.00,
+    "averagePrice": 241.43,
+    "uniqueTraders": 145
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "NVDA",
+    "instrumentName": "NVIDIA Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 654,
+    "totalQuantity": 18700,
+    "totalValue": 4876543.50,
+    "averagePrice": 260.84,
+    "uniqueTraders": 128
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "META",
+    "instrumentName": "Meta Platforms Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 532,
+    "totalQuantity": 15600,
+    "totalValue": 3845670.25,
+    "averagePrice": 246.45,
+    "uniqueTraders": 104
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "AMZN",
+    "instrumentName": "Amazon.com Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 487,
+    "totalQuantity": 12300,
+    "totalValue": 3234567.00,
+    "averagePrice": 263.07,
+    "uniqueTraders": 89
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "BRK.B",
+    "instrumentName": "Berkshire Hathaway Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 423,
+    "totalQuantity": 8900,
+    "totalValue": 2987654.50,
+    "averagePrice": 335.91,
+    "uniqueTraders": 76
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "JNJ",
+    "instrumentName": "Johnson & Johnson",
+    "assetClass": "EQUITY",
+    "tradeCount": 389,
+    "totalQuantity": 7200,
+    "totalValue": 1876543.00,
+    "averagePrice": 260.63,
+    "uniqueTraders": 68
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "V",
+    "instrumentName": "Visa Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 356,
+    "totalQuantity": 6800,
+    "totalValue": 1654321.75,
+    "averagePrice": 243.28,
+    "uniqueTraders": 54
+  }
+]
+
+
+--- USAGE IN ANGULAR ---
+
+// Component TypeScript
+export class MostActiveInstrumentsComponent implements OnInit {
+  instrumentsData: InstrumentTrendResponse[] = [];
+  displayedColumns: string[] = ['ticker', 'volume', 'value', 'traders', 'avgPrice', 'tradeCount'];
+  
+  ngOnInit() {
+    this.loadMostActiveInstruments();
+  }
+  
+  loadMostActiveInstruments(date: Date = new Date(), limit: number = 20) {
+    this.analyticsService.getMostActiveInstruments(
+      this.formatDate(date),
+      limit
+    ).subscribe(data => {
+      this.instrumentsData = data;
+    });
+  }
+  
+  // Template: Use with mat-table or ng-repeat
+  // <mat-table [dataSource]="instrumentsData">
+  //   <ng-container matColumnDef="ticker">
+  //     <mat-header-cell>Ticker</mat-header-cell>
+  //     <mat-cell>{{ element.ticker }}</mat-cell>
+  //   </ng-container>
+  //   <ng-container matColumnDef="volume">
+  //     <mat-header-cell>Quantity</mat-header-cell>
+  //     <mat-cell>{{ element.totalQuantity | number }}</mat-cell>
+  //   </ng-container>
+  //   <ng-container matColumnDef="value">
+  //     <mat-header-cell>Total Value</mat-header-cell>
+  //     <mat-cell>{{ element.totalValue | currency }}</mat-cell>
+  //   </ng-container>
+  //   <ng-container matColumnDef="traders">
+  //     <mat-header-cell>Traders</mat-header-cell>
+  //     <mat-cell>{{ element.uniqueTraders }}</mat-cell>
+  //   </ng-container>
+  //   <ng-container matColumnDef="avgPrice">
+  //     <mat-header-cell>Avg Price</mat-header-cell>
+  //     <mat-cell>{{ element.averagePrice | currency }}</mat-cell>
+  //   </ng-container>
+  //   <ng-container matColumnDef="tradeCount">
+  //     <mat-header-cell>Trades</mat-header-cell>
+  //     <mat-cell>{{ element.tradeCount }}</mat-cell>
+  //   </ng-container>
+  // </mat-table>
+  
+  private formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+}
+
+
+===========================================
+3. INSTRUMENT TREND ENDPOINT
+===========================================
+
+Purpose: Show trading trends for instruments over a date range
+Returns: Daily data for each instrument (for multi-line charts, pivot tables)
+
+ENDPOINT: GET /api/v1/analytics/dashboard/instrument-trend
+Query Parameters: startDate (required), endDate (required)
+
+
+--- SAMPLE REQUEST ---
+
+curl -X GET "http://localhost:8080/api/v1/analytics/dashboard/instrument-trend" \
+  -H "Content-Type: application/json" \
+  -G \
+  --data-urlencode "startDate=2026-10-01" \
+  --data-urlencode "endDate=2026-10-07"
+
+
+--- SAMPLE RESPONSE (200 OK) ---
+
+[
+  {
+    "date": "2026-10-01",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 834,
+    "totalQuantity": 28900,
+    "totalValue": 5234500.50,
+    "averagePrice": 181.05,
+    "uniqueTraders": 156
+  },
+  {
+    "date": "2026-10-01",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 567,
+    "totalQuantity": 18900,
+    "totalValue": 7923400.25,
+    "averagePrice": 419.34,
+    "uniqueTraders": 123
+  },
+  {
+    "date": "2026-10-01",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 423,
+    "totalQuantity": 14500,
+    "totalValue": 3487200.75,
+    "averagePrice": 240.50,
+    "uniqueTraders": 98
+  },
+  {
+    "date": "2026-10-02",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 945,
+    "totalQuantity": 32100,
+    "totalValue": 5876543.50,
+    "averagePrice": 183.02,
+    "uniqueTraders": 178
+  },
+  {
+    "date": "2026-10-02",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 678,
+    "totalQuantity": 22300,
+    "totalValue": 9234567.25,
+    "averagePrice": 414.08,
+    "uniqueTraders": 145
+  },
+  {
+    "date": "2026-10-02",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 512,
+    "totalQuantity": 18700,
+    "totalValue": 4567890.75,
+    "averagePrice": 244.19,
+    "uniqueTraders": 112
+  },
+  {
+    "date": "2026-10-03",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 756,
+    "totalQuantity": 25600,
+    "totalValue": 4623456.50,
+    "averagePrice": 180.60,
+    "uniqueTraders": 134
+  },
+  {
+    "date": "2026-10-03",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 534,
+    "totalQuantity": 17800,
+    "totalValue": 7456789.25,
+    "averagePrice": 418.92,
+    "uniqueTraders": 109
+  },
+  {
+    "date": "2026-10-03",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 389,
+    "totalQuantity": 13200,
+    "totalValue": 3234567.75,
+    "averagePrice": 245.04,
+    "uniqueTraders": 87
+  },
+  {
+    "date": "2026-10-04",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 1045,
+    "totalQuantity": 36700,
+    "totalValue": 6723456.50,
+    "averagePrice": 183.19,
+    "uniqueTraders": 198
+  },
+  {
+    "date": "2026-10-04",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 812,
+    "totalQuantity": 28900,
+    "totalValue": 12123456.25,
+    "averagePrice": 419.67,
+    "uniqueTraders": 167
+  },
+  {
+    "date": "2026-10-04",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 678,
+    "totalQuantity": 24100,
+    "totalValue": 5876543.75,
+    "averagePrice": 243.65,
+    "uniqueTraders": 154
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 1245,
+    "totalQuantity": 45000,
+    "totalValue": 8234500.50,
+    "averagePrice": 182.99,
+    "uniqueTraders": 234
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "MSFT",
+    "instrumentName": "Microsoft Corporation",
+    "assetClass": "EQUITY",
+    "tradeCount": 987,
+    "totalQuantity": 32100,
+    "totalValue": 7123400.25,
+    "averagePrice": 418.75,
+    "uniqueTraders": 198
+  },
+  {
+    "date": "2026-10-07",
+    "ticker": "TSLA",
+    "instrumentName": "Tesla Inc.",
+    "assetClass": "EQUITY",
+    "tradeCount": 856,
+    "totalQuantity": 28900,
+    "totalValue": 6987200.75,
+    "averagePrice": 241.84,
+    "uniqueTraders": 176
+  }
+]
+
+
+--- USAGE IN ANGULAR (Multi-line Chart) ---
+
+export class InstrumentTrendComponent implements OnInit {
+  trendData: InstrumentTrendResponse[] = [];
+  chartConfig: any;
+  
+  ngOnInit() {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7); // Last week
+    const endDate = new Date();
+    
+    this.analyticsService.getInstrumentTrend(
+      this.formatDate(startDate),
+      this.formatDate(endDate)
+    ).subscribe(data => {
+      this.trendData = data;
+      this.renderMultiLineChart();
+    });
+  }
+  
+  renderMultiLineChart() {
+    // Group data by ticker
+    const groupedByTicker = this.groupBy(this.trendData, 'ticker');
+    
+    const labels = [...new Set(this.trendData.map(d => d.date))].sort();
+    const colors = ['#0066cc', '#ff6b6b', '#51cf66', '#ffd93d', '#a78bfa'];
+    
+    const datasets = Array.from(groupedByTicker.entries()).map((entry, idx) => {
+      const ticker = entry[0];
+      const data = entry[1];
+      
+      return {
+        label: ticker,
+        data: labels.map(date => {
+          const record = data.find(d => d.date === date);
+          return record ? record.totalValue : null;
+        }),
+        borderColor: colors[idx % colors.length],
+        backgroundColor: colors[idx % colors.length] + '20',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 4
+      };
+    });
+    
+    this.chartConfig = {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top'
+          },
+          title: {
+            display: true,
+            text: 'Instrument Trading Trends'
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            title: { display: true, text: 'Trading Value ($)' }
+          }
+        }
+      }
+    };
+  }
+  
+  private groupBy(data: any[], key: string): Map<any, any[]> {
+    return data.reduce((map, item) => {
+      if (!map.has(item[key])) map.set(item[key], []);
+      map.get(item[key]).push(item);
+      return map;
+    }, new Map());
+  }
+  
+  private formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+}
+
+
+===========================================
+4. ERROR RESPONSES
+===========================================
+
+--- 400 BAD REQUEST (Invalid Date Range) ---
+
+Request:
+GET /api/v1/analytics/dashboard/volume-trend?startDate=2026-10-07&endDate=2026-10-01
+
+Response:
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "timestamp": "2026-10-07T15:30:45Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Start date must be before or equal to end date",
+  "path": "/api/v1/analytics/dashboard/volume-trend"
+}
+
+
+--- 200 OK (Empty Result) ---
+
+Request:
+GET /api/v1/analytics/dashboard/volume-trend?startDate=2026-10-07&endDate=2026-10-07
+(No trading data for that specific date)
+
+Response:
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[]
+
+
+--- 500 INTERNAL SERVER ERROR (Database Connection Issue) ---
+
+Request:
+GET /api/v1/analytics/dashboard/most-active-instruments
+
+Response:
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+
+{
+  "timestamp": "2026-10-07T15:30:45Z",
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "Database connection failed",
+  "path": "/api/v1/analytics/dashboard/most-active-instruments"
+}
+
+
+===========================================
+5. POSTMAN COLLECTION EXAMPLES
+===========================================
+
+{
+  "info": {
+    "name": "Analytics Dashboard - Trend Endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Volume Trend - Last 2 Weeks",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/analytics/dashboard/volume-trend?startDate=2026-09-23&endDate=2026-10-07",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "analytics", "dashboard", "volume-trend"],
+          "query": [
+            { "key": "startDate", "value": "2026-09-23" },
+            { "key": "endDate", "value": "2026-10-07" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Most Active Instruments - Today (Top 20)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/analytics/dashboard/most-active-instruments?date=2026-10-07&limit=20",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "analytics", "dashboard", "most-active-instruments"],
+          "query": [
+            { "key": "date", "value": "2026-10-07" },
+            { "key": "limit", "value": "20" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Instrument Trend - Last Week",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/analytics/dashboard/instrument-trend?startDate=2026-10-01&endDate=2026-10-07",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "analytics", "dashboard", "instrument-trend"],
+          "query": [
+            { "key": "startDate", "value": "2026-10-01" },
+            { "key": "endDate", "value": "2026-10-07" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    }
+  ]
+}
+
+
+===========================================
+6. DATA AGGREGATION REFERENCE
+===========================================
+
+All trend data is aggregated daily from warehouse fact_orders table:
+
+Query Pattern:
+SELECT 
+  DATE(fo.created_at) as date,
+  [dimension_fields],
+  COUNT(*) as trade_count,
+  SUM(fo.quantity) as total_quantity,
+  SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)) as total_value,
+  AVG(COALESCE(fo.filled_price, fo.limit_price)) as average_price,
+  COUNT(DISTINCT fo.account_id) as unique_traders
+FROM fact_orders fo
+[JOINS]
+WHERE fo.status = 'FILLED' 
+  AND DATE(fo.created_at) BETWEEN ? AND ?
+GROUP BY DATE(fo.created_at), [dimension_fields]
+ORDER BY DATE(fo.created_at) ASC
+
+Data Warehouse Tables Used:
+  - fact_orders: Core trading data (quantity, prices, timestamps)
+  - dim_instruments: Security information (ticker, name, asset class)
+  - dim_accounts: Account details
+  - dim_clients: Client information
+
+Only FILLED orders are included in calculations (status = 'FILLED')
+All aggregates use warehouse snapshot data (not real-time)
+
+
+===========================================
+7. PERFORMANCE CONSIDERATIONS
+===========================================
+
+Large Date Ranges:
+  - Limit queries to 90 days maximum for best performance
+  - Instrument trend queries may return 1000+ rows for large ranges
+  - Consider pagination for UI display if needed
+
+Sample Recommended Date Ranges:
+  - Daily dashboard: Today or yesterday
+  - Weekly view: Last 7 days
+  - Monthly view: Last 30 days
+  - Quarterly: Last 90 days
+
+Caching Strategy:
+  - Cache daily snapshots overnight
+  - Refresh hourly for trending data
+  - Request data once per component initialization
+

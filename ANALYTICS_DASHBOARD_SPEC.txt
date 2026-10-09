@@ -1,0 +1,310 @@
+/**
+ * ANALYTICS DASHBOARD - ENDPOINT SPECIFICATION & RECOMMENDATIONS
+ * 
+ * Purpose: Trading activity analysis platform for internal stakeholders
+ * Updated: 2026-10-07
+ */
+
+===========================================
+## IMPLEMENTED ENDPOINTS (Current Dashboard)
+===========================================
+
+### Top Section: Daily KPI Metrics
+1. GET /api/v1/analytics/dashboard/total-volume
+   - Shows daily trading volume
+   - Query: ?date=YYYY-MM-DD (optional, defaults to today)
+   - Returns: TotalVolumeResponse {totalQuantityTraded, totalValueTraded, totalOrdersExecuted, averageOrderQuantity, averageOrderValue}
+   - UI Component: KPI Card (large number display)
+
+2. GET /api/v1/analytics/dashboard/total-trades
+   - Shows daily trade counts and fulfillment metrics
+   - Query: ?date=YYYY-MM-DD (optional, defaults to today)
+   - Returns: TotalTradesResponse {totalTrades, filledTrades, cancelledTrades, fulfillmentRate, buyPercentage, sellPercentage}
+   - UI Component: KPI Card with breakdown
+
+3. GET /api/v1/analytics/dashboard/active-clients
+   - Shows daily active client count
+   - Query: ?date=YYYY-MM-DD (optional, defaults to today)
+   - Returns: ActiveClientsResponse {totalActiveClients, totalClients, activeClientPercentage, activeAccounts}
+   - UI Component: KPI Card with percentage indicator
+
+### Most Active Instruments Section
+4. GET /api/v1/analytics/dashboard/most-active-instruments
+   - Shows top instruments for a specific date
+   - Query: ?date=YYYY-MM-DD&limit=20 (optional)
+   - Returns: List<InstrumentTrendResponse> {date, ticker, instrumentName, assetClass, tradeCount, totalQuantity, totalValue, uniqueTraders}
+   - UI Component: Bar Chart or Table (sortable by volume/count/traders)
+
+### Trading Volume Trends Section
+5. GET /api/v1/analytics/dashboard/volume-trend
+   - Shows trading volume over time for trend analysis
+   - Query: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD (required)
+   - Returns: List<VolumeTrendResponse> {date, totalQuantityTraded, totalValueTraded, tradeCount, buyCount, sellCount}
+   - UI Component: Line Chart or Area Chart (time series)
+
+### Additional Trend Analysis
+6. GET /api/v1/analytics/dashboard/instrument-trend
+   - Shows instrument trading trends over date range
+   - Query: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD (required)
+   - Returns: List<InstrumentTrendResponse> {date, ticker, tradeCount, totalValue, uniqueTraders}
+   - UI Component: Multi-line Chart or Pivot Table
+
+
+===========================================
+## RECOMMENDED ADDITIONAL ENDPOINTS
+===========================================
+
+Based on the business requirements: "analyse trading activity over time — by instrument, by period, by client segment"
+and "surface business insights (trading volumes, most active instruments, client activity trends)"
+
+### PRIORITY 1: Client Activity Trends (High Value - Recommended)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint: GET /api/v1/analytics/dashboard/client-activity-trend             │
+│ Purpose: Show which clients are most active over time                        │
+│ Query Params:                                                                 │
+│   - startDate: Start date (YYYY-MM-DD) - required                            │
+│   - endDate: End date (YYYY-MM-DD) - required                                │
+│   - limit: Top N clients (default: 10)                                       │
+│ Returns: List<ClientActivityTrendResponse>                                   │
+│   {date, clientId, clientName, tradeCount, totalVolume, totalValue,          │
+│    averageOrderValue, orderSuccessRate}                                      │
+│ Business Value:                                                               │
+│   ✓ Track most active traders over time                                      │
+│   ✓ Identify engagement patterns                                             │
+│   ✓ Monitor account activity trends                                          │
+│ UI Component: Area chart or stacked bar chart showing top traders over time   │
+│              with color per client                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Implementation:
+  - New DTO: ClientActivityTrendResponse (date, client fields, metrics)
+  - New Query: getClientActivityTrend(startDate, endDate, limit)
+  - Warehouse SQL: Join fact_orders, dim_clients, dim_accounts
+  - Service: getClientActivityTrend(LocalDate, LocalDate, Integer)
+  - Controller: @GetMapping("/dashboard/client-activity-trend")
+
+
+### PRIORITY 2: Instrument Analysis by Period (Recommended)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint: GET /api/v1/analytics/dashboard/instrument-analysis               │
+│ Purpose: Deep dive into specific instrument performance over time            │
+│ Query Params:                                                                 │
+│   - ticker: Instrument ticker symbol (required)                              │
+│   - startDate: Start date (YYYY-MM-DD) - required                            │
+│   - endDate: End date (YYYY-MM-DD) - required                                │
+│ Returns: InstrumentAnalysisResponse                                          │
+│   {ticker, instrumentName, assetClass, period: {                             │
+│     totalVolume, totalValue, tradeCount, uniqueTraders,                      │
+│     averagePrice, volumeTrend, buyVsSellRatio}}                              │
+│ Business Value:                                                               │
+│   ✓ Analyze trading patterns per instrument                                  │
+│   ✓ Track volume and interest trends                                         │
+│   ✓ Identify volatile or trending securities                                 │
+│ UI Component: Dashboard drill-down view with instrument-specific metrics      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Implementation:
+  - New DTO: InstrumentAnalysisResponse
+  - New Query: getInstrumentAnalysis(ticker, startDate, endDate)
+  - Service: getInstrumentAnalysis(String, LocalDate, LocalDate)
+  - Controller: @GetMapping("/dashboard/instrument-analysis")
+
+
+### PRIORITY 3: Client Segment Trends (Recommended)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint: GET /api/v1/analytics/dashboard/segment-trends                    │
+│ Purpose: Show trading activity trends by client risk/portfolio segments      │
+│ Query Params:                                                                 │
+│   - segmentType: RISK_TOLERANCE | PORTFOLIO_SIZE (required)                  │
+│   - startDate: Start date (YYYY-MM-DD) - required                            │
+│   - endDate: End date (YYYY-MM-DD) - required                                │
+│ Returns: List<SegmentTrendResponse>                                          │
+│   {date, segment (e.g. "CONSERVATIVE"), tradeCount, totalVolume,             │
+│    activeClientCount, averageOrderValue}                                     │
+│ Business Value:                                                               │
+│   ✓ Analyze trading patterns by client type                                  │
+│   ✓ Identify which segments are most/least active                            │
+│   ✓ Track engagement trends by risk profile                                  │
+│ UI Component: Stacked area chart showing trading activity by segment         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Implementation:
+  - New DTO: SegmentTrendResponse
+  - New Query: getSegmentTrend(segmentType, startDate, endDate)
+  - Service: getSegmentTrend(String, LocalDate, LocalDate)
+  - Controller: @GetMapping("/dashboard/segment-trends")
+
+
+### PRIORITY 4: Order Fulfillment Trends (Nice to Have)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint: GET /api/v1/analytics/dashboard/fulfillment-trends                │
+│ Purpose: Track order fulfillment rates and times over time                  │
+│ Query Params:                                                                 │
+│   - startDate: Start date (YYYY-MM-DD) - required                            │
+│   - endDate: End date (YYYY-MM-DD) - required                                │
+│ Returns: List<FulfillmentTrendResponse>                                      │
+│   {date, totalOrders, filledOrders, cancelledOrders, fulfillmentRate,        │
+│    averageOrderDurationSeconds, peakTradingTime}                             │
+│ Business Value:                                                               │
+│   ✓ Monitor order fulfillment quality over time                              │
+│   ✓ Identify operational bottlenecks                                         │
+│   ✓ Track cancellation patterns                                              │
+│ UI Component: Line chart showing fulfillment rate % over time               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+### PRIORITY 5: Asset Class Performance Trends (Optional)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Endpoint: GET /api/v1/analytics/dashboard/asset-class-trends               │
+│ Purpose: Show which asset classes are trending over time                    │
+│ Query Params:                                                                 │
+│   - startDate: Start date (YYYY-MM-DD) - required                            │
+│   - endDate: End date (YYYY-MM-DD) - required                                │
+│ Returns: List<AssetClassTrendResponse>                                       │
+│   {date, assetClass, tradeCount, totalVolume, totalValue,                    │
+│    percentOfTotalVolume, uniqueTraders}                                      │
+│ Business Value:                                                               │
+│   ✓ Identify asset class popularity trends                                   │
+│   ✓ Allocate resources based on demand                                       │
+│   ✓ Monitor market interest shifts                                           │
+│ UI Component: Stacked bar chart by asset class over time                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+===========================================
+## DASHBOARD LAYOUT RECOMMENDATION
+===========================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ANALYTICS DASHBOARD                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Date Selector: [Today] [This Week] [This Month] [Custom Date Range]          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │ Total Volume     │  │  Total Trades    │  │ Active Clients   │           │
+│  │                  │  │                  │  │                  │           │
+│  │  1,234,567 USD   │  │     8,234        │  │  234 (42%)       │           │
+│  │  ↑ 12% vs YTD    │  │  ✓ 87% filled    │  │  ↑ 8 new today   │           │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘           │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Most Active Instruments (Today)                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ Rank │ Ticker │ Volume (Units) │ Value (USD)  │ Traders │ % Change  │   │
+│  │  1   │ AAPL   │ 45,000         │ $8,234,500   │   234   │  +5.2%   │   │
+│  │  2   │ MSFT   │ 32,100         │ $7,123,400   │   198   │  -2.1%   │   │
+│  │  3   │ TSLA   │ 28,900         │ $6,987,200   │   176   │  +8.3%   │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Trading Volume Trend (Last 30 Days)                                         │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                      ╱╲                                               │   │
+│  │      ╱╲    ╱─────╱  ╱  ╲      ╱╲                                     │   │
+│  │  ──╱  ╲──╱       ╱────  ╲────╱  ╲                                   │   │
+│  │                                                                       │   │
+│  │  Sep 7  Sep 14   Sep 21  Sep 28  Oct 5                              │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  [RECOMMENDED] Client Activity Trends (Last 30 Days)                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  Top Active Traders:                                                 │   │
+│  │  ▓▓▓▓▓▓▓▓▓▓ Alice Johnson (234 trades, $2.4M volume)                 │   │
+│  │  ▓▓▓▓▓▓▓▓░░ Bob Smith (198 trades, $1.8M volume)                     │   │
+│  │  ▓▓▓▓▓▓░░░░ Carol Davis (156 trades, $1.5M volume)                   │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  [RECOMMENDED] Client Segment Trends (Last 30 Days)                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │          Volume by Risk Profile:                                     │   │
+│  │  ░░░░░ Conservative (32%)     - 2.3M shares, $234K                  │   │
+│  │  ░░░░░░░ Moderate (48%)       - 3.8M shares, $445K                  │   │
+│  │  ░░░░░░░░ Aggressive (20%)    - 1.9M shares, $198K                  │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Order Fulfillment Trends (Last 30 Days)                                    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  Fulfillment Rate (%)                                                │   │
+│  │  100% ├─────────────────────────────────────────────────────────    │   │
+│  │   95% │     ╱─╲    ╱──╲                                              │   │
+│  │   90% │  ──╱   ╲──╱    ╲╱╲    ╱──                                   │   │
+│  │   85% │                    ╲──╱                                      │   │
+│  │       └─────────────────────────────────────────────────────────    │   │
+│  │  Sep 7  Sep 14   Sep 21  Sep 28  Oct 5                              │   │
+│  │                                                                       │   │
+│  │  Orders: 12,234 Total │ 10,635 Filled (87%) │ 1,234 Cancelled (10%)│   │
+│  │  Pending: 365 (3%) │ Avg Duration: 2.5 min                          │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+===========================================
+## SQL QUERY PATTERNS FOR TRENDS
+===========================================
+
+All trend queries follow this pattern:
+
+SELECT 
+  DATE(fo.created_at) as date,
+  [dimension_fields],
+  COUNT(*) as trade_count,
+  SUM(fo.quantity) as total_quantity,
+  SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)) as total_value,
+  COUNT(DISTINCT fo.account_id) as unique_traders
+FROM fact_orders fo
+JOIN dim_instruments di ON fo.instrument_id = di.instrument_id
+JOIN dim_accounts da ON fo.account_id = da.account_id
+JOIN dim_clients dc ON da.client_id = dc.client_id
+WHERE fo.status = 'FILLED' 
+  AND DATE(fo.created_at) BETWEEN #{startDate} AND #{endDate}
+GROUP BY DATE(fo.created_at), [dimension_fields]
+ORDER BY DATE(fo.created_at) ASC, [sort_field] DESC
+
+
+===========================================
+## IMPLEMENTATION PRIORITY
+===========================================
+
+PHASE 1 (Current - Done):
+  ✓ Dashboard KPIs (total volume, total trades, active clients)
+  ✓ Most active instruments
+  ✓ Volume trends
+
+PHASE 2 (Recommended - High Value):
+  [ ] Client activity trends - GET /dashboard/client-activity-trend
+  [ ] Segment trends - GET /dashboard/segment-trends
+  [ ] Instrument deep-dive - GET /dashboard/instrument-analysis
+  [○] Fulfillment trends - GET /dashboard/fulfillment-trends (Dashboard section added)
+
+PHASE 3 (Optional):
+  [ ] Asset class trends - GET /dashboard/asset-class-trends
+  [ ] Correlation analysis - GET /dashboard/instrument-correlations
+  [ ] Intraday patterns - GET /dashboard/hourly-trends
+
+===========================================
+## SUMMARY TABLE
+===========================================
+
+Endpoint                                  Status  UI Type        Business Value
+─────────────────────────────────────────────────────────────────────────────
+/dashboard/total-volume                   ✓ DONE  KPI Card       Volume tracking
+/dashboard/total-trades                   ✓ DONE  KPI Card       Trade health
+/dashboard/active-clients                 ✓ DONE  KPI Card       User engagement
+/dashboard/most-active-instruments        ✓ DONE  Bar/Table      Market insight
+/dashboard/volume-trend                   ✓ DONE  Line Chart     Trend analysis
+/dashboard/instrument-trend               ✓ DONE  Multi-line     Detail trends
+
+/dashboard/client-activity-trend          ☐ TODO  Area Chart     Client trends
+/dashboard/segment-trends                 ☐ TODO  Stacked Area   Segment analysis
+/dashboard/instrument-analysis            ☐ TODO  Dashboard      Drill-down view
+/dashboard/fulfillment-trends             ◐ LAYOUT Line Chart    Quality metrics (dashboard section added)
+/dashboard/asset-class-trends             ☐ TODO  Stacked Bar    Class analysis
+
