@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "JWT Asymmetric Key Verification",
+    "description": "Test endpoints for JWT verification using RSA asymmetric keys",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "JWT Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8083/api/jwt/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "jwt", "health"]
+        },
+        "description": "Verify JWT service is running and configuration is loaded"
+      },
+      "response": []
+    },
+    {
+      "name": "Verify Token (POST Body)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiQ0xJRU5UIiwianRpIjoidGVzdC1qdGkiLCJpc3MiOiJhZ2VudHMtbWlkZGxld2FyZSIsImF1ZCI6ImFnZW50cy1iYWNrZW5kIiwiaWF0IjoxNjk2MDAwMDAwLCJleHAiOjE3MjcwMDAwMDB9.SIGNATURE_HERE\"\n}\n"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/jwt/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "jwt", "verify"]
+        },
+        "description": "Verify JWT token by sending it in the request body. Replace the token with a real JWT signed with your private key."
+      },
+      "response": []
+    },
+    {
+      "name": "Verify Token (Authorization Header)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiQ0xJRU5UIiwianRpIjoidGVzdC1qdGkiLCJpc3MiOiJhZ2VudHMtbWlkZGxld2FyZSIsImF1ZCI6ImFnZW50cy1iYWNrZW5kIiwiaWF0IjoxNjk2MDAwMDAwLCJleHAiOjE3MjcwMDAwMDB9.SIGNATURE_HERE",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8083/api/jwt/verify-header",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "jwt", "verify-header"]
+        },
+        "description": "Verify JWT token by sending it in the Authorization header. Replace the token with a real JWT signed with your private key."
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Token (Should Fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"invalid.token.here\"\n}\n"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/jwt/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "jwt", "verify"]
+        },
+        "description": "Test error handling - this should return 401 Unauthorized with an error message"
+      },
+      "response": []
+    },
+    {
+      "name": "Missing Token (Should Fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"\"\n}\n"
+        },
+        "url": {
+          "raw": "http://localhost:8083/api/jwt/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8083",
+          "path": ["api", "jwt", "verify"]
+        },
+        "description": "Test error handling - this should return 400 Bad Request with an error message"
+      },
+      "response": []
+    }
+  ]
+}
