@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.List;
 
 @Mapper
-public interface HoldingRepository {
+public interface HoldingRepository extends PrimaryMapper {
     
     @Select("SELECT * FROM holdings WHERE account_id = #{accountId}")
     @Results({

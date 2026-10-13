@@ -14,7 +14,7 @@ import java.util.UUID;
  * cash balance updates, and transaction recording.
  */
 @Mapper
-public interface AccountRepository {
+public interface AccountRepository extends PrimaryMapper {
 
     /**
      * Create a new account in the database.

@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
-public interface WatchlistRepository {
+public interface WatchlistRepository extends PrimaryMapper {
 
     @Insert("INSERT INTO watchlists (client_id, instrument_id) " +
             "VALUES (#{clientId}, #{instrumentId}) " +

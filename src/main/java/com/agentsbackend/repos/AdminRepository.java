@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
-public interface AdminRepository {
+public interface AdminRepository extends PrimaryMapper {
 
     @Insert("INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role, created_at) " +
             "VALUES (#{adminId,jdbcType=VARCHAR}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, CAST(#{role} AS admin_role), #{createdAt})")

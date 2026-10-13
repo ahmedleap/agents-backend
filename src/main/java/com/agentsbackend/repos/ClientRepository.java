@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
-public interface ClientRepository {
+public interface ClientRepository extends PrimaryMapper {
     @Select("SELECT * FROM clients WHERE client_id = #{clientId}")
     Optional<Client> findById(UUID clientId);
 }

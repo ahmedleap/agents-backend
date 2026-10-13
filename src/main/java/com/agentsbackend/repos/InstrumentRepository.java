@@ -13,7 +13,7 @@ import java.util.UUID;
  * pricing updates, and historical price queries.
  */
 @Mapper
-public interface InstrumentRepository {
+public interface InstrumentRepository extends PrimaryMapper {
 
     /**
      * Search instruments by ticker or name (case-insensitive partial match).

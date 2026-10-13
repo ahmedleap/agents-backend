@@ -1,7 +1,7 @@
 # Multi-stage build for Spring Boot Backend (Lean Production Image)
 
 # Build arguments
-ARG VERSION=0.5.4
+ARG VERSION=1.0.0
 
 # Stage 1: Builder
 FROM maven:3.9-eclipse-temurin-21 as builder
@@ -27,7 +27,7 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Build arguments available in runtime stage
-ARG VERSION=0.5.4
+ARG VERSION=1.0.0
 LABEL version="${VERSION}"
 LABEL description="Spring Boot Backend - Agents System"
 LABEL maintainer="agents-backend-team"
@@ -43,7 +43,7 @@ USER appuser
 ENV SPRING_PROFILES_ACTIVE=production
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0"
 
-# Expose Spring Boot default port
+# Expose the configured Spring Boot port
 EXPOSE 8080
 
 # Health check: Spring Boot actuator endpoint

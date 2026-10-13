@@ -11,7 +11,7 @@ import java.util.UUID;
  * Handles all database operations for historical OHLCV price data.
  */
 @Mapper
-public interface InstrumentPriceHistoryRepository {
+public interface InstrumentPriceHistoryRepository extends PrimaryMapper {
 
     /**
      * Find historical OHLCV price data for an instrument within a date range.

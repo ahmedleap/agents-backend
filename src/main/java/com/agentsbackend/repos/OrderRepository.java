@@ -10,7 +10,7 @@ import java.util.UUID;
 import java.math.BigDecimal;
 
 @Mapper
-public interface OrderRepository {
+public interface OrderRepository extends PrimaryMapper {
     
     @Select("SELECT * FROM orders WHERE status = 'PENDING'")
     List<Order> findPendingOrders();

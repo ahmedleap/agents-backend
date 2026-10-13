@@ -13,7 +13,7 @@ import java.util.UUID;
  * and retrieval of recent transactions for cash movements (deposits and withdrawals).
  */
 @Mapper
-public interface TransactionsRepository {
+public interface TransactionsRepository extends PrimaryMapper {
 
     /**
      * Create a new transaction in the database.

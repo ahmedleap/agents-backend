@@ -2,6 +2,7 @@ package com.agentsbackend.config;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Configuration;
+import com.agentsbackend.repos.PrimaryMapper;
 
 /**
  * MyBatis configuration for primary transactional repositories.
@@ -11,7 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @MapperScan(
     basePackages = "com.agentsbackend.repos",
-    sqlSessionFactoryRef = "primarySqlSessionFactory"
+    sqlSessionFactoryRef = "primarySqlSessionFactory",
+    markerInterface = PrimaryMapper.class
 )
 public class PrimaryMybatisConfig {
     // Configuration-only class for primary repositories mapper scanning
