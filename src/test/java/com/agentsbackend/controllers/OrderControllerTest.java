@@ -125,14 +125,14 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Should retrieve pending orders without account filter")
+    @DisplayName("Should reject pending orders without account filter")
     void testGetPendingOrdersWithoutFilter() throws Exception {
         // Act & Assert
         mockMvc.perform(get("/api/v1/orders/pending")
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+            .andExpect(status().isBadRequest());
 
-        verify(orderService).getPendingOrders(any());
+        verify(orderService, never()).getPendingOrders(any());
     }
 
     @Test

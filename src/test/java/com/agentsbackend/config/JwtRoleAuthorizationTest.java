@@ -3,10 +3,14 @@ package com.agentsbackend.config;
 import com.agentsbackend.controllers.AccountController;
 import com.agentsbackend.controllers.AdminController;
 import com.agentsbackend.controllers.OrderController;
+import com.agentsbackend.controllers.WatchlistController;
+import com.agentsbackend.repos.AccountRepository;
+import com.agentsbackend.repos.OrderRepository;
 import com.agentsbackend.services.AccountService;
 import com.agentsbackend.services.AdminService;
 import com.agentsbackend.services.OrderService;
 import com.agentsbackend.services.MissionAuthorizationService;
+import com.agentsbackend.services.WatchlistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +32,11 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.List;
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -41,14 +48,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = JwtRoleAuthorizationTest.TestApplication.class)
 @TestPropertySource(properties = {
-        "auth.jwt.jwks-uri=https://auth.example.test/.well-known/jwks.json",
-        "auth.jwt.issuer=https://auth.example.test",
-        "auth.jwt.audience=mission-service"
+        "auth.jwt.jwks-uri=http://127.0.0.1:1/.well-known/jwks.json",
+        "auth.jwt.issuer=agents-middleware",
+        "auth.jwt.audience=agents-backend"
 })
 class JwtRoleAuthorizationTest {
+        private static final UUID CLIENT_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");
+        private static final UUID OTHER_ACCOUNT_ID = UUID.fromString("33333333-3333-4333-8333-333333333333");
+        private static final UUID OTHER_ORDER_ID = UUID.fromString("44444444-4444-4444-8444-444444444444");
+        private static final UUID OTHER_CLIENT_ID = UUID.fromString("55555555-5555-4555-8555-555555555555");
+
     @Autowired private WebApplicationContext applicationContext;
     @Autowired private AccountService accountService;
-        @Autowired private MissionAuthorizationService authorizationService;
+        @Autowired private AccountRepository accountRepository;
+        @Autowired private OrderRepository orderRepository;
+        @Autowired private OrderService orderService;
+        @Autowired private WatchlistService watchlistService;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -72,6 +87,36 @@ class JwtRoleAuthorizationTest {
                 .getAuthorities().stream().map(authority -> authority.getAuthority()).toList();
 
         assertEquals(List.of("ROLE_CLIENT", "ROLE_ANALYST"), authorities);
+    }
+
+    @Test
+    void convertsSingleRoleClaimAndIgnoresUnsupportedRoles() {
+        var token = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("synthetic-only")
+                .header("alg", "RS256")
+                .subject(CLIENT_ID.toString())
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .claim("role", "ROLE_CLIENT")
+                .claim("roles", List.of("ROOT"))
+                .build();
+
+        var authorities = new JwtSecurityConfig().jwtAuthenticationConverter().convert(token)
+                .getAuthorities().stream().map(authority -> authority.getAuthority()).toList();
+
+        assertEquals(List.of(), authorities);
+
+        var singleRoleToken = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("synthetic-only")
+                .header("alg", "RS256")
+                .subject(CLIENT_ID.toString())
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .claim("role", "ROLE_CLIENT")
+                .build();
+        var singleRoleAuthorities = new JwtSecurityConfig().jwtAuthenticationConverter()
+                .convert(singleRoleToken).getAuthorities().stream()
+                .map(authority -> authority.getAuthority()).toList();
+
+        assertEquals(List.of("ROLE_CLIENT"), singleRoleAuthorities);
     }
 
     @Test
@@ -107,6 +152,8 @@ class JwtRoleAuthorizationTest {
 
     @Test
     void clientCanSubmitTradeAndAnonymousRequestIsRejected() throws Exception {
+                when(accountRepository.existsByIdAndClientId(CLIENT_ID, CLIENT_ID)).thenReturn(true);
+
         mockMvc.perform(post("/api/v1/orders")
                         .contentType("application/json")
                         .content(validOrder())
@@ -131,9 +178,56 @@ class JwtRoleAuthorizationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void clientCannotReadAnotherClientsAccountOrOrder() throws Exception {
+        when(accountRepository.existsByIdAndClientId(OTHER_ACCOUNT_ID, CLIENT_ID)).thenReturn(false);
+        when(orderRepository.findAccountIdByOrderId(OTHER_ORDER_ID)).thenReturn(OTHER_ACCOUNT_ID);
+
+        mockMvc.perform(get("/api/accounts/{accountId}", OTHER_ACCOUNT_ID)
+                        .with(jwtWithRole("CLIENT")))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/v1/orders/{orderId}", OTHER_ORDER_ID)
+                        .with(jwtWithRole("CLIENT")))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .param("accountId", OTHER_ACCOUNT_ID.toString())
+                        .with(jwtWithRole("CLIENT")))
+                .andExpect(status().isNotFound());
+
+        verify(accountService, never()).getAccountDetails(OTHER_ACCOUNT_ID);
+        verify(orderService, never()).getOrderById(OTHER_ORDER_ID);
+        verify(orderService, never()).getOrderHistory(OTHER_ACCOUNT_ID);
+    }
+
+    @Test
+    void clientCannotAccessAnotherClientsWatchlist() throws Exception {
+        mockMvc.perform(get("/api/watchlists/{clientId}", OTHER_CLIENT_ID)
+                        .with(jwtWithRole("CLIENT")))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/watchlists")
+                        .with(jwtWithRole("CLIENT"))
+                        .contentType("application/json")
+                        .content("{\"clientId\":\"55555555-5555-4555-8555-555555555555\",\"instrumentId\":\"22222222-2222-4222-8222-222222222222\"}"))
+                .andExpect(status().isForbidden());
+
+        verify(watchlistService, never()).findByClientId(OTHER_CLIENT_ID);
+    }
+
+    @Test
+    void pendingOrderReadRequiresAccountScope() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/pending")
+                        .with(jwtWithRole("CLIENT")))
+                .andExpect(status().isBadRequest());
+
+        verify(orderService, never()).getPendingOrders(org.mockito.ArgumentMatchers.any());
+    }
+
     private SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor jwtWithRole(String role) {
         return SecurityMockMvcRequestPostProcessors.jwt()
-                .jwt(jwt -> jwt.subject("11111111-1111-4111-8111-111111111111")
+                                .jwt(jwt -> jwt.subject(CLIENT_ID.toString())
                         .claim("roles", List.of(role)))
                 .authorities(new SimpleGrantedAuthority("ROLE_" + role));
     }
@@ -152,13 +246,18 @@ class JwtRoleAuthorizationTest {
     @Configuration
     @EnableWebMvc
     @EnableWebSecurity
-    @Import({JwtSecurityConfig.class, AccountController.class, AdminController.class, OrderController.class})
+        @Import({JwtSecurityConfig.class, AccountController.class, AdminController.class,
+                OrderController.class, WatchlistController.class})
     static class TestApplication {
         @Bean AccountService accountService() { return mock(AccountService.class); }
         @Bean AdminService adminService() { return mock(AdminService.class); }
         @Bean OrderService orderService() { return mock(OrderService.class); }
-                @Bean MissionAuthorizationService missionAuthorizationService() {
-                        return mock(MissionAuthorizationService.class);
-                }
+        @Bean WatchlistService watchlistService() { return mock(WatchlistService.class); }
+        @Bean AccountRepository accountRepository() { return mock(AccountRepository.class); }
+        @Bean OrderRepository orderRepository() { return mock(OrderRepository.class); }
+        @Bean MissionAuthorizationService missionAuthorizationService(
+                AccountRepository accountRepository, OrderRepository orderRepository) {
+            return new MissionAuthorizationService(accountRepository, orderRepository);
+        }
     }
 }

@@ -79,10 +79,11 @@ DB_NAME=agents_of_leap
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
-# JWT verification configuration from the NestJS authentication service
-AUTH_JWT_JWKS_URI=http://localhost:3000/.well-known/jwks.json
-AUTH_JWT_ISSUER=agents-of-leap
-AUTH_JWT_AUDIENCE=trading-middleware
+# JWT verification configuration for the local development issuer
+AUTH_JWT_JWKS_URI=http://127.0.0.1:3000/.well-known/jwks.json
+AUTH_JWT_ISSUER=agents-middleware
+AUTH_JWT_AUDIENCE=agents-backend
+JWT_DEV_MODE=true
 
 # Optional
 JAVA_OPTS=-Xmx512m
@@ -104,7 +105,49 @@ logging.level.com.agentsbackend=DEBUG
 
 ### JWT-protected Mission API
 
-This Spring Boot application is the Mission/resource service, not the centralized identity provider. Register, login, password hashing, refresh-token handling, and JWT signing belong in the NestJS authentication service. Spring validates NestJS-issued access JWTs using the public JWKS URL and configured issuer/audience; it never stores or receives the signing private key. `/users/me` and `/api/**` require a valid JWT. Resource ownership and trading permissions must be enforced by the relevant Mission service operations.
+This Spring Boot application validates RS256 JWT signatures using the configured public PEM or JWKS, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
+
+`GET /api/missions` does not exist in this project. Existing protected endpoints include `GET /api/accounts`, `GET /users/me`, and order routes under `/api/v1/orders`. `/users/me` needs a matching client row in PostgreSQL; account listing returns accounts scoped to the JWT subject.
+
+### Local development JWT issuer (no virtual environment)
+
+The repository includes `issuer.py`, a **local-only development helper**, not an authentication service and not production code. It generates a fresh RSA key pair in memory each time it starts, serves only the public key via JWKS, and requires `JWT_DEV_MODE=true` with a non-production `APP_ENV`. It binds to `127.0.0.1:3000`; no private key is written to disk. No virtual environment is needed: run it with system Python. Flask, cryptography, and PyJWT must be installed in that interpreter; `requirements-dev-issuer.txt` lists them if missing.
+
+In PowerShell, start the issuer in terminal 1 from the repository root:
+
+```powershell
+$env:JWT_DEV_MODE = "true"
+$env:APP_ENV = "development"
+py issuer.py
+```
+
+To test the local `issuer.py` (which creates its own temporary signing key), start Spring in terminal 2 from the same root. Clear the static NestJS PEM setting so Spring uses this local issuer's JWKS instead. Spring imports the optional ignored root `.env`; process environment variables override it. Stop any old Spring process using port 8083 before restarting:
+
+```powershell
+$env:AUTH_JWT_JWKS_URI = "http://127.0.0.1:3000/.well-known/jwks.json"
+$env:AUTH_JWT_ISSUER = "agents-middleware"
+$env:AUTH_JWT_AUDIENCE = "agents-backend"
+$env:JWT_PUBLIC_KEY_FILE = ""
+$env:JWT_PUBLIC_KEY = ""
+mvn spring-boot:run
+```
+
+For NestJS tokens, Spring reads the NestJS RSA public PEM from the workspace-root `public_key.pem` by default. Set `JWT_PUBLIC_KEY_FILE` to another path if needed; `JWT_PUBLIC_KEY` is an optional Base64-encoded PEM fallback. Spring uses only the public key for RS256 verification, never the private key. Configure issuer and audience as `agents-middleware` and `agents-backend`, or override them to match NestJS's exact `iss` and `aud` claims. Do not use the local `issuer.py` tokens in this mode: that helper generates a different ephemeral key.
+
+For a paired-token login response, use Bruno `POST http://127.0.0.1:3000/auth/login`, header `Content-Type: application/json`, body `{"email":"alex@example.com","password":"ClientTest123!"}`. The response contains camelCase `accessToken`, `refreshToken`, `expiresIn` (300 seconds), and a `user` object with `clientId`, `email`, `firstName`, `lastName`, and `role`. Keep the tokens in Bruno's private/local environment; do not paste them in chat or commit them. Use `accessToken` as Bearer auth for protected Spring requests. To rotate the refresh token, call `POST http://127.0.0.1:3000/auth/refresh` with `{"refreshToken":"{{refreshToken}}"}`; each refresh token is single-use and the replacement token must be saved.
+
+For access-only role and negative-case tests, use Bruno `POST http://127.0.0.1:3000/dev/token` with `{"role":"CLIENT","case":"valid"}`. This endpoint returns snake_case `access_token`, `token_type`, and `expires_in`. The local test subject is `11111111-1111-4111-8111-111111111111`. The protected endpoint should authenticate as CLIENT; whether it returns account data depends on the database containing accounts for that subject.
+
+The local issuer can create negative test tokens by setting `case` to `wrong-signature`, `wrong-issuer`, `wrong-audience`, `expired`, or `invalid-subject`. Spring should reject them with 401. This issuer is unsuitable for production: its key changes on restart, users/credentials are simulated, and its token endpoint is intentionally only for local development.
+
+#### Test NestJS access tokens and client isolation in Bruno
+
+1. Obtain an access token from the NestJS login endpoint. Keep the token local/private in Bruno; never commit it or send it in chat.
+2. Call `GET http://localhost:8083/api/jwt/verify-header` with **Auth → Bearer Token** set to the access token. A valid signature, issuer, audience, and time window should return 200. Missing, expired, wrong-key/signature, wrong-issuer, or wrong-audience tokens should return 401.
+3. Test role authorization with tokens minted by NestJS for each role. For example, a CLIENT token can access `/api/accounts`; an ADMIN-only endpoint such as `/api/admins/**` should reject that CLIENT token with 403. Spring currently maps `role` and `roles` claims with CLIENT, ADMIN, or ANALYST values (optionally prefixed with `ROLE_`); unsupported/missing roles do not grant a protected role.
+4. To test tenant isolation, use two real client accounts in the database. With client A's token, `GET /api/accounts` must list only accounts belonging to A; `GET /api/accounts/{client-B-account-id}` must return 404. Likewise, requests for B's order history/order IDs must return 404, and B's watchlist client ID must be rejected with 403. The pending-orders endpoint requires an `accountId`, which is checked against the token subject before service access.
+
+The account-ownership implementation currently interprets the JWT `sub` claim as the client's UUID. Confirm that NestJS sets `sub` to the same client UUID (or tell us the claim that contains the client UUID before using real tokens for account-scoped routes). Verification-only can succeed even if that identity-to-client mapping is not yet correct.
 
 ### 4. Build and Run
 
@@ -113,7 +156,7 @@ This Spring Boot application is the Mission/resource service, not the centralize
 mvn clean compile
 ```
 
-#### Run Locally (Port 8080)
+#### Run Locally (Port 8083)
 ```powershell
 mvn spring-boot:run
 ```
@@ -127,7 +170,7 @@ java -jar target/agents-backend.jar
 ### 5. Verify Application
 Application is running when you see in logs:
 ```
-Tomcat started on port 8080 (http) with context path '/'
+Tomcat started on port 8083 (http) with context path '/'
 Started AgentsBackendApplication in 2.7 seconds
 ```
 

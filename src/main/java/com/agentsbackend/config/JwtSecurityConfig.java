@@ -1,14 +1,17 @@
 
 package com.agentsbackend.config;
 
+import java.util.Collection;
+import java.util.Base64;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +27,6 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -35,15 +37,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableMethodSecurity
 public class JwtSecurityConfig {
-
-    @Value("${auth.jwt.public-key}")
-    private String encodedPublicKey;
-
-    @Value("${auth.jwt.issuer}")
-    private String issuer;
-
-    @Value("${auth.jwt.audience}")
-    private String audience;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -57,9 +50,15 @@ public class JwtSecurityConfig {
                 )
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/accounts/**").hasRole("CLIENT")
-                .requestMatchers("/api/watchlists/**").hasRole("CLIENT")
-                .requestMatchers("/api/admins/**").hasRole("ADMIN")
+                .requestMatchers(
+                    "/api/accounts/**",
+                    "/api/watchlists/**"
+                ).hasRole("CLIENT")
+
+                .requestMatchers("/api/jwt/**").authenticated()
+
+                .requestMatchers("/api/admins/**")
+                    .hasRole("ADMIN")
 
                 .requestMatchers(
                     HttpMethod.POST,
@@ -71,10 +70,12 @@ public class JwtSecurityConfig {
                     "/api/v1/orders/**"
                 ).hasAnyRole("CLIENT", "ADMIN", "ANALYST")
 
+                // All remaining API and user routes require a JWT.
                 .requestMatchers("/api/**", "/users/**")
                     .authenticated()
 
-                .anyRequest().permitAll()
+                // Public endpoints must be explicitly reviewed.
+                .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth ->
                 oauth.jwt(jwt ->
@@ -88,69 +89,80 @@ public class JwtSecurityConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder() throws Exception {
+    public JwtDecoder jwtDecoder(
+            @Value("${auth.jwt.jwks-uri}") String jwksUri,
+            @Value("${auth.jwt.public-key-file:}") String publicKeyFile,
+            @Value("${auth.jwt.public-key-base64:}") String publicKeyBase64,
+            @Value("${auth.jwt.issuer}") String issuer,
+            @Value("${auth.jwt.audience}") String audience) {
 
-        // Decode the outer Base64 string into PEM format.
-        String pem = new String(
-            Base64.getDecoder().decode(encodedPublicKey.trim()),
-            StandardCharsets.UTF_8
-        );
+        NimbusJwtDecoder decoder;
+        if (publicKeyFile != null && !publicKeyFile.isBlank()) {
+            decoder = NimbusJwtDecoder
+                .withPublicKey(readRsaPublicKey(publicKeyFile))
+                .signatureAlgorithm(SignatureAlgorithm.RS256)
+                .build();
+        } else if (publicKeyBase64 != null && !publicKeyBase64.isBlank()) {
+            decoder = NimbusJwtDecoder
+                .withPublicKey(decodeRsaPublicKey(publicKeyBase64))
+                .signatureAlgorithm(SignatureAlgorithm.RS256)
+                .build();
+        } else {
+            // Prefer a trusted JWKS endpoint when no static public key is configured.
+            decoder = NimbusJwtDecoder
+                .withJwkSetUri(jwksUri)
+                .jwsAlgorithm(SignatureAlgorithm.RS256)
+                .build();
+        }
 
-        // Remove PEM headers and whitespace.
-        String keyContent = pem
-            .replace("-----BEGIN PUBLIC KEY-----", "")
-            .replace("-----END PUBLIC KEY-----", "")
-            .replaceAll("\\s", "");
-
-        // Decode the RSA public key.
-        byte[] keyBytes = Base64.getDecoder().decode(keyContent);
-
-        RSAPublicKey publicKey = (RSAPublicKey) KeyFactory
-            .getInstance("RSA")
-            .generatePublic(new X509EncodedKeySpec(keyBytes));
-
-        // Verify JWT signatures using RS256.
-        NimbusJwtDecoder decoder = NimbusJwtDecoder
-            .withPublicKey(publicKey)
-            .signatureAlgorithm(SignatureAlgorithm.RS256)
-            .build();
-
-        // Validate issuer, expiration, and audience.
         OAuth2TokenValidator<Jwt> issuerAndTime =
             JwtValidators.createDefaultWithIssuer(issuer);
 
-        OAuth2TokenValidator<Jwt> audienceValidator =
-            new JwtClaimValidator<List<String>>(
-                "aud",
-                audiences -> audiences != null
-                    && audiences.contains(audience)
-            );
-
-        // Require a valid UUID subject.
-        OAuth2TokenValidator<Jwt> subjectValidator = jwt -> {
-            try {
-                UUID.fromString(jwt.getSubject());
-                return OAuth2TokenValidatorResult.success();
-            } catch (Exception e) {
-                return OAuth2TokenValidatorResult.failure(
-                    new OAuth2Error(
-                        "invalid_token",
-                        "JWT subject must be a valid UUID",
-                        null
-                    )
+        OAuth2TokenValidator<Jwt> audienceValidator = jwt ->
+            jwt.getAudience() != null && jwt.getAudience().contains(audience)
+                ? OAuth2TokenValidatorResult.success()
+                : OAuth2TokenValidatorResult.failure(
+                    new OAuth2Error("invalid_token", "Required audience is missing", null)
                 );
-            }
-        };
 
         decoder.setJwtValidator(
             new DelegatingOAuth2TokenValidator<>(
                 issuerAndTime,
-                audienceValidator,
-                subjectValidator
+                audienceValidator
             )
         );
 
         return decoder;
+    }
+
+    private RSAPublicKey readRsaPublicKey(String publicKeyFile) {
+        try {
+            return decodeRsaPublicKey(Files.readString(Path.of(publicKeyFile)));
+        } catch (IOException | RuntimeException exception) {
+            throw new IllegalStateException(
+                "Could not load RSA public key from auth.jwt.public-key-file: " + publicKeyFile,
+                exception
+            );
+        }
+    }
+
+    private RSAPublicKey decodeRsaPublicKey(String configuredKey) {
+        try {
+            String keyText = configuredKey.trim();
+            if (!keyText.startsWith("-----BEGIN")) {
+                keyText = new String(Base64.getDecoder().decode(keyText), StandardCharsets.UTF_8).trim();
+            }
+
+            String encodedDer = keyText
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s", "");
+            byte[] der = Base64.getDecoder().decode(encodedDer);
+            return (RSAPublicKey) KeyFactory.getInstance("RSA")
+                .generatePublic(new X509EncodedKeySpec(der));
+        } catch (IllegalArgumentException | GeneralSecurityException exception) {
+            throw new IllegalStateException("auth.jwt.public-key-base64 must contain a Base64-encoded PEM RSA public key", exception);
+        }
     }
 
     @Bean
@@ -161,10 +173,12 @@ public class JwtSecurityConfig {
 
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
 
-            Collection<String> roles = jwt.getClaimAsStringList("roles");
+            Collection<String> roles =
+                jwt.getClaimAsStringList("roles");
 
             if (roles == null || roles.isEmpty()) {
-                String singleRole = jwt.getClaimAsString("role");
+                String singleRole =
+                    jwt.getClaimAsString("role");
 
                 roles = singleRole == null
                     ? List.of()
@@ -172,13 +186,21 @@ public class JwtSecurityConfig {
             }
 
             return roles.stream()
-                .filter(role -> List.of(
-                    "CLIENT",
-                    "ADMIN",
-                    "ANALYST"
-                ).contains(role))
+                .filter(role -> role != null)
+                .map(role -> role.trim().toUpperCase(java.util.Locale.ROOT))
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
+                .filter(role ->
+                    List.of(
+                        "CLIENT",
+                        "ADMIN",
+                        "ANALYST"
+                    ).contains(role)
+                )
                 .map(role -> (GrantedAuthority)
-                    new SimpleGrantedAuthority("ROLE_" + role))
+                    new SimpleGrantedAuthority(
+                        "ROLE_" + role
+                    )
+                )
                 .toList();
         });
 

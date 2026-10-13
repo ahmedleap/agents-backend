@@ -39,7 +39,7 @@ public class OrderController {
     @GetMapping("/pending")
     public List<Order> getPendingOrders(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(value = "accountId", required = false) UUID accountId,
+            @RequestParam(value = "accountId") UUID accountId,
             @RequestParam(value = "limit", required = false) Integer limit,
             @RequestParam(value = "offset", required = false) Integer offset) {
         
