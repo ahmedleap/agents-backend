@@ -138,14 +138,15 @@ public class OrderServiceImpl implements OrderService {
                 // Limit order - use the provided price
                 totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
             } else {
-                // Market order - use current mid_price from instrument
+                // Market order - use resolved market price from instrument
                 Instrument inst = instrumentRepository.findById(request.getInstrumentId()).orElse(null);
-                if (inst != null && inst.getMidPrice() != null) {
-                    totalValue = inst.getMidPrice().multiply(new BigDecimal(request.getQuantity()));
+                BigDecimal marketPrice = resolveMarketPrice(inst, request.getOrderType());
+                if (marketPrice != null) {
+                    totalValue = marketPrice.multiply(new BigDecimal(request.getQuantity()));
                 } else {
-                    // If instrument or mid_price not available, use zero
+                    // If instrument market price not available, use zero
                     totalValue = BigDecimal.ZERO;
-                    logger.warn("Could not retrieve mid_price for instrument {}", request.getInstrumentId());
+                    logger.warn("Could not retrieve market price for instrument {}", request.getInstrumentId());
                 }
             }
             
@@ -251,12 +252,7 @@ public class OrderServiceImpl implements OrderService {
         // Fetch current instrument pricing
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
             .orElse(null);
-        BigDecimal marketPrice;
-        if (instrument != null) {
-            marketPrice = instrument.getMidPrice();
-        } else {
-            marketPrice = null;
-        }
+        BigDecimal marketPrice = resolveMarketPrice(instrument, request.getOrderType());
         
         if (price == null) {
             // MARKET ORDER - validate market price exists
@@ -395,9 +391,7 @@ public class OrderServiceImpl implements OrderService {
         if (priceForValidation == null) {
             Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
                 .orElse(null);
-            if (instrument != null) {
-                priceForValidation = instrument.getMidPrice();
-            }
+            priceForValidation = resolveMarketPrice(instrument, request.getOrderType());
         }
         
         if (priceForValidation == null) {
@@ -492,8 +486,9 @@ public class OrderServiceImpl implements OrderService {
         for (Holding holding : holdings) {
             Instrument instrument = instrumentRepository.findById(holding.getInstrumentId())
                 .orElse(null);
-            if (instrument != null && instrument.getMidPrice() != null) {
-                BigDecimal holdingValue = holding.getQuantity().multiply(instrument.getMidPrice());
+            BigDecimal marketPrice = resolveMarketPrice(instrument, OrderType.SELL);
+            if (marketPrice != null) {
+                BigDecimal holdingValue = holding.getQuantity().multiply(marketPrice);
                 holdingsValue = holdingsValue.add(holdingValue);
             }
         }
@@ -594,5 +589,28 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return order;
+    }
+
+    private BigDecimal resolveMarketPrice(Instrument instrument, OrderType orderType) {
+        if (instrument == null) {
+            return null;
+        }
+
+        if (instrument.getMidPrice() != null) {
+            return instrument.getMidPrice();
+        }
+
+        BigDecimal bid = instrument.getBid();
+        BigDecimal ask = instrument.getAsk();
+
+        if (bid != null && ask != null) {
+            return bid.add(ask).divide(new BigDecimal("2"), 4, java.math.RoundingMode.HALF_UP);
+        }
+
+        if (orderType == OrderType.BUY) {
+            return ask != null ? ask : bid;
+        }
+
+        return bid != null ? bid : ask;
     }
 }
