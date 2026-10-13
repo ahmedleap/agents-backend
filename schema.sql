@@ -115,15 +115,15 @@ CREATE TABLE accounts (
 -- ============================================================
 
 CREATE TABLE instruments (
-    instrument_id   UUID PRIMARY KEY,
-    ticker          VARCHAR(10) NOT NULL UNIQUE,
-    name            VARCHAR(255) NOT NULL,
-    asset_class     asset_class NOT NULL,
-    industry        VARCHAR(100),
-    bid              NUMERIC(18,4) CHECK (bid > 0),
-    ask              NUMERIC(18,4) CHECK (ask > 0),
-    mid_price        NUMERIC(18,4) GENERATED ALWAYS AS ((bid + ask) / 2) STORED,
-    price_updated_at TIMESTAMP WITH TIME ZONE
+    instrument_id       UUID PRIMARY KEY,
+    ticker              VARCHAR(10) NOT NULL UNIQUE,
+    name                VARCHAR(255) NOT NULL,
+    asset_class         asset_class NOT NULL,
+    industry            VARCHAR(100),
+    bid                 NUMERIC(18,4) CHECK (bid > 0),
+    ask                 NUMERIC(18,4) CHECK (ask > 0),
+    mid_price           NUMERIC(18,4) GENERATED ALWAYS AS ((bid + ask) / 2) STORED,
+    price_updated_at    TIMESTAMP WITH TIME ZONE
 );
 
 -- ============================================================
@@ -167,6 +167,37 @@ CREATE TABLE instrument_price_history (
     CONSTRAINT uq_instrument_timestamp
         UNIQUE (instrument_id, timestamp)
 );
+
+-- ============================================================
+-- INSTRUMENT_PRICE_HISTORY (OHLCV historical data)
+-- ============================================================
+
+CREATE TABLE instrument_price_history (
+    price_history_id    UUID PRIMARY KEY,
+    instrument_id       UUID NOT NULL,
+    timestamp           TIMESTAMP WITH TIME ZONE NOT NULL,
+    open                NUMERIC(18,4) NOT NULL CHECK (open > 0),
+    high                NUMERIC(18,4) NOT NULL CHECK (high > 0),
+    low                 NUMERIC(18,4) NOT NULL CHECK (low > 0),
+    close               NUMERIC(18,4) NOT NULL CHECK (close > 0),
+    volume              INTEGER NOT NULL CHECK (volume >= 0),
+    CONSTRAINT fk_price_history_instrument
+        FOREIGN KEY (instrument_id)
+        REFERENCES instruments (instrument_id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_instrument_timestamp
+        UNIQUE (instrument_id, timestamp)
+);
+
+-- ============================================================
+-- INDEXES for instrument_price_history performance
+-- ============================================================
+
+CREATE INDEX idx_price_history_instrument_timestamp 
+ON instrument_price_history (instrument_id, timestamp DESC);
+
+CREATE INDEX idx_price_history_timestamp 
+ON instrument_price_history (timestamp DESC);
 
 -- ============================================================
 -- ORDERS (buy/sell orders in any status; always LIMIT for now)
