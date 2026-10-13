@@ -22,7 +22,7 @@ public interface InstrumentRepository {
      * @return Optional containing the Instrument if found
      */
     @Select("SELECT instrument_id, ticker, asset_class, bid, ask, mid_price, price_updated_at " +
-            "FROM instruments WHERE instrument_id = #{instrumentId,jdbcType=VARCHAR}")
+            "FROM instruments WHERE instrument_id = #{instrumentId,jdbcType=OTHER}")
     @Results({
         @Result(property = "instrumentId", column = "instrument_id"),
         @Result(property = "ticker", column = "ticker"),
@@ -80,6 +80,6 @@ public interface InstrumentRepository {
      */
     @Update("UPDATE instruments SET bid = #{bid,jdbcType=NUMERIC}, ask = #{ask,jdbcType=NUMERIC}, " +
             "mid_price = #{midPrice,jdbcType=NUMERIC}, price_updated_at = #{priceUpdatedAt} " +
-            "WHERE instrument_id = #{instrumentId,jdbcType=VARCHAR}")
+            "WHERE instrument_id = #{instrumentId,jdbcType=OTHER}")
     void updatePricing(Instrument instrument);
 }

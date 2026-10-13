@@ -40,6 +40,9 @@ class OrderConsumerServiceTest {
     @Mock
     private HoldingService holdingsService;
 
+    @Mock
+    private OrderRetryRoutingService orderRetryRoutingService;
+
     private OrderConsumerService orderConsumerService;
 
     @BeforeEach
@@ -50,7 +53,8 @@ class OrderConsumerServiceTest {
             accountRepository,
             instrumentRepository,
             auditTrailService,
-            holdingsService
+            holdingsService,
+            orderRetryRoutingService
         );
     }
 
@@ -179,6 +183,7 @@ class OrderConsumerServiceTest {
         // Assert - order should remain PENDING
         assertEquals(OrderStatus.PENDING, order.getStatus());
         verify(orderRepository, never()).updateOrder(any(Order.class));
+        verify(orderRetryRoutingService).sendToRetry(eq(order), anyString());
     }
 
     @Test

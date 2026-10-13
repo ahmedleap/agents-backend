@@ -36,17 +36,20 @@ public class OrderConsumerService {
     private final InstrumentRepository instrumentRepository;
     private final AuditTrailService auditTrailService;
     private final HoldingService holdingsService;
+    private final OrderRetryRoutingService orderRetryRoutingService;
     
     public OrderConsumerService(OrderRepository orderRepository,
                                AccountRepository accountRepository,
                                InstrumentRepository instrumentRepository,
                                AuditTrailService auditTrailService,
-                               HoldingService holdingsService) {
+                               HoldingService holdingsService,
+                               OrderRetryRoutingService orderRetryRoutingService) {
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.auditTrailService = auditTrailService;
         this.holdingsService = holdingsService;
+        this.orderRetryRoutingService = orderRetryRoutingService;
     }
     
     /**
@@ -56,14 +59,24 @@ public class OrderConsumerService {
     public void processOrder(Order order) {
         try {
             logger.info("Received order {} from Kafka", order.getOrderId());
-            if (tryFillOrder(order)) {
+            if (attemptFill(order)) {
                 logger.info("Order {} filled successfully", order.getOrderId());
             } else {
                 logger.info("Order {} could not be filled at current market price", order.getOrderId());
+                if (order.getLimitPrice() != null) {
+                    orderRetryRoutingService.sendToRetry(order, "Limit order not fillable at current market price");
+                }
             }
         } catch (Exception e) {
             logger.error("Error processing order {}: {}", order.getOrderId(), e.getMessage(), e);
         }
+    }
+
+    /**
+     * Shared fill-attempt entrypoint for both main and retry consumers.
+     */
+    public boolean attemptFill(Order order) {
+        return tryFillOrder(order);
     }
     
     /**
