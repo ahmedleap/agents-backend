@@ -2,22 +2,67 @@ package com.agentsbackend.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.dao.DuplicateKeyException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleAccountNotFound(AccountNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ClientNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleClientNotFound(ClientNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InstrumentNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleInstrumentNotFound(InstrumentNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(HoldingNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleHoldingNotFound(HoldingNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedAccountAccessException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedAccountAccess(UnauthorizedAccountAccessException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("error", "Invalid UUID format: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateKey(DuplicateKeyException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", "This account already holds this instrument. Use PUT to update quantity instead."));
+    }
+
+    // Order exceptions (from dev branch)
     @ExceptionHandler(InvalidOrderParametersException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidOrderParameters(
             InvalidOrderParametersException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", java.time.LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InvalidOrderParametersException");
         body.put("message", ex.getMessage());
@@ -62,7 +107,7 @@ public class GlobalExceptionHandler {
             InsufficientFundsException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", java.time.LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InsufficientFundsException");
         body.put("message", ex.getMessage());
@@ -79,7 +124,7 @@ public class GlobalExceptionHandler {
             InvalidAccountException ex, WebRequest request) {
         
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", java.time.LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "InvalidAccountException");
         body.put("message", ex.getMessage());

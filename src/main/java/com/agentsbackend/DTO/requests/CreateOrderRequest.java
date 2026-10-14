@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.DecimalMin;
+import org.springframework.lang.Nullable;
 import java.util.UUID;
 import java.math.BigDecimal;
 import com.agentsbackend.enums.OrderType;
@@ -25,6 +26,7 @@ public class CreateOrderRequest {
     @Max(value = 1_000_000, message = "Quantity cannot exceed 1,000,000")
     private Integer quantity;
 
+    @Nullable
     @DecimalMin(value = "0.01", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;  // Optional: null = MARKET order, value = LIMIT order
 

@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.agentsbackend</groupId>
     <artifactId>agents-backend</artifactId>
-    <version>0.4.3</version>
+    <version>0.9.0</version>
     <packaging>jar</packaging>
     <name>Agents Backend</name>
     <description>Spring Boot Backend for Agents System</description>
@@ -82,6 +82,17 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.12.6</version>
             <scope>runtime</scope>
+        <!-- Lombok for annotations like @Slf4j, @Data, @Builder -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Spring Cache -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
         <!-- Testing -->
@@ -129,6 +140,13 @@
                     <source>21</source>
                     <target>21</target>
                     <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

@@ -5,7 +5,8 @@ import com.agentsbackend.repos.AdminRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -25,7 +26,7 @@ public class AdminServiceImpl implements AdminService {
             admin.setAdminId(UUID.randomUUID());
         }
         if (admin.getCreatedAt() == null) {
-            admin.setCreatedAt(LocalDateTime.now());
+            admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
         adminRepository.createAdmin(admin);
         return admin;

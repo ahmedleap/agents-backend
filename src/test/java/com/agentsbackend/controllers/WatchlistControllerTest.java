@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -60,7 +60,7 @@ class WatchlistControllerTest {
                 INSTRUMENT_ID,
                 "AAPL",
                 "Apple Inc.",
-                LocalDateTime.parse("2026-09-21T12:00:00"));
+                OffsetDateTime.parse("2026-09-21T12:00:00Z"));
         when(watchlistService.add(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/watchlists")
@@ -81,7 +81,7 @@ class WatchlistControllerTest {
             @Test
             void watchlistResponseExposesAllFieldsAndValueMethods() {
             UUID watchlistId = UUID.fromString("b50e8400-e29b-41d4-a716-446655aa0001");
-            LocalDateTime addedAt = LocalDateTime.parse("2026-09-21T12:00:00");
+            OffsetDateTime addedAt = OffsetDateTime.parse("2026-09-21T12:00:00Z");
             WatchlistResponse response = new WatchlistResponse(
                 watchlistId, CLIENT_ID, INSTRUMENT_ID, "AAPL", "Apple Inc.", addedAt);
             WatchlistResponse equalResponse = new WatchlistResponse(
@@ -110,7 +110,7 @@ class WatchlistControllerTest {
                         INSTRUMENT_ID,
                         "AAPL",
                         "Apple Inc.",
-                        LocalDateTime.parse("2026-09-21T12:00:00"))));
+                        OffsetDateTime.parse("2026-09-21T12:00:00Z"))));
 
         mockMvc.perform(get("/api/watchlists/{clientId}", CLIENT_ID))
                 .andExpect(status().isOk())

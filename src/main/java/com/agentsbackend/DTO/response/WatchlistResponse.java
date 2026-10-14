@@ -1,6 +1,6 @@
 package com.agentsbackend.DTO.response;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record WatchlistResponse(
@@ -9,5 +9,5 @@ public record WatchlistResponse(
         UUID instrumentId,
         String ticker,
         String instrumentName,
-        LocalDateTime addedAt) {
+        OffsetDateTime addedAt) {
 }

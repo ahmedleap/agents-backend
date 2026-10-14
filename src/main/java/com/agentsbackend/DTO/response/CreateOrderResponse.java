@@ -1,7 +1,7 @@
 package com.agentsbackend.DTO.response;
 
 import java.util.UUID;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.math.BigDecimal;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
@@ -19,7 +19,7 @@ public class CreateOrderResponse {
     private BigDecimal totalValue;
     private OrderType orderType;
     private OrderStatus status;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
     private String message;
 
     public CreateOrderResponse() {
@@ -27,7 +27,7 @@ public class CreateOrderResponse {
 
     public CreateOrderResponse(UUID orderId, UUID accountId, UUID instrumentId, 
                               Integer quantity, BigDecimal price, BigDecimal totalValue,
-                              OrderType orderType, OrderStatus status, LocalDateTime createdAt, String message) {
+                              OrderType orderType, OrderStatus status, OffsetDateTime createdAt, String message) {
         this.orderId = orderId;
         this.accountId = accountId;
         this.instrumentId = instrumentId;
@@ -105,11 +105,11 @@ public class CreateOrderResponse {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 

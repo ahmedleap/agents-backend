@@ -6,6 +6,7 @@ import com.agentsbackend.services.AccountService;
 import com.agentsbackend.services.MissionAuthorizationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import com.agentsbackend.services.TransactionsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,11 @@ public class AccountController {
     public AccountController(AccountService accountService, MissionAuthorizationService authorizationService) {
         this.accountService = accountService;
         this.authorizationService = authorizationService;
+    private final TransactionsService transactionsService;
+
+    public AccountController(AccountService accountService, TransactionsService transactionsService) {
+        this.accountService = accountService;
+        this.transactionsService = transactionsService;
     }
 
     /**
@@ -109,6 +115,25 @@ public class AccountController {
     }
 
     /**
+     * Retrieve recent transactions (deposits and withdrawals) for an account.
+     * GET /api/accounts/{accountId}/transactions?limit=10
+     *
+     * Query Parameters:
+     * - limit: Maximum number of recent transactions to return (default: 10)
+     *
+     * @param accountId UUID of the account
+     * @param limit Maximum number of transactions to return (default: 10)
+     * @return ResponseEntity with list of TransactionItem ordered by most recent first (HTTP 200)
+     */
+    @GetMapping("/{accountId}/transactions")
+    public ResponseEntity<List<AccountsResponse.TransactionItem>> getRecentTransactions(
+            @PathVariable UUID accountId,
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        List<AccountsResponse.TransactionItem> transactions = transactionsService.getRecentTransactions(accountId, limit);
+        return ResponseEntity.ok(transactions);
+    }
+
+    /**
      * Update account details (name and/or status).
      * PUT /api/accounts/{accountId}
      *
@@ -128,13 +153,13 @@ public class AccountController {
 
     /**
      * Deposit cash into an account.
-     * POST /api/accounts/{accountId}/deposit
+     * PATCH /api/accounts/{accountId}/deposit
      *
      * @param accountId UUID of the account
      * @param request AccountsRequest.Deposit containing deposit amount
      * @return ResponseEntity with AccountsResponse.Transaction showing new balance (HTTP 200)
      */
-    @PostMapping("/{accountId}/deposit")
+    @PatchMapping("/{accountId}/deposit")
     public ResponseEntity<AccountsResponse.Transaction> depositCash(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
@@ -146,14 +171,14 @@ public class AccountController {
 
     /**
      * Withdraw cash from an account.
-     * POST /api/accounts/{accountId}/withdraw
+     * PATCH /api/accounts/{accountId}/withdraw
      *
      * @param accountId UUID of the account
      * @param request AccountsRequest.Withdrawal containing withdrawal amount
      * @return ResponseEntity with AccountsResponse.Transaction showing new balance (HTTP 200)
      * @throws IllegalArgumentException if insufficient funds or account is closed
      */
-    @PostMapping("/{accountId}/withdraw")
+    @PatchMapping("/{accountId}/withdraw")
     public ResponseEntity<AccountsResponse.Transaction> withdrawCash(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,

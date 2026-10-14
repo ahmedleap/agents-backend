@@ -1,58 +1,25 @@
 package com.agentsbackend.entities;
 
-import jakarta.persistence.*;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.OrderStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "orders")
 public class Order {
 
-    @Id
-    @Column(name = "order_id", columnDefinition = "UUID")
     private UUID orderId;
-
-    @Column(name = "account_id", insertable = false, updatable = false)
     private UUID accountId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false)
     private Account account;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instrument_id", nullable = false)
     private Instrument instrument;
-
-    @Column(name = "order_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private OrderType orderType;
-
-    @Column(name = "quantity", nullable = false, precision = 18, scale = 6, columnDefinition = "NUMERIC(18,6) CHECK (quantity > 0)")
     private BigDecimal quantity;
-
-    @Column(name = "limit_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (limit_price > 0)")
     private BigDecimal limitPrice;
-
-    @Column(name = "filled_price", precision = 18, scale = 4, columnDefinition = "NUMERIC(18,4) CHECK (filled_price > 0)")
     private BigDecimal filledPrice;
-
-    @Column(name = "status", nullable = false)
-    @Enumerated(EnumType.STRING)
     private OrderStatus status;
-
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime createdAt;
-
-    @Column(name = "filled_at")
-    private LocalDateTime filledAt;
-
-    @Column(name = "cancelled_at")
-    private LocalDateTime cancelledAt;
-
-    @Column(name = "cancel_reason")
+    private OffsetDateTime createdAt;
+    private OffsetDateTime filledAt;
+    private OffsetDateTime cancelledAt;
     private String cancelReason;
 
     public Order() {
@@ -60,7 +27,7 @@ public class Order {
 
     public Order(UUID orderId, Account account, Instrument instrument, OrderType orderType,
                  BigDecimal quantity, BigDecimal limitPrice, BigDecimal filledPrice, OrderStatus status,
-                 LocalDateTime createdAt, LocalDateTime filledAt, LocalDateTime cancelledAt, String cancelReason) {
+                 OffsetDateTime createdAt, OffsetDateTime filledAt, OffsetDateTime cancelledAt, String cancelReason) {
         this.orderId = orderId;
         this.account = account;
         this.instrument = instrument;
@@ -147,27 +114,27 @@ public class Order {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getFilledAt() {
+    public OffsetDateTime getFilledAt() {
         return filledAt;
     }
 
-    public void setFilledAt(LocalDateTime filledAt) {
+    public void setFilledAt(OffsetDateTime filledAt) {
         this.filledAt = filledAt;
     }
 
-    public LocalDateTime getCancelledAt() {
+    public OffsetDateTime getCancelledAt() {
         return cancelledAt;
     }
 
-    public void setCancelledAt(LocalDateTime cancelledAt) {
+    public void setCancelledAt(OffsetDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
     }
 

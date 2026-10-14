@@ -8,7 +8,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,7 +36,7 @@ class AdminServiceImplTest {
     void testCreateAdminWithProvidedValues() {
         // Arrange
         UUID adminId = UUID.randomUUID();
-        LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
+        OffsetDateTime createdAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
         Admin admin = new Admin();
         admin.setAdminId(adminId);
         admin.setCreatedAt(createdAt);
@@ -55,7 +56,7 @@ class AdminServiceImplTest {
         // Arrange
         Admin admin = new Admin();
         admin.setAdminId(null);
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         // Act
         Admin result = adminService.createAdmin(admin);
@@ -72,11 +73,11 @@ class AdminServiceImplTest {
         Admin admin = new Admin();
         admin.setAdminId(UUID.randomUUID());
         admin.setCreatedAt(null);
-        LocalDateTime beforeCreation = LocalDateTime.now();
+        OffsetDateTime beforeCreation = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         Admin result = adminService.createAdmin(admin);
-        LocalDateTime afterCreation = LocalDateTime.now();
+        OffsetDateTime afterCreation = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Assert
         assertNotNull(result.getCreatedAt());
@@ -92,11 +93,11 @@ class AdminServiceImplTest {
         Admin admin = new Admin();
         admin.setAdminId(null);
         admin.setCreatedAt(null);
-        LocalDateTime beforeCreation = LocalDateTime.now();
+        OffsetDateTime beforeCreation = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Act
         Admin result = adminService.createAdmin(admin);
-        LocalDateTime afterCreation = LocalDateTime.now();
+        OffsetDateTime afterCreation = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Assert
         assertNotNull(result.getAdminId());
@@ -112,7 +113,7 @@ class AdminServiceImplTest {
         // Arrange
         Admin admin = new Admin();
         admin.setAdminId(UUID.randomUUID());
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         // Act
         adminService.createAdmin(admin);
@@ -128,7 +129,7 @@ class AdminServiceImplTest {
         UUID adminId = UUID.randomUUID();
         Admin admin = new Admin();
         admin.setAdminId(adminId);
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         // Act
         Admin result = adminService.createAdmin(admin);
@@ -143,7 +144,7 @@ class AdminServiceImplTest {
         // Arrange
         Admin admin = new Admin();
         admin.setAdminId(UUID.randomUUID());
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         doThrow(new RuntimeException("Database error")).when(adminRepository).createAdmin(any());
 
         // Act & Assert
@@ -156,7 +157,7 @@ class AdminServiceImplTest {
         // Arrange
         Admin admin = new Admin();
         admin.setAdminId(UUID.randomUUID());
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         // Act
         Admin result = adminService.createAdmin(admin);

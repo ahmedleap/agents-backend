@@ -1,7 +1,7 @@
 package com.agentsbackend.DTO.response;
 
 import java.util.UUID;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import com.agentsbackend.enums.OrderStatus;
 
 /**
@@ -11,13 +11,13 @@ public class CancelOrderResponse {
 
     private UUID orderId;
     private OrderStatus status;
-    private LocalDateTime cancelledAt;
+    private OffsetDateTime cancelledAt;
     private String message;
 
     public CancelOrderResponse() {
     }
 
-    public CancelOrderResponse(UUID orderId, OrderStatus status, LocalDateTime cancelledAt, String message) {
+    public CancelOrderResponse(UUID orderId, OrderStatus status, OffsetDateTime cancelledAt, String message) {
         this.orderId = orderId;
         this.status = status;
         this.cancelledAt = cancelledAt;
@@ -41,11 +41,11 @@ public class CancelOrderResponse {
         this.status = status;
     }
 
-    public LocalDateTime getCancelledAt() {
+    public OffsetDateTime getCancelledAt() {
         return cancelledAt;
     }
 
-    public void setCancelledAt(LocalDateTime cancelledAt) {
+    public void setCancelledAt(OffsetDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
     }
 

@@ -17,7 +17,7 @@ public class AdminController {
     }
 
     // HTTP POST endpoint to create a new admin and return the created record with HTTP 201
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<Admin> createAdmin(@RequestBody Admin admin) {
         Admin createdAdmin = adminService.createAdmin(admin);
         return new ResponseEntity<>(createdAdmin, HttpStatus.CREATED);
