@@ -68,7 +68,7 @@ public class OrderRetryConsumerService {
         try {
             boolean filled = orderConsumerService.attemptFill(order);
             if (!filled) {
-                orderRetryRoutingService.sendToDeadLetter(order, "Limit order still unfilled after scheduled retry attempt");
+                orderRetryRoutingService.sendToDeadLetter(order, "Limit price was not reached after scheduled retry attempt");
             }
         } catch (Exception e) {
             logger.error("Scheduled retry execution failed for order {}: {}", order.getOrderId(), e.getMessage(), e);
