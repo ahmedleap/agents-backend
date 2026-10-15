@@ -7,7 +7,7 @@ import java.util.UUID;
 public class InstrumentPriceHistory {
 
     private UUID priceHistoryId;
-    private Instrument instrument;
+    private UUID instrumentId;
     private OffsetDateTime timestamp;
     private BigDecimal open;
     private BigDecimal high;
@@ -18,11 +18,11 @@ public class InstrumentPriceHistory {
     public InstrumentPriceHistory() {
     }
 
-    public InstrumentPriceHistory(UUID priceHistoryId, Instrument instrument, OffsetDateTime timestamp,
+    public InstrumentPriceHistory(UUID priceHistoryId, UUID instrumentId, OffsetDateTime timestamp,
                                   BigDecimal open, BigDecimal high, BigDecimal low,
                                   BigDecimal close, Integer volume) {
         this.priceHistoryId = priceHistoryId;
-        this.instrument = instrument;
+        this.instrumentId = instrumentId;
         this.timestamp = timestamp;
         this.open = open;
         this.high = high;
@@ -39,12 +39,12 @@ public class InstrumentPriceHistory {
         this.priceHistoryId = priceHistoryId;
     }
 
-    public Instrument getInstrument() {
-        return instrument;
+    public UUID getInstrumentId() {
+        return instrumentId;
     }
 
-    public void setInstrument(Instrument instrument) {
-        this.instrument = instrument;
+    public void setInstrumentId(UUID instrumentId) {
+        this.instrumentId = instrumentId;
     }
 
     public OffsetDateTime getTimestamp() {

@@ -15,10 +15,10 @@ import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
 import com.agentsbackend.DTO.response.OrderSummaryResponse;
-import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.HoldingRepository;
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.InstrumentRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
+import com.agentsbackend.repos.transactional.HoldingRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.InstrumentRepository;
 import com.agentsbackend.queue.OrderQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +58,9 @@ class OrderServiceImplTest {
     @Mock
     private AuditTrailService auditTrailService;
 
+    @Mock
+    private OrderSubmissionService orderSubmissionService;
+
     private OrderServiceImpl orderService;
 
     @BeforeEach
@@ -69,7 +72,8 @@ class OrderServiceImplTest {
             accountRepository,
             instrumentRepository,
             orderQueue,
-            auditTrailService
+            auditTrailService,
+            orderSubmissionService
         );
     }
 
@@ -542,7 +546,7 @@ class OrderServiceImplTest {
         assertEquals(OrderType.BUY, response.getOrderType());
         assertEquals(OrderStatus.PENDING, response.getStatus());
         verify(orderRepository).save(any(Order.class));
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
         verify(auditTrailService).logOrderCreated(any(), any(), any(), any(), anyInt(), any());
     }
 
@@ -1056,7 +1060,7 @@ class OrderServiceImplTest {
         assertNotNull(response);
         assertEquals(OrderStatus.PENDING, response.getStatus());
         verify(orderRepository).save(any(Order.class));
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
     }
 
     @Test
@@ -1662,7 +1666,7 @@ class OrderServiceImplTest {
 
         // Assert
         assertNotNull(response);
-        verify(orderQueue).enqueue(any(Order.class));
+        verify(orderSubmissionService).submitOrder(any(Order.class));
     }
 
     @Test
@@ -1784,7 +1788,7 @@ class OrderServiceImplTest {
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
         when(holdingRepository.findAllByAccount(accountId)).thenReturn(new ArrayList<>());
 
-        // Act
+    
         CreateOrderResponse response = orderService.createOrder(request);
 
         // Assert - SELL doesn't check position limit

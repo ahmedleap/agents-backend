@@ -3,7 +3,7 @@ package com.agentsbackend.services;
 import com.agentsbackend.DTO.requests.AddWatchlistRequest;
 import com.agentsbackend.DTO.response.WatchlistResponse;
 import com.agentsbackend.entities.Watchlist;
-import com.agentsbackend.repos.WatchlistRepository;
+import com.agentsbackend.repos.transactional.WatchlistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

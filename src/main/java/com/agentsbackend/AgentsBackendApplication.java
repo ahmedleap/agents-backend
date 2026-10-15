@@ -5,13 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.mybatis.spring.annotation.MapperScan;
 
 @SpringBootApplication(exclude = { 
     HibernateJpaAutoConfiguration.class,
     JpaRepositoriesAutoConfiguration.class
 })
-@MapperScan("com.agentsbackend.repos")
 @EnableScheduling
 public class AgentsBackendApplication {
 
