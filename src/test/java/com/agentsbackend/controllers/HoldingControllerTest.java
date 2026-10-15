@@ -2,6 +2,7 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.services.HoldingService;
+import com.agentsbackend.services.MissionAuthorizationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.core.MethodParameter;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -29,6 +34,9 @@ class HoldingControllerTest {
     @Mock
     private HoldingService holdingService;
 
+    @Mock
+    private MissionAuthorizationService authorizationService;
+
     private MockMvc mockMvc;
 
     private UUID accountId;
@@ -37,10 +45,34 @@ class HoldingControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new HoldingController(holdingService)).build();
         accountId = UUID.randomUUID();
         holdingId = UUID.randomUUID();
         instrumentId = UUID.randomUUID();
+        mockMvc = MockMvcBuilders.standaloneSetup(new HoldingController(holdingService, authorizationService))
+                .setCustomArgumentResolvers(jwtResolver())
+            .build();
+    }
+
+    private HandlerMethodArgumentResolver jwtResolver() {
+        Jwt jwt = Jwt.withTokenValue("synthetic-token")
+                .header("alg", "RS256")
+                .subject(UUID.randomUUID().toString())
+                .build();
+        return new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.getParameterType().equals(Jwt.class);
+            }
+
+            @Override
+            public Object resolveArgument(MethodParameter parameter,
+                                          org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                                          NativeWebRequest webRequest,
+                                          org.springframework.web.bind.support.WebDataBinderFactory binderFactory)
+                    throws Exception {
+                return jwt;
+            }
+        };
     }
 
     @Test

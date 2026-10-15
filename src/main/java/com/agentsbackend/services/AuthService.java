@@ -3,7 +3,7 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.controllers.AuthModels;
 import com.agentsbackend.entities.AuthUser;
-import com.agentsbackend.repos.AuthRepository;
+import com.agentsbackend.repos.transactional.AuthRepository;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

@@ -5,8 +5,11 @@ import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.repos.transactional.HoldingRepository;
 import com.agentsbackend.services.HoldingService;
+import com.agentsbackend.services.MissionAuthorizationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.websocket.server.PathParam;
@@ -27,9 +30,12 @@ import java.util.UUID;
 public class HoldingController {
     
     private final HoldingService holdingService;
+    private final MissionAuthorizationService authorizationService;
     
-    public HoldingController(HoldingService holdingService){
+    public HoldingController(HoldingService holdingService,
+                             MissionAuthorizationService authorizationService){
         this.holdingService = holdingService;
+        this.authorizationService = authorizationService;
     }
 
     @GetMapping("/{accountId}")
@@ -40,7 +46,9 @@ public class HoldingController {
      * @return list of holdings with calculated market values and unrealized gains/losses
      */
     public ResponseEntity<java.util.List<GetHoldingResponseDTO>> getHoldings(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId) {
+        authorizationService.requireOwnAccount(authorizationService.clientId(jwt), accountId);
         java.util.List<GetHoldingResponseDTO> response = holdingService.getHoldingsDTOByAccountId(accountId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -54,8 +62,10 @@ public class HoldingController {
      * @return a single holding with calculated metrics, or 404 if not found
      */
     public ResponseEntity<GetHoldingResponseDTO> getOneHolding(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId, 
             @PathVariable UUID holdingId){
+        authorizationService.requireOwnAccount(authorizationService.clientId(jwt), accountId);
         GetHoldingResponseDTO response = holdingService.getOneHoldingDTO(accountId, holdingId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

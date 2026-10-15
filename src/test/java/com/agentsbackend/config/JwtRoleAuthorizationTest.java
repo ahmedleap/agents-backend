@@ -4,12 +4,13 @@ import com.agentsbackend.controllers.AccountController;
 import com.agentsbackend.controllers.AdminController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.OrderRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
 import com.agentsbackend.services.AccountService;
 import com.agentsbackend.services.AdminService;
 import com.agentsbackend.services.OrderService;
 import com.agentsbackend.services.MissionAuthorizationService;
+import com.agentsbackend.services.TransactionsService;
 import com.agentsbackend.services.WatchlistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = JwtRoleAuthorizationTest.TestApplication.class)
 @TestPropertySource(properties = {
-        "auth.jwt.jwks-uri=http://127.0.0.1:1/.well-known/jwks.json",
+        "auth.jwt.public-key-base64=LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2ZkJDaDB5cTlWOGVzZ0xxSVBxK0dMM3JYczlUU3BHb3MrUHRKQzl1aWs5dEIzdnMzRGlTM2JTYlJQa1JWUllaVHBBN3gxdzZ3WTZzQWZrUHM0QjREcEFud2tIR2I1TmFWaXZkVDdHaTJHNlRQZ3dYaUJ1Z0ZEQklrMXZGWFBIcUR3bEwzY0VVYkw5ZmptMm5rbjkrdTBjZE5jNmUvYzFZOHZCWmt4bVFNNXRnTWZsT2RYVDgzUFBxSGlOY0w0eXdVakNKaWQwdFJzRGQ2SlNseWd1Qk1ENFNmb0pUMGgxRDF2RzBPNUtiQ2FHN25GNWtnWnFkK09EQzJnMHE2RlQwNGhyby9kdUVnL1pteUdXV1hBem5vQnBFSUxBU294NC9Cc2FvWWtrOHY1SStsZ2hrYWxwekJ1WEdSbE1wSlRmZ2VBU1B5cURRMVdwZmFnamVDeFJweXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
         "auth.jwt.issuer=agents-middleware",
         "auth.jwt.audience=agents-backend"
 })
@@ -128,7 +129,7 @@ class JwtRoleAuthorizationTest {
                         .with(jwtWithRole("CLIENT")))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/admins/create")
+        mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
                         .content("{}")
                         .with(jwtWithRole("CLIENT")))
@@ -137,7 +138,7 @@ class JwtRoleAuthorizationTest {
 
     @Test
     void adminCanUseAdminApiButCannotSubmitTrades() throws Exception {
-        mockMvc.perform(post("/api/admins/create")
+        mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
                         .content("{}")
                         .with(jwtWithRole("ADMIN")))
@@ -252,6 +253,7 @@ class JwtRoleAuthorizationTest {
         @Bean AccountService accountService() { return mock(AccountService.class); }
         @Bean AdminService adminService() { return mock(AdminService.class); }
         @Bean OrderService orderService() { return mock(OrderService.class); }
+        @Bean TransactionsService transactionsService() { return mock(TransactionsService.class); }
         @Bean WatchlistService watchlistService() { return mock(WatchlistService.class); }
         @Bean AccountRepository accountRepository() { return mock(AccountRepository.class); }
         @Bean OrderRepository orderRepository() { return mock(OrderRepository.class); }

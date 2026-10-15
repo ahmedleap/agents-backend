@@ -25,14 +25,13 @@ public class AccountController {
 
     private final AccountService accountService;
     private final MissionAuthorizationService authorizationService;
-
-    public AccountController(AccountService accountService, MissionAuthorizationService authorizationService) {
-        this.accountService = accountService;
-        this.authorizationService = authorizationService;
     private final TransactionsService transactionsService;
 
-    public AccountController(AccountService accountService, TransactionsService transactionsService) {
+    public AccountController(AccountService accountService,
+                             MissionAuthorizationService authorizationService,
+                             TransactionsService transactionsService) {
         this.accountService = accountService;
+        this.authorizationService = authorizationService;
         this.transactionsService = transactionsService;
     }
 
@@ -127,8 +126,10 @@ public class AccountController {
      */
     @GetMapping("/{accountId}/transactions")
     public ResponseEntity<List<AccountsResponse.TransactionItem>> getRecentTransactions(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID accountId,
             @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        authorizationService.requireOwnAccount(clientId(jwt), accountId);
         List<AccountsResponse.TransactionItem> transactions = transactionsService.getRecentTransactions(accountId, limit);
         return ResponseEntity.ok(transactions);
     }

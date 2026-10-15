@@ -359,8 +359,7 @@ CREATE TABLE auth_sessions (
     access_expires_at   TIMESTAMP NOT NULL,
     refresh_expires_at  TIMESTAMP NOT NULL,
     revoked_at          TIMESTAMP,
-    device              VARCHAR(512),
-    location            VARCHAR(128)
+    device              VARCHAR(512)
 );
 CREATE INDEX idx_auth_sessions_client ON auth_sessions (client_id, created_at DESC);
 

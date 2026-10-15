@@ -21,7 +21,7 @@ public final class AuthModels {
                                 @JsonProperty("mfa_required") boolean mfaRequired) {}
     public record MessageResponse(String message) {}
     public record SessionResponse(@JsonProperty("session_id") UUID sessionId,
-                                  String device, String location,
+                                  String device,
                                   @JsonProperty("created_at") LocalDateTime createdAt,
                                   @JsonProperty("last_active") LocalDateTime lastActive) {}
     public record UserResponse(@JsonProperty("client_id") UUID clientId,

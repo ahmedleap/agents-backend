@@ -105,7 +105,7 @@ spring.datasource.warehouse.password=your_warehouse_password
 
 ### JWT-protected Mission API
 
-This Spring Boot application validates RS256 JWT signatures using the configured public PEM or JWKS, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
+This Spring Boot application validates RS256 JWT signatures using a statically supplied RSA public PEM, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
 
 `GET /api/missions` does not exist in this project. Existing protected endpoints include `GET /api/accounts`, `GET /users/me`, and order routes under `/api/v1/orders`. `/users/me` needs a matching client row in PostgreSQL; account listing returns accounts scoped to the JWT subject.
 
@@ -132,7 +132,7 @@ $env:JWT_PUBLIC_KEY = ""
 mvn spring-boot:run
 ```
 
-For NestJS tokens, Spring reads the NestJS RSA public PEM from the workspace-root `public_key.pem` by default. Set `JWT_PUBLIC_KEY_FILE` to another path if needed; `JWT_PUBLIC_KEY` is an optional Base64-encoded PEM fallback. Spring uses only the public key for RS256 verification, never the private key. Configure issuer and audience as `agents-middleware` and `agents-backend`, or override them to match NestJS's exact `iss` and `aud` claims. Do not use the local `issuer.py` tokens in this mode: that helper generates a different ephemeral key.
+For NestJS tokens, Spring uses only the RSA public key for RS256 verification, never the private key. Configure issuer and audience as `agents-middleware` and `agents-backend`, or override them to match NestJS's exact `iss` and `aud` claims. The local `issuer.py` workflow is obsolete for backend validation because access tokens are validated only with the statically supplied public key.
 
 For a paired-token login response, use Bruno `POST http://127.0.0.1:3000/auth/login`, header `Content-Type: application/json`, body `{"email":"alex@example.com","password":"ClientTest123!"}`. The response contains camelCase `accessToken`, `refreshToken`, `expiresIn` (300 seconds), and a `user` object with `clientId`, `email`, `firstName`, `lastName`, and `role`. Keep the tokens in Bruno's private/local environment; do not paste them in chat or commit them. Use `accessToken` as Bearer auth for protected Spring requests. To rotate the refresh token, call `POST http://127.0.0.1:3000/auth/refresh` with `{"refreshToken":"{{refreshToken}}"}`; each refresh token is single-use and the replacement token must be saved.
 
@@ -200,11 +200,12 @@ docker run -d \
   --name agents-backend \
   --network agents-network \
   --env-file /opt/agents-backend/agents-backend.env \
+  --mount type=bind,src=/opt/agents-backend/secrets/public_key.pem,dst=/run/secrets/jwt_public_key.pem,readonly \
   -p 8080:8080 \
   agents-backend:latest
 ```
 
-The environment file stays on the VM and should not be committed.
+The image defaults to `/run/secrets/jwt_public_key.pem`, so no JWT key environment variable is needed in Docker. Place only the middleware's public key at `/opt/agents-backend/secrets/public_key.pem`; keep the private signing key in the middleware's separate secret store or container and never mount it into this backend. The environment file and mounted key stay on the VM and should not be committed.
 
 ### Test Coverage
 

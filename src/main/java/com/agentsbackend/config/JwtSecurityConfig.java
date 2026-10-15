@@ -60,8 +60,24 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/admins/**")
                     .hasRole("ADMIN")
 
+                .requestMatchers("/api/v1/analytics/**")
+                    .hasRole("ANALYST")
+
+                .requestMatchers(
+                    "/api/portfolio/**",
+                    "/api/holding/**"
+                ).hasRole("CLIENT")
+
+                .requestMatchers("/dashboard")
+                    .hasRole("CLIENT")
+
                 .requestMatchers(
                     HttpMethod.POST,
+                    "/api/v1/orders/**"
+                ).hasRole("CLIENT")
+
+                .requestMatchers(
+                    HttpMethod.DELETE,
                     "/api/v1/orders/**"
                 ).hasRole("CLIENT")
 
@@ -71,7 +87,10 @@ public class JwtSecurityConfig {
                 ).hasAnyRole("CLIENT", "ADMIN", "ANALYST")
 
                 // All remaining API and user routes require a JWT.
-                .requestMatchers("/api/**", "/users/**")
+                .requestMatchers("/users/**")
+                    .hasRole("CLIENT")
+
+                .requestMatchers("/api/**")
                     .authenticated()
 
                 // Public endpoints must be explicitly reviewed.
@@ -90,7 +109,6 @@ public class JwtSecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(
-            @Value("${auth.jwt.jwks-uri}") String jwksUri,
             @Value("${auth.jwt.public-key-file:}") String publicKeyFile,
             @Value("${auth.jwt.public-key-base64:}") String publicKeyBase64,
             @Value("${auth.jwt.issuer}") String issuer,
@@ -108,11 +126,10 @@ public class JwtSecurityConfig {
                 .signatureAlgorithm(SignatureAlgorithm.RS256)
                 .build();
         } else {
-            // Prefer a trusted JWKS endpoint when no static public key is configured.
-            decoder = NimbusJwtDecoder
-                .withJwkSetUri(jwksUri)
-                .jwsAlgorithm(SignatureAlgorithm.RS256)
-                .build();
+            throw new IllegalStateException(
+                "A static RSA public key is required via auth.jwt.public-key-file or " +
+                "auth.jwt.public-key-base64"
+            );
         }
 
         OAuth2TokenValidator<Jwt> issuerAndTime =
@@ -125,10 +142,36 @@ public class JwtSecurityConfig {
                     new OAuth2Error("invalid_token", "Required audience is missing", null)
                 );
 
+        OAuth2TokenValidator<Jwt> requiredClaimsValidator = jwt -> {
+            boolean hasRole = jwt.getClaimAsString("role") != null
+                || (jwt.getClaimAsStringList("roles") != null
+                    && !jwt.getClaimAsStringList("roles").isEmpty());
+            boolean valid = jwt.getSubject() != null
+                && !jwt.getSubject().isBlank()
+                && jwt.getClaimAsString("email") != null
+                && !jwt.getClaimAsString("email").isBlank()
+                && jwt.getId() != null
+                && !jwt.getId().isBlank()
+                && jwt.getIssuedAt() != null
+                && jwt.getExpiresAt() != null
+                && hasRole;
+
+            return valid
+                ? OAuth2TokenValidatorResult.success()
+                : OAuth2TokenValidatorResult.failure(
+                    new OAuth2Error(
+                        "invalid_token",
+                        "Required JWT claims are missing",
+                        null
+                    )
+                );
+        };
+
         decoder.setJwtValidator(
             new DelegatingOAuth2TokenValidator<>(
                 issuerAndTime,
-                audienceValidator
+                audienceValidator,
+                requiredClaimsValidator
             )
         );
 
@@ -158,8 +201,12 @@ public class JwtSecurityConfig {
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
             byte[] der = Base64.getDecoder().decode(encodedDer);
-            return (RSAPublicKey) KeyFactory.getInstance("RSA")
+            RSAPublicKey publicKey = (RSAPublicKey) KeyFactory.getInstance("RSA")
                 .generatePublic(new X509EncodedKeySpec(der));
+            if (publicKey.getModulus().bitLength() < 2048) {
+                throw new IllegalStateException("JWT RSA public key must be at least 2048 bits");
+            }
+            return publicKey;
         } catch (IllegalArgumentException | GeneralSecurityException exception) {
             throw new IllegalStateException("auth.jwt.public-key-base64 must contain a Base64-encoded PEM RSA public key", exception);
         }

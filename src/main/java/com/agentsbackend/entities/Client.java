@@ -16,11 +16,10 @@ public class Client {
     private String email;
     private String passwordHash;
 
-    @Column(name = "phone", length = 32, unique = true)
     private String phone;
 
-    @Column(name = "country", length = 2)
     private String country;
+    private boolean emailVerified;
     private LocalDate dateOfBirth;
     private OffsetDateTime joinDate;
     private String ssnLast4;

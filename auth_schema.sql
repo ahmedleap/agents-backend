@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
     access_expires_at TIMESTAMP NOT NULL,
     refresh_expires_at TIMESTAMP NOT NULL,
     revoked_at TIMESTAMP,
-    device VARCHAR(512),
-    location VARCHAR(128)
+    device VARCHAR(512)
 );
+ALTER TABLE auth_sessions DROP COLUMN IF EXISTS location;
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_client ON auth_sessions (client_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS auth_one_time_tokens (

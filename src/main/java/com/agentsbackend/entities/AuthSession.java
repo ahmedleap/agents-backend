@@ -14,7 +14,6 @@ public class AuthSession {
     private LocalDateTime refreshExpiresAt;
     private LocalDateTime revokedAt;
     private String device;
-    private String location;
 
     public UUID getSessionId() { return sessionId; }
     public void setSessionId(UUID sessionId) { this.sessionId = sessionId; }
@@ -36,6 +35,4 @@ public class AuthSession {
     public void setRevokedAt(LocalDateTime revokedAt) { this.revokedAt = revokedAt; }
     public String getDevice() { return device; }
     public void setDevice(String device) { this.device = device; }
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
 }

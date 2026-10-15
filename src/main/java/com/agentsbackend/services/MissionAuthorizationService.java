@@ -1,7 +1,7 @@
 package com.agentsbackend.services;
 
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.OrderRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;

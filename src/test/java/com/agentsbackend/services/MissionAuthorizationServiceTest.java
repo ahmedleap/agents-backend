@@ -1,7 +1,7 @@
 package com.agentsbackend.services;
 
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.OrderRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
