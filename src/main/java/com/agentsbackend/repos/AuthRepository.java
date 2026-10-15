@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.AuthSession;
 import com.agentsbackend.entities.AuthUser;
@@ -68,21 +68,21 @@ public interface AuthRepository {
     int unlockIfExpired(@Param("clientId") UUID clientId);
 
     @Insert("INSERT INTO auth_sessions (session_id, client_id, access_token_hash, refresh_token_hash, " +
-            "created_at, last_active, access_expires_at, refresh_expires_at, device, location) " +
+            "created_at, last_active, access_expires_at, refresh_expires_at, device) " +
             "VALUES (#{sessionId}, #{clientId}, #{accessTokenHash}, #{refreshTokenHash}, #{createdAt}, " +
-            "#{lastActive}, #{accessExpiresAt}, #{refreshExpiresAt}, #{device}, #{location})")
+            "#{lastActive}, #{accessExpiresAt}, #{refreshExpiresAt}, #{device})")
     void insertSession(AuthSession session);
 
     @Select("SELECT session_id AS sessionId, client_id AS clientId, access_token_hash AS accessTokenHash, " +
             "refresh_token_hash AS refreshTokenHash, created_at AS createdAt, last_active AS lastActive, " +
             "access_expires_at AS accessExpiresAt, refresh_expires_at AS refreshExpiresAt, " +
-            "revoked_at AS revokedAt, device, location FROM auth_sessions WHERE access_token_hash = #{hash}")
+            "revoked_at AS revokedAt, device FROM auth_sessions WHERE access_token_hash = #{hash}")
     Optional<AuthSession> findByAccessHash(@Param("hash") String hash);
 
     @Select("SELECT session_id AS sessionId, client_id AS clientId, access_token_hash AS accessTokenHash, " +
             "refresh_token_hash AS refreshTokenHash, created_at AS createdAt, last_active AS lastActive, " +
             "access_expires_at AS accessExpiresAt, refresh_expires_at AS refreshExpiresAt, " +
-            "revoked_at AS revokedAt, device, location FROM auth_sessions WHERE refresh_token_hash = #{hash}")
+            "revoked_at AS revokedAt, device FROM auth_sessions WHERE refresh_token_hash = #{hash}")
     Optional<AuthSession> findByRefreshHash(@Param("hash") String hash);
 
     @Update("UPDATE auth_sessions SET last_active = CURRENT_TIMESTAMP WHERE session_id = #{sessionId} " +
@@ -112,7 +112,7 @@ public interface AuthRepository {
 
     @Select("SELECT session_id AS sessionId, client_id AS clientId, created_at AS createdAt, " +
             "last_active AS lastActive, access_expires_at AS accessExpiresAt, " +
-            "refresh_expires_at AS refreshExpiresAt, revoked_at AS revokedAt, device, location " +
+            "refresh_expires_at AS refreshExpiresAt, revoked_at AS revokedAt, device " +
             "FROM auth_sessions WHERE client_id = #{clientId} AND revoked_at IS NULL " +
             "AND refresh_expires_at > CURRENT_TIMESTAMP " +
             "AND last_active > CURRENT_TIMESTAMP - INTERVAL '30 minutes' ORDER BY last_active DESC")
