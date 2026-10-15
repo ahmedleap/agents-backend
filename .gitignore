@@ -15,11 +15,12 @@ target/
 Thumbs.db
 
 .env
+application-local.properties
 target
 
 # Build scripts
 build.ps1
-*.ps1
+test-api.ps1
 
 # IDE
 .vscode/
@@ -27,3 +28,4 @@ build.ps1
 *.code-workspace
 
 .env
+*.pem

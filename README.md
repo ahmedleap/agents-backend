@@ -79,28 +79,28 @@ DB_NAME=agents_of_leap
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
-# JWT verification configuration for the local development issuer
-AUTH_JWT_JWKS_URI=http://127.0.0.1:3000/.well-known/jwks.json
-AUTH_JWT_ISSUER=agents-middleware
-AUTH_JWT_AUDIENCE=agents-backend
-JWT_DEV_MODE=true
+# Optional warehouse database used by analytics mappers
+WAREHOUSE_DB_HOST=localhost
+WAREHOUSE_DB_PORT=25432
+WAREHOUSE_DB_NAME=test_db
+WAREHOUSE_DB_USER=test
+WAREHOUSE_DB_PASSWORD=your_warehouse_password
 
 # Optional
 JAVA_OPTS=-Xmx512m
 ```
 
-#### Or use `application.properties` directly
-Edit `src/main/resources/application.properties`:
+#### Local-only application properties
+For a local SSH tunnel, use the ignored [application-local.properties](application-local.properties) file. It is imported automatically by the tracked `application.properties` file and is not copied into the Docker image.
+
+Set the values once:
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/agents_of_leap
+spring.datasource.url=jdbc:postgresql://localhost:15432/agents_of_leap
 spring.datasource.username=postgres
 spring.datasource.password=your_secure_password
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-spring.jpa.hibernate.ddl-auto=validate
-mybatis.configuration.map-underscore-to-camel-case=true
-
-logging.level.com.agentsbackend=DEBUG
+spring.datasource.warehouse.url=jdbc:postgresql://localhost:25432/test_db
+spring.datasource.warehouse.username=test
+spring.datasource.warehouse.password=your_warehouse_password
 ```
 
 ### JWT-protected Mission API
@@ -148,6 +148,7 @@ The local issuer can create negative test tokens by setting `case` to `wrong-sig
 4. To test tenant isolation, use two real client accounts in the database. With client A's token, `GET /api/accounts` must list only accounts belonging to A; `GET /api/accounts/{client-B-account-id}` must return 404. Likewise, requests for B's order history/order IDs must return 404, and B's watchlist client ID must be rejected with 403. The pending-orders endpoint requires an `accountId`, which is checked against the token subject before service access.
 
 The account-ownership implementation currently interprets the JWT `sub` claim as the client's UUID. Confirm that NestJS sets `sub` to the same client UUID (or tell us the claim that contains the client UUID before using real tokens for account-scoped routes). Verification-only can succeed even if that identity-to-client mapping is not yet correct.
+The local file is git-ignored. Do not put passwords in the tracked `src/main/resources/application.properties` file.
 
 ### 4. Build and Run
 
@@ -172,6 +173,86 @@ Application is running when you see in logs:
 ```
 Tomcat started on port 8083 (http) with context path '/'
 Started AgentsBackendApplication in 2.7 seconds
+```
+
+### Docker Database Configuration
+
+The Docker container receives database configuration through environment variables. Do not copy `application.properties` or local credential files into the image. On the Linux VM, create an untracked file such as `/opt/agents-backend/agents-backend.env`:
+
+```env
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=agents_of_leap
+DB_USER=postgres
+DB_PASSWORD=your_primary_password
+WAREHOUSE_DB_HOST=warehouse-postgres
+WAREHOUSE_DB_PORT=5432
+WAREHOUSE_DB_NAME=test_db
+WAREHOUSE_DB_USER=test
+WAREHOUSE_DB_PASSWORD=your_warehouse_password
+SERVER_PORT=8080
+```
+
+Use Docker service/container names for `DB_HOST` and `WAREHOUSE_DB_HOST`, not `localhost`. Run the backend on the same Docker network as the databases:
+
+```bash
+docker run -d \
+  --name agents-backend \
+  --network agents-network \
+  --env-file /opt/agents-backend/agents-backend.env \
+  -p 8080:8080 \
+  agents-backend:latest
+```
+
+The environment file stays on the VM and should not be committed.
+
+### Test Coverage
+
+Generate the JaCoCo HTML report with:
+
+```powershell
+mvn clean test
+```
+
+Open `target/site/jacoco/index.html` in a browser. On Windows:
+
+```powershell
+Start-Process .\target\site\jacoco\index.html
+```
+
+### Dashboard Bruno Request
+
+The dashboard endpoint aggregates data for one client across active accounts:
+
+- Active account balances and portfolio values
+- Platform-wide market movers
+- Client watchlist securities
+- Five most recent orders across all statuses
+- Daily portfolio history for up to 365 days
+
+Request:
+
+```http
+GET http://localhost:8080/dashboard?clientId={{clientId}}&period=90D
+Accept: application/json
+```
+
+This request has no body. Create a Bruno environment variable named `clientId` using the ID printed by `test-dashboard-data.sql`. Supported periods are `30D`, `90D`, `180D`, and `365D`.
+
+Expected response sections are `accounts`, `marketMovers`, `watchlist`, `recentTrades`, and `portfolioHistory`.
+
+Invalid UUIDs or periods return `400`. A successful response contains all five sections, including empty arrays when no rows exist. Database or mapper failures currently fail the aggregation with `500`; the endpoint does not fabricate partial data. If partial success is required later, isolate each section behind independent reads and add per-section status/error fields or use separate refresh endpoints.
+
+Example response shape:
+
+```json
+{
+  "accounts": [],
+  "marketMovers": [],
+  "watchlist": [],
+  "recentTrades": [],
+  "portfolioHistory": []
+}
 ```
 
 ---
@@ -338,6 +419,194 @@ When building features that depend on external services:
 - Portfolio analytics microservice
 - Risk modeling microservice
 - Historical analysis & reporting microservice
+
+---
+
+## Kafka Integration - Asynchronous Order Processing
+
+### Overview
+The backend supports both **in-memory queue** and **Apache Kafka** for order fulfillment processing. Switch between them via a single configuration property.
+
+### Architecture
+
+```
+API Request (POST /api/v1/orders)
+    ↓
+OrderServiceImpl.createOrder()
+    ├─ Validate order
+    ├─ Save to database
+    └─ Call OrderSubmissionService.submitOrder()
+                    ↓
+        ┌───────────┴────────────┐
+        ↓                         ↓
+    (queue mode)           (kafka mode)
+        ↓                         ↓
+QueueOrderSubmissionService  KafkaOrderSubmissionService
+        ↓                         ↓
+    OrderQueue           Kafka Topic: order-fulfillment
+    (in-memory)         (accountId as partition key)
+        ↓                         ↓
+OrderFulfillmentService     OrderConsumerService
+  @Scheduled every 5s       @KafkaListener
+        ↓                         ↓
+  Poll queue ─────────→  Consume from broker
+        ↓                         ↓
+  tryFillOrder() ────────→ tryFillOrder()
+  fillOrder()            fillOrder()
+```
+
+### Configuration
+
+#### Enable Kafka Mode
+Edit `src/main/resources/application.properties`:
+
+```properties
+# Order processing mode: "queue" (default) or "kafka"
+order.processing.mode=kafka
+
+# Kafka broker connection
+spring.kafka.bootstrap-servers=<IP_ADDRESSE>:9092
+spring.kafka.consumer.group-id=order-fulfillment-group
+spring.kafka.consumer.auto-offset-reset=earliest
+
+# Serialization
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+```
+
+#### Switch Back to Queue Mode
+```properties
+order.processing.mode=queue
+```
+
+### Kafka Setup
+
+#### Create Topic on Kafka Broker
+```bash
+# SSH to Linux box with Kafka
+ssh user@<IP_ADDRESS>
+
+# Create topic with 3 partitions and replication factor 3
+kafka-topics.sh --bootstrap-server localhost:9092 \
+  --create \
+  --topic order-fulfillment \
+  --partitions 3 \
+  --replication-factor 3
+
+# Verify topic created
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+```
+
+#### Topic Configuration Details
+- **Topic Name:** `order-fulfillment`
+- **Partitions:** 3 (allows parallel processing across 3 consumer instances)
+- **Replication Factor:** 3 (high availability; requires 3+ brokers)
+- **Partition Key:** `accountId` (ensures orders from same account stay in order)
+
+### How It Works
+
+#### Producer (KafkaOrderSubmissionService)
+1. Order created via API → published to Kafka immediately
+2. Uses **accountId as partition key** for ordering guarantees
+3. All orders for Account A → Partition 0 (FIFO)
+4. All orders for Account B → Partition 1 (FIFO)
+5. Parallel accounts don't interfere with each other
+
+#### Consumer (OrderConsumerService)
+1. Listens to `order-fulfillment` topic
+2. **Concurrency: 3** (processes up to 3 partitions in parallel)
+3. For each order:
+   - Checks current instrument bid/ask prices
+   - Determines if order can be filled
+   - If filled: updates order, cash, holdings, audit trail
+   - If not filled: order remains PENDING (retry later)
+
+#### Key Design Decisions
+- **Per-Account Ordering:** accountId as partition key → same account orders always in order
+- **Parallel Processing:** Different accounts processed simultaneously across partitions
+- **Idempotent Consumption:** Safe to replay messages (updates are idempotent)
+- **Auto-offset Commit:** Consumer tracks position automatically
+
+### Monitoring & Debugging
+
+#### View Logs
+```bash
+# Tail application logs
+tail -f logs/application.log
+
+# Look for these messages:
+# Producer:
+# "Order [uuid] published to Kafka topic: order-fulfillment with partition key: [accountId]"
+
+# Consumer:
+# "Received order [uuid] from Kafka"
+# "Order [uuid] filled successfully"
+# OR "Order [uuid] could not be filled at current market price"
+```
+
+#### Check Kafka Messages
+```bash
+# Inside Kafka container, consume messages from topic
+kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic order-fulfillment \
+  --from-beginning \
+  --max-messages 10
+```
+
+#### Enable Debug Logging
+Add to `application.properties`:
+```properties
+logging.level.org.springframework.kafka=DEBUG
+logging.level.org.apache.kafka=DEBUG
+logging.level.com.agentsbackend.services=DEBUG
+```
+
+### Files Created
+
+#### Strategy Pattern (Interfaces & Implementations)
+- **`OrderSubmissionService.java`** - Interface defining `submitOrder(Order)`
+- **`QueueOrderSubmissionService.java`** - Queue-based implementation
+- **`KafkaOrderSubmissionService.java`** - Kafka-based implementation
+
+#### Kafka Configuration
+- **`KafkaProducerConfig.java`** - Configures KafkaTemplate with JSON serialization
+- **`KafkaConsumerConfig.java`** - Configures consumer factory with 3-partition concurrency
+
+#### Consumer
+- **`OrderConsumerService.java`** - Listens to Kafka and fulfills orders
+  - Only active when `order.processing.mode=kafka`
+  - Contains: `tryFillOrder()`, `fillOrder()`, cash/holdings updates
+
+#### Tests
+- **`KafkaOrderSubmissionServiceTest.java`** - Tests producer publishing
+- **`OrderConsumerServiceTest.java`** - Tests consumer fulfillment logic
+- **`QueueOrderSubmissionServiceTest.java`** - Tests queue submission
+- **`OrderServiceImplTest.java`** - Updated to mock OrderSubmissionService
+
+### Switching Modes
+
+#### From Queue to Kafka
+1. Set `order.processing.mode=kafka` in `application.properties`
+2. Create `order-fulfillment` topic on Kafka broker
+3. Restart Spring Boot app
+4. OrderConsumerService bean loads automatically
+
+#### From Kafka Back to Queue
+1. Set `order.processing.mode=queue` in `application.properties`
+2. Restart Spring Boot app
+3. OrderFulfillmentService resumes polling queue every 5 seconds
+
+### Performance Characteristics
+
+| Aspect | Queue | Kafka |
+|--------|-------|-------|
+| Latency | Poll every 5s | Near real-time |
+| Scaling | Single instance | Multiple consumers |
+| Ordering | Per-account | Per-partition (accounts) |
+| Durability | In-memory only | Persisted on broker |
+| Failure Recovery | Lost on restart | Replayed from broker |
+| Concurrency | Sequential polling | 3 partitions in parallel |
 
 ---
 

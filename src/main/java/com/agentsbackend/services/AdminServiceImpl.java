@@ -1,7 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Admin;
-import com.agentsbackend.repos.AdminRepository;
+import com.agentsbackend.repos.transactional.AdminRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

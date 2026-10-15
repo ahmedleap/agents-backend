@@ -5,12 +5,12 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * MyBatis configuration for primary transactional repositories.
- * Scans all repositories in com.agentsbackend.repos (excluding analytics)
+ * Scans only transactional repositories
  * to use the primary transactional datasource.
  */
 @Configuration
 @MapperScan(
-    basePackages = "com.agentsbackend.repos",
+    basePackages = "com.agentsbackend.repos.transactional",
     sqlSessionFactoryRef = "primarySqlSessionFactory"
 )
 public class PrimaryMybatisConfig {

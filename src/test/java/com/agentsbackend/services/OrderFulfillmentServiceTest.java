@@ -4,7 +4,7 @@ import com.agentsbackend.entities.*;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.queue.OrderQueue;
-import com.agentsbackend.repos.*;
+import com.agentsbackend.repos.transactional.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

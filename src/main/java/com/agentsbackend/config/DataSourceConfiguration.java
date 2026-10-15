@@ -4,10 +4,11 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 
@@ -22,20 +23,39 @@ public class DataSourceConfiguration {
     /**
      * Primary datasource for transactional operations
      */
-    @Bean(name = "primaryDataSource")
+    @Bean(name = "primaryDataSourceProperties")
     @Primary
     @ConfigurationProperties(prefix = "spring.datasource")
-    public DataSource primaryDataSource() {
-        return DataSourceBuilder.create().build();
+    public DataSourceProperties primaryDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "primaryDataSource")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public HikariDataSource primaryDataSource(
+            @Qualifier("primaryDataSourceProperties") DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
     }
 
     /**
      * Warehouse datasource for analytics queries
      */
-    @Bean(name = "warehouseDataSource")
+    @Bean(name = "warehouseDataSourceProperties")
     @ConfigurationProperties(prefix = "spring.datasource.warehouse")
-    public DataSource warehouseDataSource() {
-        return DataSourceBuilder.create().build();
+    public DataSourceProperties warehouseDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "warehouseDataSource")
+    @ConfigurationProperties(prefix = "spring.datasource.warehouse.hikari")
+    public HikariDataSource warehouseDataSource(
+            @Qualifier("warehouseDataSourceProperties") DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
     }
 
     /**
@@ -47,6 +67,11 @@ public class DataSourceConfiguration {
             @Qualifier("primaryDataSource") DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
+
+        org.apache.ibatis.session.Configuration config = new org.apache.ibatis.session.Configuration();
+        config.setMapUnderscoreToCamelCase(true);
+        factoryBean.setConfiguration(config);
+
         return factoryBean.getObject();
     }
 

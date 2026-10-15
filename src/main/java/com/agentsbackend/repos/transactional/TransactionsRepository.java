@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Transaction;
 import org.apache.ibatis.annotations.*;
@@ -12,7 +12,6 @@ import java.util.UUID;
  * Handles all database operations for transactions including CRUD operations
  * and retrieval of recent transactions for cash movements (deposits and withdrawals).
  */
-@Mapper
 public interface TransactionsRepository {
 
     /**
@@ -22,7 +21,7 @@ public interface TransactionsRepository {
      * @param transaction Transaction entity with populated fields
      */
     @Insert("INSERT INTO transactions (transaction_id, account_id, txn_type, amount, created_at) " +
-            "VALUES (#{transactionId,jdbcType=VARCHAR}, #{account.accountId,jdbcType=VARCHAR}, " +
+            "VALUES (#{transactionId,jdbcType=OTHER}, #{account.accountId,jdbcType=OTHER}, " +
             "CAST(#{txnType} AS transaction_type), #{amount,jdbcType=NUMERIC}, #{createdAt})")
     void createTransaction(Transaction transaction);
 
@@ -33,7 +32,7 @@ public interface TransactionsRepository {
      * @return Optional containing Transaction if found, empty otherwise
      */
     @Select("SELECT transaction_id, account_id, txn_type, amount, created_at " +
-            "FROM transactions WHERE transaction_id = #{transactionId,jdbcType=VARCHAR}")
+            "FROM transactions WHERE transaction_id = #{transactionId,jdbcType=OTHER}")
     @Results({
             @Result(column = "transaction_id", property = "transactionId"),
             @Result(column = "account_id", property = "account.accountId"),
@@ -50,7 +49,7 @@ public interface TransactionsRepository {
      * @return List of Transaction entities for the account
      */
     @Select("SELECT transaction_id, account_id, txn_type, amount, created_at " +
-            "FROM transactions WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
+            "FROM transactions WHERE account_id = #{accountId,jdbcType=OTHER} " +
             "ORDER BY created_at DESC")
     @Results({
             @Result(column = "transaction_id", property = "transactionId"),
@@ -70,7 +69,7 @@ public interface TransactionsRepository {
      * @return List of recent Transaction entities
      */
     @Select("SELECT transaction_id, account_id, txn_type, amount, created_at " +
-            "FROM transactions WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
+            "FROM transactions WHERE account_id = #{accountId,jdbcType=OTHER} " +
             "ORDER BY created_at DESC " +
             "LIMIT #{limit}")
     @Results({
@@ -91,7 +90,7 @@ public interface TransactionsRepository {
      * @param transactionType "DEPOSIT" or "WITHDRAWAL"
      */
     @Insert("INSERT INTO transactions (transaction_id, account_id, txn_type, amount) " +
-            "VALUES (gen_random_uuid(), #{accountId,jdbcType=VARCHAR}, " +
+            "VALUES (gen_random_uuid(), #{accountId,jdbcType=OTHER}, " +
             "CAST(#{transactionType} AS transaction_type), #{amount,jdbcType=NUMERIC})")
     void recordTransaction(@Param("accountId") UUID accountId, @Param("amount") BigDecimal amount,
                           @Param("transactionType") String transactionType);
