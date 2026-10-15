@@ -3,7 +3,7 @@ package com.agentsbackend.services;
 import com.agentsbackend.entities.AuditLog;
 import com.agentsbackend.enums.OrderStatus;
 import com.agentsbackend.enums.OrderType;
-import com.agentsbackend.repos.AuditLogRepository;
+import com.agentsbackend.repos.transactional.AuditLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

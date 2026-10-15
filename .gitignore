@@ -26,3 +26,5 @@ test-api.ps1
 .vscode/
 .vs/
 *.code-workspace
+
+*.pem

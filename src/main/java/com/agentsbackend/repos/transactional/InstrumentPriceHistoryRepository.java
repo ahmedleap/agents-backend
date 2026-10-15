@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.InstrumentPriceHistory;
 import org.apache.ibatis.annotations.*;
@@ -10,8 +10,7 @@ import java.util.UUID;
  * MyBatis Mapper for InstrumentPriceHistory entity.
  * Handles all database operations for historical OHLCV price data.
  */
-@Mapper
-public interface InstrumentPriceHistoryRepository extends PrimaryMapper {
+public interface InstrumentPriceHistoryRepository {
 
     /**
      * Find historical OHLCV price data for an instrument within a date range.

@@ -5,9 +5,9 @@ import com.agentsbackend.DTO.response.DashboardResponse;
 import com.agentsbackend.DTO.response.WatchlistResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.enums.AccountStatus;
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.ClientRepository;
-import com.agentsbackend.repos.DashboardRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.ClientRepository;
+import com.agentsbackend.repos.transactional.DashboardRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,12 +50,27 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(this::toAccountSummary)
                 .toList();
 
-        return new DashboardResponse(
+        DashboardResponse response = new DashboardResponse(
                 accounts,
                 dashboardRepository.findMarketMovers(MARKET_MOVER_LIMIT),
                 watchlistService.findByClientId(clientId),
                 dashboardRepository.findRecentTrades(clientId),
                 dashboardRepository.findPortfolioHistory(clientId, LocalDate.now().minusDays(days - 1)));
+
+        BigDecimal currentValue = accounts.stream()
+            .map(AccountsResponse.AccountListItem::getTotalValue)
+            .map(this::defaultZero)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal previousValue = defaultZero(
+            dashboardRepository.findPreviousPortfolioValue(clientId, LocalDate.now()));
+        BigDecimal todayProfitLoss = currentValue.subtract(previousValue);
+        BigDecimal todayProfitLossPercent = previousValue.signum() == 0
+            ? BigDecimal.ZERO
+            : todayProfitLoss.multiply(BigDecimal.valueOf(100))
+            .divide(previousValue, 4, java.math.RoundingMode.HALF_UP);
+        response.setTodayProfitLoss(todayProfitLoss);
+        response.setTodayProfitLossPercent(todayProfitLossPercent);
+        return response;
     }
 
     private AccountsResponse.AccountListItem toAccountSummary(Account account) {

@@ -13,6 +13,8 @@ public class DashboardResponse {
     private List<WatchlistResponse> watchlist;
     private List<RecentTrade> recentTrades;
     private List<PortfolioHistoryPoint> portfolioHistory;
+    private BigDecimal todayProfitLoss;
+    private BigDecimal todayProfitLossPercent;
 
     public DashboardResponse() {
     }
@@ -39,6 +41,10 @@ public class DashboardResponse {
     public void setRecentTrades(List<RecentTrade> recentTrades) { this.recentTrades = recentTrades; }
     public List<PortfolioHistoryPoint> getPortfolioHistory() { return portfolioHistory; }
     public void setPortfolioHistory(List<PortfolioHistoryPoint> portfolioHistory) { this.portfolioHistory = portfolioHistory; }
+    public BigDecimal getTodayProfitLoss() { return todayProfitLoss; }
+    public void setTodayProfitLoss(BigDecimal todayProfitLoss) { this.todayProfitLoss = todayProfitLoss; }
+    public BigDecimal getTodayProfitLossPercent() { return todayProfitLossPercent; }
+    public void setTodayProfitLossPercent(BigDecimal todayProfitLossPercent) { this.todayProfitLossPercent = todayProfitLossPercent; }
 
     public static class MarketMover {
         private String ticker;

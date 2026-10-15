@@ -1,5 +1,4 @@
-package com.agentsbackend.repos;
-import org.apache.ibatis.annotations.Mapper;
+package com.agentsbackend.repos.transactional;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Insert;
@@ -9,8 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import java.math.BigDecimal;
 
-@Mapper
-public interface OrderRepository extends PrimaryMapper {
+public interface OrderRepository {
     
     @Select("SELECT * FROM orders WHERE status = 'PENDING'")
     List<Order> findPendingOrders();

@@ -3,7 +3,7 @@ package com.agentsbackend.services;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.enums.OrderStatus;
-import com.agentsbackend.repos.OrderRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

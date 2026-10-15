@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Instrument;
 import org.apache.ibatis.annotations.*;
@@ -11,8 +11,7 @@ import java.util.UUID;
  * Handles all database operations for instruments including search,
  * pricing updates, and historical price queries.
  */
-@Mapper
-public interface InstrumentRepository extends PrimaryMapper {
+public interface InstrumentRepository {
 
     /**
      * Find instrument by ID.

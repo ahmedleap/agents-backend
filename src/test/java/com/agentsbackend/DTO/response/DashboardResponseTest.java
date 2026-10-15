@@ -28,11 +28,15 @@ class DashboardResponseTest {
         response.setWatchlist(watchlist);
         response.setRecentTrades(trades);
         response.setPortfolioHistory(history);
+        response.setTodayProfitLoss(new BigDecimal("50.00"));
+        response.setTodayProfitLossPercent(new BigDecimal("0.50"));
         assertEquals(accounts, response.getAccounts());
         assertEquals(movers, response.getMarketMovers());
         assertEquals(watchlist, response.getWatchlist());
         assertEquals(trades, response.getRecentTrades());
         assertEquals(history, response.getPortfolioHistory());
+        assertEquals(new BigDecimal("50.00"), response.getTodayProfitLoss());
+        assertEquals(new BigDecimal("0.50"), response.getTodayProfitLossPercent());
 
         DashboardResponse.MarketMover mover = new DashboardResponse.MarketMover();
         mover.setTicker("AAPL");

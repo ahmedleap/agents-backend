@@ -2,7 +2,7 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Order;
 import com.agentsbackend.enums.OrderStatus;
-import com.agentsbackend.repos.OrderRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

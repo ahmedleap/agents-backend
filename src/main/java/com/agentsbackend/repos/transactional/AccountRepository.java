@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Account;
 import org.apache.ibatis.annotations.*;
@@ -13,8 +13,7 @@ import java.util.UUID;
  * Handles all database operations for accounts including CRUD operations,
  * cash balance updates, and transaction recording.
  */
-@Mapper
-public interface AccountRepository extends PrimaryMapper {
+public interface AccountRepository {
 
     /**
      * Create a new account in the database.

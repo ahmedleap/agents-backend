@@ -1,6 +1,5 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Param;
@@ -8,8 +7,7 @@ import com.agentsbackend.entities.AuditLog;
 import java.util.UUID;
 import java.util.List;
 
-@Mapper
-public interface AuditLogRepository extends PrimaryMapper {
+public interface AuditLogRepository {
     
     @Insert("INSERT INTO audit_logs (audit_log_id, order_id, account_id, client_id, event_type, event_time, reason, details, created_at) " +
             "VALUES (#{auditLogId}, #{orderId}, #{accountId}, #{clientId}, #{eventType}, #{eventTime}, #{reason}, #{details}::jsonb, #{createdAt})")

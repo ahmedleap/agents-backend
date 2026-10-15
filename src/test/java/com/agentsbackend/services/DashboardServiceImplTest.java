@@ -4,9 +4,9 @@ import com.agentsbackend.DTO.response.DashboardResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.enums.AccountStatus;
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.ClientRepository;
-import com.agentsbackend.repos.DashboardRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.ClientRepository;
+import com.agentsbackend.repos.transactional.DashboardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +54,7 @@ class DashboardServiceImplTest {
         when(dashboardRepository.findMarketMovers(5)).thenReturn(List.of());
         when(dashboardRepository.findRecentTrades(clientId)).thenReturn(List.of());
         when(dashboardRepository.findPortfolioHistory(any(), any())).thenReturn(List.of());
+        when(dashboardRepository.findPreviousPortfolioValue(any(), any())).thenReturn(new BigDecimal("100.00"));
         when(watchlistService.findByClientId(clientId)).thenReturn(List.of());
         when(accountRepository.findByClientId(clientId)).thenReturn(List.of(active, closed));
         when(accountRepository.getPortfolioValue(active.getAccountId())).thenReturn(new BigDecimal("50.00"));
@@ -64,6 +65,8 @@ class DashboardServiceImplTest {
         assertEquals(1, response.getAccounts().size());
         assertEquals(new BigDecimal("150.00"), response.getAccounts().get(0).getTotalValue());
         assertEquals(new BigDecimal("90.00"), response.getAccounts().get(0).getAvailableBalance());
+        assertEquals(new BigDecimal("50.00"), response.getTodayProfitLoss());
+        assertEquals(new BigDecimal("50.0000"), response.getTodayProfitLossPercent());
         verify(dashboardRepository).findPortfolioHistory(any(), any());
     }
 

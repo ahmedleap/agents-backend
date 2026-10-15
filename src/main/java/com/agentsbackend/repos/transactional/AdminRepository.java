@@ -1,17 +1,15 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Admin;
 import com.agentsbackend.enums.AdminRole;
 import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Mapper
-public interface AdminRepository extends PrimaryMapper {
+public interface AdminRepository {
 
     @Insert("INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role, created_at) " +
             "VALUES (#{adminId,jdbcType=OTHER}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, CAST(#{role} AS admin_role), #{createdAt})")

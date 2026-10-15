@@ -3,7 +3,7 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
 import com.agentsbackend.entities.Holding;
-import com.agentsbackend.repos.HoldingRepository;
+import com.agentsbackend.repos.transactional.HoldingRepository;
 import com.agentsbackend.services.HoldingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

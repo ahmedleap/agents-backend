@@ -1,9 +1,8 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Watchlist;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
@@ -13,8 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Mapper
-public interface WatchlistRepository extends PrimaryMapper {
+public interface WatchlistRepository {
 
     @Insert("INSERT INTO watchlists (client_id, instrument_id) " +
             "VALUES (#{clientId}, #{instrumentId}) " +

@@ -1,4 +1,4 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Transaction;
 import org.apache.ibatis.annotations.*;
@@ -12,8 +12,7 @@ import java.util.UUID;
  * Handles all database operations for transactions including CRUD operations
  * and retrieval of recent transactions for cash movements (deposits and withdrawals).
  */
-@Mapper
-public interface TransactionsRepository extends PrimaryMapper {
+public interface TransactionsRepository {
 
     /**
      * Create a new transaction in the database.

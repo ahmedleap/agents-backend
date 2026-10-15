@@ -1,18 +1,17 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.DTO.response.DashboardResponse;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@Mapper
-public interface DashboardRepository extends PrimaryMapper {
+public interface DashboardRepository {
 
     @Select("SELECT o.order_id, o.account_id, a.name AS account_name, i.ticker, " +
             "i.name AS instrument_name, o.order_type, o.quantity, o.limit_price, " +
@@ -47,6 +46,15 @@ public interface DashboardRepository extends PrimaryMapper {
     })
     List<DashboardResponse.PortfolioHistoryPoint> findPortfolioHistory(
             @Param("clientId") UUID clientId, @Param("startDate") LocalDate startDate);
+
+    @Select("SELECT COALESCE(SUM(hs.total_value), 0) " +
+            "FROM historical_snapshot hs JOIN accounts a ON a.account_id = hs.account_id " +
+            "WHERE a.client_id = #{clientId} AND a.status = 'ACTIVE' " +
+            "AND hs.snapshot_date = (" +
+            "SELECT MAX(previous.snapshot_date) FROM historical_snapshot previous " +
+            "WHERE previous.account_id = hs.account_id AND previous.snapshot_date < #{asOfDate})")
+    BigDecimal findPreviousPortfolioValue(
+            @Param("clientId") UUID clientId, @Param("asOfDate") LocalDate asOfDate);
 
     @Select("WITH ranked_prices AS (" +
             "SELECT instrument_id, close, ROW_NUMBER() OVER (PARTITION BY instrument_id ORDER BY timestamp DESC) AS position " +
