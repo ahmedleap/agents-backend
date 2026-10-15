@@ -8,13 +8,7 @@ pipeline {
     }
 
     environment {
-        // Extract version from pom.xml for consistency across builds
-        PROJECT_VERSION = sh(
-            script: "grep -m1 '<version>' pom.xml | sed 's/.*<version>\\([^<]*\\)<\\/version>.*/\\1/' | xargs",
-            returnStdout: true
-        ).toString().trim()
         IMAGE_NAME = "agents-backend"
-        DOCKER_TAG = "${IMAGE_NAME}:${PROJECT_VERSION}-${BUILD_NUMBER}"
         DOCKER_TAG_LATEST = "${IMAGE_NAME}:latest"
     }
 
@@ -23,6 +17,13 @@ pipeline {
             steps {
                 echo "Checking out code from branch: ${BRANCH_NAME}"
                 checkout scm
+                    script {
+                        env.PROJECT_VERSION = sh(
+                            script: "mvn -q help:evaluate '-Dexpression=project.version' -DforceStdout",
+                            returnStdout: true
+                        ).trim()
+                        env.DOCKER_TAG = "${env.IMAGE_NAME}:${env.PROJECT_VERSION}-${env.BUILD_NUMBER}"
+                    }
                 echo "Project version: ${PROJECT_VERSION}"
             }
         }

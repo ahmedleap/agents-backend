@@ -76,23 +76,31 @@ DB_NAME=agents_of_leap
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 
+# Optional warehouse database used by analytics mappers
+WAREHOUSE_DB_HOST=localhost
+WAREHOUSE_DB_PORT=25432
+WAREHOUSE_DB_NAME=test_db
+WAREHOUSE_DB_USER=test
+WAREHOUSE_DB_PASSWORD=your_warehouse_password
+
 # Optional
 JAVA_OPTS=-Xmx512m
 ```
 
-#### Or use `application.properties` directly
-Edit `src/main/resources/application.properties`:
+#### Local-only application properties
+For a local SSH tunnel, use the ignored [application-local.properties](application-local.properties) file. It is imported automatically by the tracked `application.properties` file and is not copied into the Docker image.
+
+Set the values once:
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/agents_of_leap
+spring.datasource.url=jdbc:postgresql://localhost:15432/agents_of_leap
 spring.datasource.username=postgres
 spring.datasource.password=your_secure_password
-spring.datasource.driver-class-name=org.postgresql.Driver
-
-spring.jpa.hibernate.ddl-auto=validate
-mybatis.configuration.map-underscore-to-camel-case=true
-
-logging.level.com.agentsbackend=DEBUG
+spring.datasource.warehouse.url=jdbc:postgresql://localhost:25432/test_db
+spring.datasource.warehouse.username=test
+spring.datasource.warehouse.password=your_warehouse_password
 ```
+
+The local file is git-ignored. Do not put passwords in the tracked `src/main/resources/application.properties` file.
 
 ### 4. Build and Run
 
@@ -117,6 +125,86 @@ Application is running when you see in logs:
 ```
 Tomcat started on port 8080 (http) with context path '/'
 Started AgentsBackendApplication in 2.7 seconds
+```
+
+### Docker Database Configuration
+
+The Docker container receives database configuration through environment variables. Do not copy `application.properties` or local credential files into the image. On the Linux VM, create an untracked file such as `/opt/agents-backend/agents-backend.env`:
+
+```env
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=agents_of_leap
+DB_USER=postgres
+DB_PASSWORD=your_primary_password
+WAREHOUSE_DB_HOST=warehouse-postgres
+WAREHOUSE_DB_PORT=5432
+WAREHOUSE_DB_NAME=test_db
+WAREHOUSE_DB_USER=test
+WAREHOUSE_DB_PASSWORD=your_warehouse_password
+SERVER_PORT=8080
+```
+
+Use Docker service/container names for `DB_HOST` and `WAREHOUSE_DB_HOST`, not `localhost`. Run the backend on the same Docker network as the databases:
+
+```bash
+docker run -d \
+  --name agents-backend \
+  --network agents-network \
+  --env-file /opt/agents-backend/agents-backend.env \
+  -p 8080:8080 \
+  agents-backend:latest
+```
+
+The environment file stays on the VM and should not be committed.
+
+### Test Coverage
+
+Generate the JaCoCo HTML report with:
+
+```powershell
+mvn clean test
+```
+
+Open `target/site/jacoco/index.html` in a browser. On Windows:
+
+```powershell
+Start-Process .\target\site\jacoco\index.html
+```
+
+### Dashboard Bruno Request
+
+The dashboard endpoint aggregates data for one client across active accounts:
+
+- Active account balances and portfolio values
+- Platform-wide market movers
+- Client watchlist securities
+- Five most recent orders across all statuses
+- Daily portfolio history for up to 365 days
+
+Request:
+
+```http
+GET http://localhost:8080/dashboard?clientId={{clientId}}&period=90D
+Accept: application/json
+```
+
+This request has no body. Create a Bruno environment variable named `clientId` using the ID printed by `test-dashboard-data.sql`. Supported periods are `30D`, `90D`, `180D`, and `365D`.
+
+Expected response sections are `accounts`, `marketMovers`, `watchlist`, `recentTrades`, and `portfolioHistory`.
+
+Invalid UUIDs or periods return `400`. A successful response contains all five sections, including empty arrays when no rows exist. Database or mapper failures currently fail the aggregation with `500`; the endpoint does not fabricate partial data. If partial success is required later, isolate each section behind independent reads and add per-section status/error fields or use separate refresh endpoints.
+
+Example response shape:
+
+```json
+{
+  "accounts": [],
+  "marketMovers": [],
+  "watchlist": [],
+  "recentTrades": [],
+  "portfolioHistory": []
+}
 ```
 
 ---
