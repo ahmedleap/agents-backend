@@ -1,6 +1,12 @@
 package com.agentsbackend.repos;
 
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.DTO.response.AdminAccountResponse;
+import com.agentsbackend.DTO.response.AdminAuditResponse;
+import com.agentsbackend.DTO.response.AdminClientResponse;
+import com.agentsbackend.DTO.response.AdminOrderResponse;
+import com.agentsbackend.DTO.response.AdminInsightsResponse;
+import com.agentsbackend.DTO.response.TradingActivityReportResponse;
 import com.agentsbackend.enums.AdminRole;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -12,6 +18,85 @@ import java.util.UUID;
 
 @Mapper
 public interface AdminRepository {
+
+    @Select("SELECT client_id AS \"clientId\", first_name AS \"firstName\", middle_name AS \"middleName\", " +
+        "last_name AS \"lastName\", email, date_of_birth AS \"dateOfBirth\", join_date AS \"joinDate\", " +
+        "ssn_last4 AS \"ssnLast4\", portfolio_size_range AS \"portfolioSizeRange\", " +
+        "risk_tolerance AS \"riskTolerance\" FROM clients ORDER BY join_date DESC")
+    List<AdminClientResponse> findAllClients();
+
+    @Select("SELECT client_id AS \"clientId\", first_name AS \"firstName\", middle_name AS \"middleName\", " +
+        "last_name AS \"lastName\", email, date_of_birth AS \"dateOfBirth\", join_date AS \"joinDate\", " +
+        "ssn_last4 AS \"ssnLast4\", portfolio_size_range AS \"portfolioSizeRange\", " +
+        "risk_tolerance AS \"riskTolerance\" FROM clients WHERE client_id = #{clientId}")
+    Optional<AdminClientResponse> findClientById(@Param("clientId") UUID clientId);
+
+    @Select("SELECT account_id AS \"accountId\", client_id AS \"clientId\", name, " +
+        "cash_balance AS \"cashBalance\", status, open_date AS \"openDate\" " +
+        "FROM accounts ORDER BY open_date DESC")
+    List<AdminAccountResponse> findAllAccounts();
+
+    @Select("SELECT account_id AS \"accountId\", client_id AS \"clientId\", name, " +
+        "cash_balance AS \"cashBalance\", status, open_date AS \"openDate\" " +
+        "FROM accounts WHERE account_id = #{accountId}")
+    Optional<AdminAccountResponse> findAccountById(@Param("accountId") UUID accountId);
+
+    @Select("SELECT o.order_id AS \"orderId\", o.account_id AS \"accountId\", " +
+        "a.client_id AS \"clientId\", o.instrument_id AS \"instrumentId\", i.ticker, " +
+        "i.name AS \"instrumentName\", o.order_type AS \"orderType\", o.quantity, " +
+        "o.limit_price AS \"limitPrice\", o.filled_price AS \"filledPrice\", o.status, " +
+        "o.created_at AS \"createdAt\", o.filled_at AS \"filledAt\", " +
+        "o.cancelled_at AS \"cancelledAt\", o.cancel_reason AS \"cancelReason\" FROM orders o " +
+        "JOIN accounts a ON a.account_id = o.account_id " +
+        "JOIN instruments i ON i.instrument_id = o.instrument_id " +
+        "ORDER BY o.created_at DESC")
+    List<AdminOrderResponse> findAllOrders();
+
+    @Select("SELECT o.order_id AS \"orderId\", o.account_id AS \"accountId\", " +
+        "a.client_id AS \"clientId\", o.instrument_id AS \"instrumentId\", i.ticker, " +
+        "i.name AS \"instrumentName\", o.order_type AS \"orderType\", o.quantity, " +
+        "o.limit_price AS \"limitPrice\", o.filled_price AS \"filledPrice\", o.status, " +
+        "o.created_at AS \"createdAt\", o.filled_at AS \"filledAt\", " +
+        "o.cancelled_at AS \"cancelledAt\", o.cancel_reason AS \"cancelReason\" FROM orders o " +
+        "JOIN accounts a ON a.account_id = o.account_id " +
+        "JOIN instruments i ON i.instrument_id = o.instrument_id " +
+        "WHERE o.order_id = #{orderId}")
+    Optional<AdminOrderResponse> findOrderById(@Param("orderId") UUID orderId);
+
+    @Select("SELECT o.order_id AS \"orderId\", o.account_id AS \"accountId\", " +
+        "a.client_id AS \"clientId\", o.instrument_id AS \"instrumentId\", i.ticker, " +
+        "i.name AS \"instrumentName\", o.order_type AS \"orderType\", o.quantity, " +
+        "o.limit_price AS \"limitPrice\", o.filled_price AS \"filledPrice\", o.status, " +
+        "o.created_at AS \"createdAt\", o.filled_at AS \"filledAt\", " +
+        "o.cancelled_at AS \"cancelledAt\", o.cancel_reason AS \"cancelReason\" FROM orders o " +
+        "JOIN accounts a ON a.account_id = o.account_id " +
+        "JOIN instruments i ON i.instrument_id = o.instrument_id " +
+        "WHERE o.order_id = #{tradeId} AND o.status = 'FILLED'")
+    Optional<AdminOrderResponse> findTradeById(@Param("tradeId") UUID tradeId);
+
+    @Select("SELECT audit_log_id AS \"auditLogId\", order_id AS \"orderId\", " +
+        "account_id AS \"accountId\", client_id AS \"clientId\", event_type AS \"eventType\", " +
+        "event_time AS \"eventTime\", reason, details::text AS details, " +
+        "created_at AS \"createdAt\" " +
+        "FROM audit_logs WHERE order_id = #{orderId} ORDER BY event_time DESC")
+    List<AdminAuditResponse> findAuditByOrderId(@Param("orderId") UUID orderId);
+
+    @Select("SELECT COUNT(*) AS \"totalOrders\", " +
+        "COUNT(*) FILTER (WHERE status = 'FILLED') AS \"filledOrders\", " +
+        "COUNT(*) FILTER (WHERE status = 'PENDING') AS \"pendingOrders\", " +
+        "COUNT(*) FILTER (WHERE status = 'CANCELLED') AS \"cancelledOrders\", " +
+        "COALESCE(SUM(quantity) FILTER (WHERE status = 'FILLED'), 0) AS \"filledQuantity\", " +
+        "COALESCE(SUM(quantity * COALESCE(filled_price, limit_price)) FILTER (WHERE status = 'FILLED'), 0) AS \"tradedValue\" " +
+        "FROM orders")
+    TradingActivityReportResponse getTradingActivityReport();
+
+    @Select("SELECT (SELECT COUNT(*) FROM clients) AS \"clientCount\", " +
+        "(SELECT COUNT(*) FROM accounts) AS \"accountCount\", " +
+        "(SELECT COUNT(*) FROM orders) AS \"orderCount\", " +
+        "(SELECT COUNT(*) FROM orders WHERE status = 'FILLED') AS \"filledOrderCount\", " +
+        "(SELECT COALESCE(SUM(quantity * COALESCE(filled_price, limit_price)), 0) " +
+        "FROM orders WHERE status = 'FILLED') AS \"tradedValue\"")
+    AdminInsightsResponse getInsights();
 
     @Insert("INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role, created_at) " +
             "VALUES (#{adminId,jdbcType=VARCHAR}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, CAST(#{role} AS admin_role), #{createdAt})")

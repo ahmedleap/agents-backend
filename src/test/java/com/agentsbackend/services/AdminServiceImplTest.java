@@ -1,7 +1,16 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.DTO.response.AdminAccountResponse;
+import com.agentsbackend.DTO.response.AdminAuditResponse;
+import com.agentsbackend.DTO.response.AdminClientResponse;
+import com.agentsbackend.DTO.response.AdminInsightsResponse;
+import com.agentsbackend.DTO.response.AdminOrderResponse;
+import com.agentsbackend.DTO.response.TradingActivityReportResponse;
 import com.agentsbackend.repos.AdminRepository;
+import com.agentsbackend.exceptions.AccountNotFoundException;
+import com.agentsbackend.exceptions.ClientNotFoundException;
+import com.agentsbackend.exceptions.OrderNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +20,9 @@ import org.mockito.MockitoAnnotations;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -164,5 +176,68 @@ class AdminServiceImplTest {
 
         // Assert
         assertSame(admin, result);
+    }
+
+    @Test
+    void readMethodsDelegateToRepository() {
+        UUID clientId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        AdminClientResponse client = new AdminClientResponse();
+        AdminAccountResponse account = new AdminAccountResponse();
+        AdminOrderResponse order = new AdminOrderResponse();
+        TradingActivityReportResponse report = new TradingActivityReportResponse(
+                1L, 1L, 0L, 0L, new BigDecimal("1"), new BigDecimal("10"));
+        AdminInsightsResponse insights = new AdminInsightsResponse(
+                1L, 1L, 1L, 1L, new BigDecimal("10"));
+
+        when(adminRepository.findAllClients()).thenReturn(List.of(client));
+        when(adminRepository.findClientById(clientId)).thenReturn(Optional.of(client));
+        when(adminRepository.findAllAccounts()).thenReturn(List.of(account));
+        when(adminRepository.findAccountById(accountId)).thenReturn(Optional.of(account));
+        when(adminRepository.findAllOrders()).thenReturn(List.of(order));
+        when(adminRepository.findOrderById(orderId)).thenReturn(Optional.of(order));
+        when(adminRepository.findTradeById(orderId)).thenReturn(Optional.of(order));
+        when(adminRepository.findAuditByOrderId(orderId)).thenReturn(List.of(new AdminAuditResponse()));
+        when(adminRepository.getTradingActivityReport()).thenReturn(report);
+        when(adminRepository.getInsights()).thenReturn(insights);
+
+        assertSame(client, adminService.getClients().get(0));
+        assertSame(client, adminService.getClient(clientId));
+        assertSame(account, adminService.getAccounts().get(0));
+        assertSame(account, adminService.getAccount(accountId));
+        assertSame(order, adminService.getOrders().get(0));
+        assertSame(order, adminService.getOrder(orderId));
+        assertSame(order, adminService.getTrade(orderId));
+        assertEquals(1, adminService.getTradeAudit(orderId).size());
+        assertSame(report, adminService.getTradingActivityReport());
+        assertSame(insights, adminService.getInsights());
+
+        verify(adminRepository).findAllClients();
+        verify(adminRepository).findClientById(clientId);
+        verify(adminRepository).findAllAccounts();
+        verify(adminRepository).findAccountById(accountId);
+        verify(adminRepository).findAllOrders();
+        verify(adminRepository).findOrderById(orderId);
+        verify(adminRepository, times(2)).findTradeById(orderId);
+        verify(adminRepository).findAuditByOrderId(orderId);
+        verify(adminRepository).getTradingActivityReport();
+        verify(adminRepository).getInsights();
+    }
+
+    @Test
+    void missingResourcesRaiseTypedExceptions() {
+        UUID clientId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+        when(adminRepository.findClientById(clientId)).thenReturn(Optional.empty());
+        when(adminRepository.findAccountById(accountId)).thenReturn(Optional.empty());
+        when(adminRepository.findOrderById(orderId)).thenReturn(Optional.empty());
+        when(adminRepository.findTradeById(orderId)).thenReturn(Optional.empty());
+
+        assertThrows(ClientNotFoundException.class, () -> adminService.getClient(clientId));
+        assertThrows(AccountNotFoundException.class, () -> adminService.getAccount(accountId));
+        assertThrows(OrderNotFoundException.class, () -> adminService.getOrder(orderId));
+        assertThrows(OrderNotFoundException.class, () -> adminService.getTrade(orderId));
     }
 }

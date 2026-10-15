@@ -1,0 +1,375 @@
+ADMIN ENDPOINTS REVIEW
+======================
+
+Purpose
+-------
+This document describes the admin read endpoints, their response DTOs, the
+underlying MyBatis queries, and the expected JSON response shapes.
+
+The admin read API is exposed under both of these prefixes:
+
+  /admin
+  /api/v1/admin
+
+The examples below use /api/v1/admin.
+
+All endpoints are GET requests. They are read-only and do not accept a request
+body. The identifiers in the URL are UUID values read from PostgreSQL.
+
+Architecture
+------------
+
+Controller:
+  AdminReadController
+
+Service:
+  AdminService
+  AdminServiceImpl
+
+MyBatis mapper:
+  AdminRepository
+
+Database:
+  Primary PostgreSQL database
+
+The implementation uses MyBatis annotations such as @Select and @Insert for
+database access. The admin read endpoints do not use JPA repositories,
+EntityManager, JPQL, or Hibernate queries.
+
+
+1. GET /api/v1/admin/clients
+----------------------------
+
+Purpose:
+  Returns all client records for administrative review.
+
+Database source:
+  clients
+
+Ordering:
+  Newest join_date first.
+
+Service path:
+  AdminReadController.getClients()
+    -> AdminService.getClients()
+    -> AdminServiceImpl.getClients()
+    -> AdminRepository.findAllClients()
+
+Response DTO:
+  AdminClientResponse
+
+Expected response shape:
+
+[
+  {
+    "clientId": "uuid",
+    "firstName": "First",
+    "middleName": null,
+    "lastName": "Last",
+    "email": "client@example.com",
+    "dateOfBirth": "1990-01-01",
+    "joinDate": "2026-01-01T12:00:00Z",
+    "ssnLast4": "1234",
+    "portfolioSizeRange": "UNDER_50K",
+    "riskTolerance": "CONSERVATIVE"
+  }
+]
+
+Security note:
+  password_hash and refresh_token are intentionally not included in the DTO.
+
+
+2. GET /api/v1/admin/clients/{clientId}
+----------------------------------------
+
+Purpose:
+  Returns one client by client UUID.
+
+Database source:
+  clients WHERE client_id = {clientId}
+
+Response DTO:
+  AdminClientResponse
+
+Success response:
+  The same object shape as one item from the clients list endpoint.
+
+Missing client:
+  ClientNotFoundException is raised and the global exception handler returns
+  HTTP 404.
+
+
+3. GET /api/v1/admin/accounts
+-----------------------------
+
+Purpose:
+  Returns all investment accounts for administrative review.
+
+Database source:
+  accounts
+
+Ordering:
+  Newest open_date first.
+
+Response DTO:
+  AdminAccountResponse
+
+Expected response shape:
+
+[
+  {
+    "accountId": "uuid",
+    "clientId": "uuid",
+    "name": "Brokerage Account",
+    "cashBalance": 10000.00,
+    "status": "ACTIVE",
+    "openDate": "2026-01-01T12:00:00Z"
+  }
+]
+
+
+4. GET /api/v1/admin/accounts/{accountId}
+------------------------------------------
+
+Purpose:
+  Returns one account by account UUID.
+
+Database source:
+  accounts WHERE account_id = {accountId}
+
+Response DTO:
+  AdminAccountResponse
+
+Missing account:
+  AccountNotFoundException is raised and the global exception handler returns
+  HTTP 404.
+
+
+5. GET /api/v1/admin/orders
+---------------------------
+
+Purpose:
+  Returns all orders, including pending, filled, cancelled, and rejected
+  orders.
+
+Database source:
+  orders joined with accounts and instruments.
+
+Ordering:
+  Newest created_at first.
+
+Response DTO:
+  AdminOrderResponse
+
+Expected response shape:
+
+[
+  {
+    "orderId": "uuid",
+    "accountId": "uuid",
+    "clientId": "uuid",
+    "instrumentId": "uuid",
+    "ticker": "AAPL",
+    "instrumentName": "Apple Inc.",
+    "orderType": "BUY",
+    "quantity": 1.000000,
+    "limitPrice": 82.00,
+    "filledPrice": 72.53,
+    "status": "FILLED",
+    "createdAt": "2026-01-01T12:00:00Z",
+    "filledAt": "2026-01-01T12:01:00Z",
+    "cancelledAt": null,
+    "cancelReason": null
+  }
+]
+
+
+6. GET /api/v1/admin/orders/{orderId}
+------------------------------------
+
+Purpose:
+  Returns one order by order UUID.
+
+Database source:
+  orders joined with accounts and instruments WHERE order_id = {orderId}
+
+Response DTO:
+  AdminOrderResponse
+
+Missing order:
+  OrderNotFoundException is raised and the global exception handler returns
+  HTTP 404.
+
+
+7. GET /api/v1/admin/trades/{tradeId}
+-------------------------------------
+
+Purpose:
+  Returns one completed trade.
+
+Data model:
+  The schema does not have a separate trades table. A trade is represented by
+  an orders row whose status is FILLED.
+
+Database source:
+  orders joined with accounts and instruments WHERE order_id = {tradeId}
+  AND status = 'FILLED'
+
+Response DTO:
+  AdminOrderResponse
+
+Expected response:
+  The same shape as an AdminOrderResponse, with status FILLED.
+
+Missing or non-filled trade:
+  OrderNotFoundException is raised and the global exception handler returns
+  HTTP 404.
+
+
+8. GET /api/v1/admin/trades/{tradeId}/audit
+--------------------------------------------
+
+Purpose:
+  Returns the lifecycle audit history for a completed trade.
+
+Database source:
+  audit_logs WHERE order_id = {tradeId}
+
+Ordering:
+  Newest event_time first.
+
+Response DTO:
+  AdminAuditResponse
+
+Expected response shape:
+
+[
+  {
+    "auditLogId": "uuid",
+    "orderId": "uuid",
+    "accountId": "uuid",
+    "clientId": "uuid",
+    "eventType": "FILLED",
+    "eventTime": "2026-01-01T12:01:00Z",
+    "reason": "Order filled at price: 72.5300",
+    "details": "{\"status\":\"FILLED\"}",
+    "createdAt": "2026-01-01T12:01:00Z"
+  }
+]
+
+The details column is JSONB in PostgreSQL and is returned as text in this DTO.
+
+
+9. GET /api/v1/admin/reports/tradingactivity
+----------------------------------------------
+
+Purpose:
+  Returns aggregate trading activity for an administrative report.
+
+Database source:
+  orders
+
+Calculated fields:
+  totalOrders      = count of all orders
+  filledOrders     = count where status is FILLED
+  pendingOrders    = count where status is PENDING
+  cancelledOrders  = count where status is CANCELLED
+  filledQuantity   = sum of quantity for FILLED orders
+  tradedValue      = sum of quantity * COALESCE(filled_price, limit_price)
+                     for FILLED orders
+
+Response DTO:
+  TradingActivityReportResponse
+
+Expected response shape:
+
+{
+  "totalOrders": 33,
+  "filledOrders": 13,
+  "pendingOrders": 13,
+  "cancelledOrders": 3,
+  "filledQuantity": 36.000000,
+  "tradedValue": 3000.5400000000
+}
+
+The numeric values above are an example of the response shape. The endpoint
+calculates current values from PostgreSQL on each request.
+
+Rejected orders are included in totalOrders but are not returned as a separate
+count by this DTO.
+
+
+10. GET /api/v1/admin/insights
+------------------------------
+
+Purpose:
+  Returns compact platform-wide metrics for dashboard summary cards.
+
+Database sources:
+  clients, accounts, and orders
+
+Calculated fields:
+  clientCount       = count of clients
+  accountCount      = count of accounts
+  orderCount        = count of all orders
+  filledOrderCount  = count where status is FILLED
+  tradedValue       = sum of quantity * COALESCE(filled_price, limit_price)
+                      for FILLED orders
+
+Response DTO:
+  AdminInsightsResponse
+
+Expected response shape:
+
+{
+  "clientCount": 17,
+  "accountCount": 7,
+  "orderCount": 33,
+  "filledOrderCount": 13,
+  "tradedValue": 3000.5400000000
+}
+
+The numeric values above reflect the database values observed during review;
+they are calculated dynamically and are not hardcoded in the application.
+
+
+DTO SUMMARY
+-----------
+
+AdminClientResponse:
+  Safe client summary. Excludes password_hash and refresh_token.
+
+AdminAccountResponse:
+  Account identity, owning client, cash balance, status, and open date.
+
+AdminOrderResponse:
+  Order, account, client, instrument, pricing, status, and lifecycle dates.
+
+AdminAuditResponse:
+  Audit event identity, related IDs, event type, timestamps, reason, and JSON
+  details text.
+
+TradingActivityReportResponse:
+  Aggregate order counts, filled quantity, and traded value.
+
+AdminInsightsResponse:
+  Compact counts and traded value for dashboard-level insights.
+
+
+TEST COVERAGE
+-------------
+
+The admin tests are data-independent and use generated UUIDs plus mocked
+repositories/services. They do not depend on the current PostgreSQL rows.
+
+Covered test areas include:
+
+  - Admin create controller
+  - All admin read controller routes
+  - Admin service delegation and not-found behavior
+  - Response DTO constructors, getters, setters, equality, and values
+  - Admin entity accessors and toString
+  - AdminRole MyBatis type-handler success and null paths
+
+JaCoCo report:
+  target/site/jacoco/index.html
