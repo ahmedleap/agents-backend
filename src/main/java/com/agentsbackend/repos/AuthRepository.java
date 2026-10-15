@@ -34,7 +34,7 @@ public interface AuthRepository {
     @Insert("INSERT INTO clients (client_id, first_name, last_name, email, password_hash, phone, country, " +
             "email_verified, auth_status, date_of_birth, join_date, signup_ip, signup_device) " +
             "VALUES (#{clientId}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, #{phone}, #{country}, " +
-            "TRUE, 'ACTIVE', #{dateOfBirth}, #{joinDate}, " +
+            "FALSE, 'PENDING_VERIFICATION', #{dateOfBirth}, #{joinDate}, " +
             "CAST(NULLIF(#{signupIp}, '') AS INET), #{signupDevice})")
     void insertClient(@Param("clientId") UUID clientId, @Param("firstName") String firstName,
                       @Param("lastName") String lastName, @Param("email") String email,
