@@ -14,13 +14,13 @@ import java.util.UUID;
 public interface AdminRepository extends PrimaryMapper {
 
     @Insert("INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role, created_at) " +
-            "VALUES (#{adminId,jdbcType=VARCHAR}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, CAST(#{role} AS admin_role), #{createdAt})")
+            "VALUES (#{adminId,jdbcType=OTHER}, #{firstName}, #{lastName}, #{email}, #{passwordHash}, CAST(#{role} AS admin_role), #{createdAt})")
     void createAdmin(Admin admin);
 
     @Select("SELECT * FROM admin WHERE email = #{email}")
     Optional<Admin> findByEmail(@Param("email") String email);
 
-    @Select("SELECT * FROM admin WHERE admin_id = #{adminId,jdbcType=VARCHAR}")
+    @Select("SELECT * FROM admin WHERE admin_id = #{adminId,jdbcType=OTHER}")
     Optional<Admin> findById(@Param("adminId") UUID adminId);
 
     @Select("SELECT * FROM admin")
@@ -29,7 +29,7 @@ public interface AdminRepository extends PrimaryMapper {
     @Select("SELECT * FROM admin WHERE role = #{role}")
     List<Admin> findByRole(@Param("role") AdminRole role);
 
-    @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM admin WHERE admin_id = #{adminId,jdbcType=VARCHAR}")
+    @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM admin WHERE admin_id = #{adminId,jdbcType=OTHER}")
     boolean existsById(@Param("adminId") UUID adminId);
 }
 

@@ -2,7 +2,6 @@ package com.agentsbackend.repos;
 
 import com.agentsbackend.entities.Instrument;
 import org.apache.ibatis.annotations.*;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +13,17 @@ import java.util.UUID;
  */
 @Mapper
 public interface InstrumentRepository extends PrimaryMapper {
+
+    /**
+     * Find instrument by ID.
+     * Returns current pricing data (bid, ask, mid_price).
+     *
+     * @param instrumentId UUID of the instrument
+     * @return Optional containing Instrument if found, empty otherwise
+     */
+    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
+            "FROM instruments WHERE instrument_id = #{instrumentId,jdbcType=OTHER}")
+    Optional<Instrument> findById(@Param("instrumentId") UUID instrumentId);
 
     /**
      * Search instruments by ticker or name (case-insensitive partial match).
@@ -42,22 +52,16 @@ public interface InstrumentRepository extends PrimaryMapper {
     Optional<Instrument> findByTicker(@Param("ticker") String ticker);
 
     /**
-     * Find instrument by ID.
-     * Returns current pricing data (bid, ask, mid_price).
-     *
-     * @param instrumentId UUID of the instrument
-     * @return Optional containing Instrument if found, empty otherwise
-     */
-    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
-            "FROM instruments WHERE instrument_id = #{instrumentId}")
-    Optional<Instrument> findById(@Param("instrumentId") UUID instrumentId);
-
-    /**
      * Update instrument with latest market pricing from Alpaca API.
      * Updates bid, ask, and price_updated_at columns.
      *
      * @param instrument Instrument with updated bid, ask, and price_updated_at
      */
+    @Update("UPDATE instruments SET bid = #{bid,jdbcType=NUMERIC}, ask = #{ask,jdbcType=NUMERIC}, " +
+            "mid_price = #{midPrice,jdbcType=NUMERIC}, price_updated_at = #{priceUpdatedAt} " +
+            "WHERE instrument_id = #{instrumentId,jdbcType=OTHER}")
+    void updatePricing(Instrument instrument);
+
     @Update("UPDATE instruments " +
             "SET bid = #{bid}, ask = #{ask}, price_updated_at = #{priceUpdatedAt} " +
             "WHERE instrument_id = #{instrumentId}")

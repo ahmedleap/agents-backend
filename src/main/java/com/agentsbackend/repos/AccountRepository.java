@@ -23,7 +23,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param account Account entity with populated fields
      */
     @Insert("INSERT INTO accounts (account_id, client_id, name, cash_balance, status, open_date) " +
-            "VALUES (#{accountId,jdbcType=VARCHAR}, #{client.clientId,jdbcType=VARCHAR}, " +
+            "VALUES (#{accountId,jdbcType=OTHER}, #{client.clientId,jdbcType=OTHER}, " +
             "#{name}, #{cashBalance,jdbcType=NUMERIC}, CAST(#{status} AS account_status), #{openDate})")
     void createAccount(Account account);
 
@@ -34,7 +34,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @return Optional containing Account if found, empty otherwise
      */
     @Select("SELECT account_id, client_id, name, cash_balance, status, open_date " +
-            "FROM accounts WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+            "FROM accounts WHERE account_id = #{accountId,jdbcType=OTHER}")
     @Results({
             @Result(column = "account_id", property = "accountId"),
             @Result(column = "client_id", property = "clientId"),
@@ -53,7 +53,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @return List of Account objects for the client
      */
     @Select("SELECT account_id, client_id, name, cash_balance, status, open_date " +
-            "FROM accounts WHERE client_id = #{clientId,jdbcType=VARCHAR} ORDER BY open_date DESC")
+            "FROM accounts WHERE client_id = #{clientId,jdbcType=OTHER} ORDER BY open_date DESC")
     @Results({
             @Result(column = "account_id", property = "accountId"),
             @Result(column = "client_id", property = "clientId"),
@@ -70,7 +70,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param account Account entity with updated fields
      */
     @Update("UPDATE accounts SET name = #{name}, status = CAST(#{status} AS account_status) " +
-            "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+            "WHERE account_id = #{accountId,jdbcType=OTHER}")
     void updateAccount(Account account);
 
     /**
@@ -81,7 +81,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param newBalance New cash balance value
      */
     @Update("UPDATE accounts SET cash_balance = #{newBalance,jdbcType=NUMERIC} " +
-            "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+            "WHERE account_id = #{accountId,jdbcType=OTHER}")
     void updateCashBalance(@Param("accountId") UUID accountId, @Param("newBalance") BigDecimal newBalance);
 
     /**
@@ -90,7 +90,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param clientId UUID of the client
      * @return true if client exists, false otherwise
      */
-    @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM clients WHERE client_id = #{clientId,jdbcType=VARCHAR}")
+        @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM clients WHERE client_id = #{clientId,jdbcType=OTHER}")
     boolean clientExists(@Param("clientId") UUID clientId);
 
     /**
@@ -99,7 +99,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param accountId UUID of the account
      * @return true if account exists, false otherwise
      */
-    @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM accounts WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+        @Select("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM accounts WHERE account_id = #{accountId,jdbcType=OTHER}")
     boolean existsById(@Param("accountId") UUID accountId);
 
     /**
@@ -109,7 +109,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param accountId UUID of the account
      * @return Count of holdings, or null if none
      */
-    @Select("SELECT COUNT(*) FROM holdings WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+        @Select("SELECT COUNT(*) FROM holdings WHERE account_id = #{accountId,jdbcType=OTHER}")
     Integer getHoldingCount(@Param("accountId") UUID accountId);
 
     /**
@@ -119,7 +119,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param accountId UUID of the account
      * @return Count of orders, or null if none
      */
-    @Select("SELECT COUNT(*) FROM orders WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+        @Select("SELECT COUNT(*) FROM orders WHERE account_id = #{accountId,jdbcType=OTHER}")
     Integer getOrderCount(@Param("accountId") UUID accountId);
 
     /**
@@ -129,7 +129,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @param accountId UUID of the account
      * @return Count of transactions, or null if none
      */
-    @Select("SELECT COUNT(*) FROM transactions WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+        @Select("SELECT COUNT(*) FROM transactions WHERE account_id = #{accountId,jdbcType=OTHER}")
     Integer getTransactionCount(@Param("accountId") UUID accountId);
 
     /**
@@ -141,7 +141,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @return Sum of reserved funds, or null if no open orders
      */
     @Select("SELECT COALESCE(SUM(quantity * limit_price), 0) FROM orders " +
-            "WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
+            "WHERE account_id = #{accountId,jdbcType=OTHER} " +
             "AND order_type = 'BUY' AND status = 'PENDING'")
     BigDecimal getReservedFundsForOpenOrders(@Param("accountId") UUID accountId);
 
@@ -154,7 +154,7 @@ public interface AccountRepository extends PrimaryMapper {
      */
     @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.close, 0)), 0) FROM holdings h " +
             "LEFT JOIN instrument_price_history ip ON h.instrument_id = ip.instrument_id " +
-            "WHERE h.account_id = #{accountId,jdbcType=VARCHAR} " +
+            "WHERE h.account_id = #{accountId,jdbcType=OTHER} " +
             "AND ip.timestamp = (SELECT MAX(timestamp) FROM instrument_price_history WHERE instrument_id = h.instrument_id)")
     BigDecimal getPortfolioValue(@Param("accountId") UUID accountId);
 
@@ -167,7 +167,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @return Portfolio value at the specified date, or null if no data
      */
     @Select("SELECT total_value FROM historical_snapshot " +
-            "WHERE account_id = #{accountId,jdbcType=VARCHAR} " +
+            "WHERE account_id = #{accountId,jdbcType=OTHER} " +
             "AND snapshot_date <= #{date,jdbcType=DATE} " +
             "ORDER BY snapshot_date DESC LIMIT 1")
     BigDecimal getPortfolioValueAtDate(@Param("accountId") UUID accountId, @Param("date") java.time.OffsetDateTime date);
@@ -183,7 +183,7 @@ public interface AccountRepository extends PrimaryMapper {
     @Select("SELECT COALESCE(SUM(CASE WHEN o.order_type = 'SELL' " +
             "THEN (o.quantity * o.limit_price) - (h.quantity * h.average_cost_basis) ELSE 0 END), 0) " +
             "FROM orders o LEFT JOIN holdings h ON o.instrument_id = h.instrument_id " +
-            "WHERE o.account_id = #{accountId,jdbcType=VARCHAR} " +
+            "WHERE o.account_id = #{accountId,jdbcType=OTHER} " +
             "AND o.status = 'FILLED' AND o.created_at >= #{startDate,jdbcType=TIMESTAMP}")
     BigDecimal getRealizedGainLoss(@Param("accountId") UUID accountId, @Param("startDate") java.time.OffsetDateTime startDate);
 
@@ -195,7 +195,7 @@ public interface AccountRepository extends PrimaryMapper {
      * @return Total cost basis of holdings, or null if no holdings
      */
     @Select("SELECT COALESCE(SUM(quantity * average_cost_basis), 0) FROM holdings " +
-            "WHERE account_id = #{accountId,jdbcType=VARCHAR}")
+            "WHERE account_id = #{accountId,jdbcType=OTHER}")
     BigDecimal getHoldingsCostBasis(@Param("accountId") UUID accountId);
 
     /**
