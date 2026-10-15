@@ -13,8 +13,7 @@ import com.agentsbackend.exceptions.InvalidOrderStatusException;
 import com.agentsbackend.exceptions.InvalidOrderParametersException;
 import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
-import com.agentsbackend.queue.OrderQueue;
-
+import com.agentsbackend.queue.OrderQueue;    import com.agentsbackend.services.OrderSubmissionService;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
@@ -26,10 +25,10 @@ import com.agentsbackend.DTO.requests.CancelOrderRequest;
 import com.agentsbackend.DTO.response.CancelOrderResponse;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
 import com.agentsbackend.DTO.response.OrderSummaryResponse;
-import com.agentsbackend.repos.OrderRepository;
-import com.agentsbackend.repos.HoldingRepository;
-import com.agentsbackend.repos.AccountRepository;
-import com.agentsbackend.repos.InstrumentRepository;
+import com.agentsbackend.repos.transactional.OrderRepository;
+import com.agentsbackend.repos.transactional.HoldingRepository;
+import com.agentsbackend.repos.transactional.AccountRepository;
+import com.agentsbackend.repos.transactional.InstrumentRepository;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,16 +44,19 @@ public class OrderServiceImpl implements OrderService {
     private final InstrumentRepository instrumentRepository;
     private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
+    private final OrderSubmissionService orderSubmissionService;
 
     public OrderServiceImpl(OrderRepository orderRepository, HoldingRepository holdingRepository, 
                           AccountRepository accountRepository, InstrumentRepository instrumentRepository,
-                          OrderQueue orderQueue, AuditTrailService auditTrailService) {
+                          OrderQueue orderQueue, AuditTrailService auditTrailService,
+                          OrderSubmissionService orderSubmissionService) {
         this.orderRepository = orderRepository;
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
         this.orderQueue = orderQueue;
         this.auditTrailService = auditTrailService;
+        this.orderSubmissionService = orderSubmissionService;
     }
 
     // Returns a list of pending orders for a specific account
@@ -109,8 +111,9 @@ public class OrderServiceImpl implements OrderService {
             // Save order to database
             orderRepository.save(order);
             
-            // Add order to queue for fulfillment processing
-            orderQueue.enqueue(order);
+            // Submit order for fulfillment processing (queue or Kafka based on configuration)
+            // orderQueue.enqueue(order);  // [OLD - queue logic, now handled by QueueOrderSubmissionService]
+            orderSubmissionService.submitOrder(order);
             
             // Log order creation to audit trail
             Account fullAccount = accountRepository.findById(request.getAccountId()).orElse(null);
@@ -135,14 +138,15 @@ public class OrderServiceImpl implements OrderService {
                 // Limit order - use the provided price
                 totalValue = priceForResponse.multiply(new BigDecimal(request.getQuantity()));
             } else {
-                // Market order - use current mid_price from instrument
+                // Market order - use resolved market price from instrument
                 Instrument inst = instrumentRepository.findById(request.getInstrumentId()).orElse(null);
-                if (inst != null && inst.getMidPrice() != null) {
-                    totalValue = inst.getMidPrice().multiply(new BigDecimal(request.getQuantity()));
+                BigDecimal marketPrice = resolveMarketPrice(inst, request.getOrderType());
+                if (marketPrice != null) {
+                    totalValue = marketPrice.multiply(new BigDecimal(request.getQuantity()));
                 } else {
-                    // If instrument or mid_price not available, use zero
+                    // If instrument market price not available, use zero
                     totalValue = BigDecimal.ZERO;
-                    logger.warn("Could not retrieve mid_price for instrument {}", request.getInstrumentId());
+                    logger.warn("Could not retrieve market price for instrument {}", request.getInstrumentId());
                 }
             }
             
@@ -248,12 +252,7 @@ public class OrderServiceImpl implements OrderService {
         // Fetch current instrument pricing
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
             .orElse(null);
-        BigDecimal marketPrice;
-        if (instrument != null) {
-            marketPrice = instrument.getMidPrice();
-        } else {
-            marketPrice = null;
-        }
+        BigDecimal marketPrice = resolveMarketPrice(instrument, request.getOrderType());
         
         if (price == null) {
             // MARKET ORDER - validate market price exists
@@ -392,9 +391,7 @@ public class OrderServiceImpl implements OrderService {
         if (priceForValidation == null) {
             Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
                 .orElse(null);
-            if (instrument != null) {
-                priceForValidation = instrument.getMidPrice();
-            }
+            priceForValidation = resolveMarketPrice(instrument, request.getOrderType());
         }
         
         if (priceForValidation == null) {
@@ -489,8 +486,9 @@ public class OrderServiceImpl implements OrderService {
         for (Holding holding : holdings) {
             Instrument instrument = instrumentRepository.findById(holding.getInstrumentId())
                 .orElse(null);
-            if (instrument != null && instrument.getMidPrice() != null) {
-                BigDecimal holdingValue = holding.getQuantity().multiply(instrument.getMidPrice());
+            BigDecimal marketPrice = resolveMarketPrice(instrument, OrderType.SELL);
+            if (marketPrice != null) {
+                BigDecimal holdingValue = holding.getQuantity().multiply(marketPrice);
                 holdingsValue = holdingsValue.add(holdingValue);
             }
         }
@@ -591,5 +589,28 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return order;
+    }
+
+    private BigDecimal resolveMarketPrice(Instrument instrument, OrderType orderType) {
+        if (instrument == null) {
+            return null;
+        }
+
+        if (instrument.getMidPrice() != null) {
+            return instrument.getMidPrice();
+        }
+
+        BigDecimal bid = instrument.getBid();
+        BigDecimal ask = instrument.getAsk();
+
+        if (bid != null && ask != null) {
+            return bid.add(ask).divide(new BigDecimal("2"), 4, java.math.RoundingMode.HALF_UP);
+        }
+
+        if (orderType == OrderType.BUY) {
+            return ask != null ? ask : bid;
+        }
+
+        return bid != null ? bid : ask;
     }
 }

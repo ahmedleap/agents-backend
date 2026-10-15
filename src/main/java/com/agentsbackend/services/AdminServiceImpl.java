@@ -10,7 +10,7 @@ import com.agentsbackend.DTO.response.TradingActivityReportResponse;
 import com.agentsbackend.exceptions.AccountNotFoundException;
 import com.agentsbackend.exceptions.ClientNotFoundException;
 import com.agentsbackend.exceptions.OrderNotFoundException;
-import com.agentsbackend.repos.AdminRepository;
+import com.agentsbackend.repos.transactional.AdminRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

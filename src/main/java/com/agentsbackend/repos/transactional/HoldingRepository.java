@@ -1,11 +1,10 @@
-package com.agentsbackend.repos;
+package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Holding;
 
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Results;
@@ -18,23 +17,22 @@ import java.util.UUID;
 import java.util.Optional;
 import java.util.List;
 
-@Mapper
 public interface HoldingRepository {
     
     @Select("SELECT * FROM holdings WHERE account_id = #{accountId}")
     @Results({
         @Result(property = "holdingId", column = "holding_id"),
         @Result(property = "account", column = "account_id", 
-            one = @One(select = "com.agentsbackend.repos.AccountRepository.findById")),
+            one = @One(select = "com.agentsbackend.repos.transactional.AccountRepository.findById")),
         @Result(property = "instrument", column = "instrument_id",
-            one = @One(select = "com.agentsbackend.repos.InstrumentRepository.findById"))
+            one = @One(select = "com.agentsbackend.repos.transactional.InstrumentRepository.findById"))
     })
     List<Holding> findByAccountId(UUID accountId);
 
     @Select("SELECT * FROM holdings WHERE holding_id = #{holdingId} AND account_id = #{accountId}")
     @Results({
-        @Result(property = "account", column = "account_id", one = @One(select = "com.agentsbackend.repos.AccountRepository.findById")),
-        @Result(property = "instrument", column = "instrument_id", one = @One(select = "com.agentsbackend.repos.InstrumentRepository.findById"))
+        @Result(property = "account", column = "account_id", one = @One(select = "com.agentsbackend.repos.transactional.AccountRepository.findById")),
+        @Result(property = "instrument", column = "instrument_id", one = @One(select = "com.agentsbackend.repos.transactional.InstrumentRepository.findById"))
     })
     Optional<Holding> findOneHolding(@Param("holdingId") UUID holdingId, @Param("accountId") UUID accountId);
 

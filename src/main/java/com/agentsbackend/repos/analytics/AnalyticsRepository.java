@@ -1,6 +1,5 @@
 package com.agentsbackend.repos.analytics;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Param;
 import com.agentsbackend.entities.DimClient;
@@ -32,7 +31,6 @@ import java.time.LocalDate;
  * This repository is specifically configured to use the warehouse datasource,
  * separate from the primary transactional database.
  */
-@Mapper
 public interface AnalyticsRepository {
 
     // ============================================================

@@ -1,7 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.AuditLog;
-import com.agentsbackend.repos.AuditLogRepository;
+import com.agentsbackend.repos.transactional.AuditLogRepository;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.OrderStatus;
 import org.springframework.stereotype.Service;
