@@ -35,6 +35,10 @@ LABEL maintainer="agents-backend-team"
 # Copy JAR from builder stage
 COPY --from=builder /build/target/agents-backend.jar .
 
+# Set timezone to EST for scheduled tasks
+ENV TZ=America/New_York
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
