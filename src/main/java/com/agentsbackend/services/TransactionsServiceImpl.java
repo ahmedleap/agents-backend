@@ -1,7 +1,6 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.AccountsResponse;
-import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Transaction;
 import com.agentsbackend.repos.transactional.AccountRepository;
 import com.agentsbackend.repos.transactional.TransactionsRepository;
@@ -41,7 +40,7 @@ public class TransactionsServiceImpl implements TransactionsService {
     @Override
     public List<AccountsResponse.TransactionItem> getRecentTransactions(UUID accountId, int limit) {
         // Verify account exists
-        Account account = accountRepository.findById(accountId)
+        accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
         // Retrieve recent transactions from repository
@@ -64,7 +63,7 @@ public class TransactionsServiceImpl implements TransactionsService {
     @Override
     public List<AccountsResponse.TransactionItem> getAllTransactions(UUID accountId) {
         // Verify account exists
-        Account account = accountRepository.findById(accountId)
+        accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
         // Retrieve all transactions from repository

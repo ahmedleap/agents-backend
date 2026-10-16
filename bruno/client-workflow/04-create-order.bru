@@ -1,0 +1,29 @@
+meta {
+  name: Create client order
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{apiUrl}}/api/v1/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "accountId": "{{accountId}}",
+    "instrumentId": "{{instrumentId}}",
+    "quantity": {{orderQuantity}},
+    "price": {{orderPrice}},
+    "orderType": "{{orderType}}"
+  }
+}

@@ -2,7 +2,6 @@ package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.DTO.response.DashboardResponse;
-import com.agentsbackend.DTO.response.WatchlistResponse;
 import com.agentsbackend.entities.Account;
 import com.agentsbackend.enums.AccountStatus;
 import com.agentsbackend.repos.transactional.AccountRepository;

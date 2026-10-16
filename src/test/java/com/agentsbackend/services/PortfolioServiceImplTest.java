@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -80,6 +79,7 @@ class PortfolioServiceImplTest {
         testAccount.setAccountId(accountId);
         testAccount.setName("Test Account");
         testAccount.setClient(testClient);
+        testAccount.setClientId(clientId);
     }
 
     // ==================== getPortfolioByAccountId Tests ====================
@@ -134,7 +134,7 @@ class PortfolioServiceImplTest {
     @DisplayName("Should throw UnauthorizedAccountAccessException when account doesn't belong to client")
     void testGetPortfolioByAccountId_UnauthorizedAccess() {
         UUID differentClientId = UUID.randomUUID();
-        testAccount.getClient().setClientId(differentClientId);
+        testAccount.setClientId(differentClientId);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
 
@@ -192,6 +192,7 @@ class PortfolioServiceImplTest {
         account2.setAccountId(accountId2);
         account2.setName("Account 2");
         account2.setClient(testClient);
+            account2.setClientId(clientId);
 
         GetHoldingResponseDTO holding1 = new GetHoldingResponseDTO();
         holding1.setQuantity(new BigDecimal("10"));
@@ -432,7 +433,7 @@ class PortfolioServiceImplTest {
     @DisplayName("Should throw UnauthorizedAccountAccessException for wrong client")
     void testGetAccountAllocation_UnauthorizedAccess() {
         UUID differentClientId = UUID.randomUUID();
-        testAccount.getClient().setClientId(differentClientId);
+        testAccount.setClientId(differentClientId);
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
 

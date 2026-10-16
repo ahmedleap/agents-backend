@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -67,12 +66,12 @@ class AccountServiceImplTest {
     @Test
     @DisplayName("List all accounts successfully")
     void testListAccounts() {
-        when(accountRepository.findAll()).thenReturn(java.util.List.of(testAccount));
+        when(accountRepository.findByClientId(testClientId)).thenReturn(java.util.List.of(testAccount));
         when(accountRepository.findById(testAccountId)).thenReturn(Optional.of(testAccount));
         when(accountRepository.getPortfolioValue(testAccountId)).thenReturn(new BigDecimal("30000.00"));
         when(accountRepository.getReservedFundsForOpenOrders(testAccountId)).thenReturn(BigDecimal.ZERO);
 
-        var result = accountService.listAccounts();
+        var result = accountService.listAccounts(testClientId);
 
         assertNotNull(result);
         assertEquals(1, result.size());

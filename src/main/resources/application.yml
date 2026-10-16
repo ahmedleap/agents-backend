@@ -1,0 +1,11 @@
+# JWT Configuration (Asymmetric RSA Keys)
+# Generate keys using: openssl genrsa -out private_key.pem 2048 && openssl rsa -in private_key.pem -pubout -out public_key.pem
+# The backend must receive only the public key, either as a PEM file or as a
+# Base64-encoded PEM value in JWT_PUBLIC_KEY.
+auth:
+  jwt:
+    public-key-file: ${JWT_PUBLIC_KEY_FILE:public_key.pem}
+    # Set JWT_PUBLIC_KEY to the Base64-encoded PEM for the middleware's RSA 2048+ public key.
+    public-key-base64: ${JWT_PUBLIC_KEY:}
+    issuer: ${JWT_ISSUER:agents-middleware}
+    audience: ${JWT_AUDIENCE:agents-backend}

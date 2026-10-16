@@ -13,10 +13,9 @@ import com.agentsbackend.exceptions.InvalidOrderStatusException;
 import com.agentsbackend.exceptions.InvalidOrderParametersException;
 import com.agentsbackend.exceptions.InsufficientFundsException;
 import com.agentsbackend.exceptions.InvalidAccountException;
-import com.agentsbackend.queue.OrderQueue;    import com.agentsbackend.services.OrderSubmissionService;
+import com.agentsbackend.queue.OrderQueue;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -42,7 +41,6 @@ public class OrderServiceImpl implements OrderService {
     private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
-    private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
     private final OrderSubmissionService orderSubmissionService;
 
@@ -54,7 +52,6 @@ public class OrderServiceImpl implements OrderService {
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
-        this.orderQueue = orderQueue;
         this.auditTrailService = auditTrailService;
         this.orderSubmissionService = orderSubmissionService;
     }

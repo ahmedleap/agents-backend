@@ -11,7 +11,6 @@ import com.agentsbackend.services.AnalyticsService;
 import com.agentsbackend.DTO.response.PlatformMetricsResponse;
 import com.agentsbackend.DTO.response.TopInstrumentResponse;
 import com.agentsbackend.DTO.response.AssetClassMetricsResponse;
-import com.agentsbackend.DTO.response.OrderMetricsResponse;
 import com.agentsbackend.DTO.response.ClientSegmentationResponse;
 import com.agentsbackend.DTO.response.TotalVolumeResponse;
 import com.agentsbackend.DTO.response.TotalTradesResponse;

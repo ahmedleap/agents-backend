@@ -10,7 +10,6 @@ import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
-import com.agentsbackend.DTO.response.ClientActivityTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
 import com.agentsbackend.DTO.response.FulfillmentTrendResponse;

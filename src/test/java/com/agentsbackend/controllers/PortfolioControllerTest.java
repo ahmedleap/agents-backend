@@ -6,7 +6,7 @@ import com.agentsbackend.DTO.response.GetAllocationResponseDTO;
 import com.agentsbackend.DTO.response.GetAllocationResponseDTO.IndustryAllocationDTO;
 import com.agentsbackend.DTO.response.GetAllocationResponseDTO.AssetClassAllocationDTO;
 import com.agentsbackend.services.PortfolioService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.agentsbackend.services.MissionAuthorizationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.core.MethodParameter;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -34,18 +38,42 @@ class PortfolioControllerTest {
     @Mock
     private PortfolioService portfolioService;
 
-    private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
+    @Mock
+    private MissionAuthorizationService authorizationService;
 
+    private MockMvc mockMvc;
     private UUID clientId;
     private UUID accountId;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new PortfolioController(portfolioService)).build();
-        objectMapper = new ObjectMapper();
         clientId = UUID.randomUUID();
         accountId = UUID.randomUUID();
+        mockMvc = MockMvcBuilders.standaloneSetup(new PortfolioController(portfolioService, authorizationService))
+                .setCustomArgumentResolvers(jwtResolver())
+            .build();
+    }
+
+    private HandlerMethodArgumentResolver jwtResolver() {
+        Jwt jwt = Jwt.withTokenValue("synthetic-token")
+                .header("alg", "RS256")
+                .subject(clientId.toString())
+                .build();
+        return new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.getParameterType().equals(Jwt.class);
+            }
+
+            @Override
+            public Object resolveArgument(MethodParameter parameter,
+                                          org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                                          NativeWebRequest webRequest,
+                                          org.springframework.web.bind.support.WebDataBinderFactory binderFactory)
+                    throws Exception {
+                return jwt;
+            }
+        };
     }
 
     @Test
