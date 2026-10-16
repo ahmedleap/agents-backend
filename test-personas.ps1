@@ -100,6 +100,7 @@ function Invoke-Backend {
 if ([string]::IsNullOrWhiteSpace($ClientEmail)) {
     $ClientEmail = "persona.client.$([guid]::NewGuid().ToString('N'))@example.test"
 }
+$clientPhone = "+1202" + (Get-Random -Minimum 1000000 -Maximum 9999999).ToString()
 
 Write-Host "Creating or locating client through middleware: $ClientEmail" -ForegroundColor Cyan
 $login = Invoke-JsonApi -Method POST -Url "$MiddlewareUrl/auth/login" -Body @{ email = $ClientEmail; password = $ClientPassword }
@@ -110,7 +111,7 @@ if ($login.Status -ne 200) {
         firstName = "Persona"
         lastName = "Client"
         dateOfBirth = "1990-01-15"
-        phoneNumber = "+12025550123"
+        phoneNumber = $clientPhone
         country = "US"
     }
     Assert-Status $signup @(201, 409) "middleware client signup"
@@ -188,7 +189,7 @@ Assert-Status (Invoke-Backend GET "/api/v1/orders/$orderOne" $clientToken) 200 "
 Assert-Status (Invoke-Backend GET "/api/instruments/search?q=$tickerOne" $clientToken) 200 "client instrument search"
 Assert-Status (Invoke-Backend GET "/api/instruments/$tickerOne" $clientToken) 200 "client instrument detail"
 Assert-Status (Invoke-Backend GET "/api/instruments/$tickerOne/quote" $clientToken) 200 "client instrument quote"
-Assert-Status (Invoke-Backend GET "/api/instruments/$tickerOne/history?period=30D" $clientToken) 200 "client instrument history"
+Assert-Status (Invoke-Backend GET "/api/instruments/$tickerOne/history?period=1Y" $clientToken) 200 "client instrument history"
 Assert-Status (Invoke-Backend GET "/api/v1/analytics/health" $clientToken) 403 "client analytics denial"
 Assert-Status (Invoke-Backend POST "/api/admins" $clientToken @{ firstName = "Denied"; lastName = "Client"; email = "denied-$clientId@example.test"; passwordHash = "unused"; role = "ADMIN" }) 403 "client admin denial"
 

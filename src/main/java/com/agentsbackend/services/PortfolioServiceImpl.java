@@ -47,7 +47,7 @@ public class PortfolioServiceImpl implements PortfolioService{
             .orElseThrow(() -> new AccountNotFoundException(accountId));
         
         // Verify the account belongs to the client to prevent unauthorized access
-        if (!account.getClient().getClientId().equals(clientId)) {
+        if (!clientId.equals(account.getClientId())) {
             throw new UnauthorizedAccountAccessException(clientId, accountId);
         }
 
@@ -149,7 +149,7 @@ public class PortfolioServiceImpl implements PortfolioService{
             .orElseThrow(() -> new AccountNotFoundException(accountId));
         
         // Prevent unauthorized access to accounts not owned by the client
-        if (!account.getClient().getClientId().equals(clientId)) {
+        if (!clientId.equals(account.getClientId())) {
             throw new UnauthorizedAccountAccessException(clientId, accountId);
         }
 
