@@ -234,7 +234,7 @@ if (-not $SkipStaff) {
         "/api/v1/analytics/dashboard/instrument-trend?startDate=2026-01-01&endDate=2026-01-31",
         "/api/v1/analytics/dashboard/most-active-instruments?limit=5",
         "/api/v1/analytics/dashboard/instrument-analysis?ticker=$tickerOne&startDate=2026-01-01&endDate=2026-01-31",
-        "/api/v1/analytics/dashboard/segment-trends?segmentType=riskTolerance&startDate=2026-01-01&endDate=2026-01-31",
+        "/api/v1/analytics/dashboard/segment-trends?segmentType=RISK_TOLERANCE&startDate=2026-01-01&endDate=2026-01-31",
         "/api/v1/analytics/dashboard/fulfillment-trends?startDate=2026-01-01&endDate=2026-01-31",
         "/api/v1/analytics/dashboard/asset-class-trends?startDate=2026-01-01&endDate=2026-01-31",
         "/api/v1/analytics/health"

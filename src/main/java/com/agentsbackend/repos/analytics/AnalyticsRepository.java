@@ -431,7 +431,7 @@ public interface AnalyticsRepository {
             "FROM fact_orders fo " +
             "JOIN dim_instruments di ON fo.instrument_id = di.instrument_id " +
             "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) = #{date} " +
-            "GROUP BY di.instrument_id, di.ticker, di.instrument_name, di.asset_class " +
+            "GROUP BY DATE(fo.created_at), di.instrument_id, di.ticker, di.instrument_name, di.asset_class " +
             "ORDER BY total_value DESC " +
             "LIMIT #{limit}")
     List<InstrumentTrendResponse> getTopInstrumentsForDate(@Param("date") LocalDate date, @Param("limit") Integer limit);
@@ -477,25 +477,23 @@ public interface AnalyticsRepository {
      * @param endDate End date
      * @return List of segment trends over time
      */
-    @Select("SELECT " +
-            "DATE(fo.created_at) as date, " +
+    @Select("SELECT source.date, source.segment, " +
+            "COUNT(*) as trade_count, " +
+            "COALESCE(SUM(source.quantity), 0) as total_volume, " +
+            "COALESCE(SUM(source.quantity * COALESCE(source.filled_price, source.limit_price)), 0) as total_value, " +
+            "COUNT(DISTINCT source.client_id) as active_client_count, " +
+            "COALESCE(AVG(source.quantity * COALESCE(source.filled_price, source.limit_price)), 0) as average_order_value " +
+            "FROM (SELECT DATE(fo.created_at) as date, " +
             "CASE WHEN #{segmentType} = 'RISK_TOLERANCE' THEN COALESCE(dc.risk_tolerance, 'UNKNOWN') " +
             "     WHEN #{segmentType} = 'PORTFOLIO_SIZE' THEN COALESCE(dc.portfolio_size_range, 'UNKNOWN') " +
             "     ELSE 'UNKNOWN' END as segment, " +
-            "COUNT(*) as trade_count, " +
-            "COALESCE(SUM(fo.quantity), 0) as total_volume, " +
-            "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value, " +
-            "COUNT(DISTINCT dc.client_id) as active_client_count, " +
-            "COALESCE(AVG(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as average_order_value " +
+            "fo.quantity, fo.filled_price, fo.limit_price, dc.client_id " +
             "FROM fact_orders fo " +
             "JOIN dim_accounts da ON fo.account_id = da.account_id " +
             "JOIN dim_clients dc ON da.client_id = dc.client_id " +
-            "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) BETWEEN #{startDate} AND #{endDate} " +
-            "GROUP BY DATE(fo.created_at), " +
-            "CASE WHEN #{segmentType} = 'RISK_TOLERANCE' THEN COALESCE(dc.risk_tolerance, 'UNKNOWN') " +
-            "     WHEN #{segmentType} = 'PORTFOLIO_SIZE' THEN COALESCE(dc.portfolio_size_range, 'UNKNOWN') " +
-            "     ELSE 'UNKNOWN' END " +
-            "ORDER BY DATE(fo.created_at) ASC")
+            "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) BETWEEN #{startDate} AND #{endDate}) source " +
+            "GROUP BY source.date, source.segment " +
+            "ORDER BY source.date ASC")
     List<SegmentTrendResponse> getSegmentTrend(@Param("segmentType") String segmentType,
                                                 @Param("startDate") LocalDate startDate,
                                                 @Param("endDate") LocalDate endDate);
