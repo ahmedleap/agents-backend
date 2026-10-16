@@ -153,7 +153,7 @@ Purpose:
   orders.
 
 Database source:
-  orders joined with accounts and instruments.
+  orders joined with accounts, clients, and instruments.
 
 Ordering:
   Newest created_at first.
@@ -168,6 +168,7 @@ Expected response shape:
     "orderId": "uuid",
     "accountId": "uuid",
     "clientId": "uuid",
+    "clientName": "First Middle Last",
     "instrumentId": "uuid",
     "ticker": "AAPL",
     "instrumentName": "Apple Inc.",
@@ -191,7 +192,7 @@ Purpose:
   Returns one order by order UUID.
 
 Database source:
-  orders joined with accounts and instruments WHERE order_id = {orderId}
+  orders joined with accounts, clients, and instruments WHERE order_id = {orderId}
 
 Response DTO:
   AdminOrderResponse
@@ -212,7 +213,7 @@ Data model:
   an orders row whose status is FILLED.
 
 Database source:
-  orders joined with accounts and instruments WHERE order_id = {tradeId}
+  orders joined with accounts, clients, and instruments WHERE order_id = {tradeId}
   AND status = 'FILLED'
 
 Response DTO:
@@ -343,7 +344,8 @@ AdminAccountResponse:
   Account identity, owning client, cash balance, status, and open date.
 
 AdminOrderResponse:
-  Order, account, client, instrument, pricing, status, and lifecycle dates.
+  Order, account, client ID and full client name, instrument, pricing, status,
+  and lifecycle dates.
 
 AdminAuditResponse:
   Audit event identity, related IDs, event type, timestamps, reason, and JSON

@@ -22,6 +22,7 @@ class AdminResponseDtoTest {
         UUID id = UUID.randomUUID();
         AdminClientResponse response = new AdminClientResponse();
         response.setClientId(id);
+        response.setClientName("First Middle Last");
         response.setFirstName("First");
         response.setMiddleName("Middle");
         response.setLastName("Last");
@@ -33,6 +34,7 @@ class AdminResponseDtoTest {
         response.setRiskTolerance(RiskTolerance.MODERATE);
 
         assertEquals(id, response.getClientId());
+        assertEquals("First Middle Last", response.getClientName());
         assertEquals("First", response.getFirstName());
         assertEquals("Middle", response.getMiddleName());
         assertEquals("Last", response.getLastName());
@@ -51,6 +53,7 @@ class AdminResponseDtoTest {
         AdminAccountResponse response = new AdminAccountResponse();
         response.setAccountId(accountId);
         response.setClientId(clientId);
+        response.setClientName("Client Name");
         response.setName("Account");
         response.setCashBalance(new BigDecimal("10.25"));
         response.setStatus(AccountStatus.ACTIVE);
@@ -58,6 +61,7 @@ class AdminResponseDtoTest {
 
         assertEquals(accountId, response.getAccountId());
         assertEquals(clientId, response.getClientId());
+        assertEquals("Client Name", response.getClientName());
         assertEquals("Account", response.getName());
         assertEquals(new BigDecimal("10.25"), response.getCashBalance());
         assertEquals(AccountStatus.ACTIVE, response.getStatus());
@@ -109,6 +113,7 @@ class AdminResponseDtoTest {
         audit.setOrderId(UUID.randomUUID());
         audit.setAccountId(UUID.randomUUID());
         audit.setClientId(UUID.randomUUID());
+        audit.setClientName("Client Name");
         audit.setEventTime(OffsetDateTime.parse("2026-01-01T00:00:00Z"));
         audit.setCreatedAt(OffsetDateTime.parse("2026-01-01T00:01:00Z"));
 
@@ -124,6 +129,7 @@ class AdminResponseDtoTest {
         assertEquals(audit.getOrderId(), audit.getOrderId());
         assertEquals(audit.getAccountId(), audit.getAccountId());
         assertEquals(audit.getClientId(), audit.getClientId());
+        assertEquals("Client Name", audit.getClientName());
         assertEquals(OffsetDateTime.parse("2026-01-01T00:00:00Z"), audit.getEventTime());
         assertEquals(OffsetDateTime.parse("2026-01-01T00:01:00Z"), audit.getCreatedAt());
         assertEquals(1L, report.getTotalOrders());
@@ -146,15 +152,15 @@ class AdminResponseDtoTest {
             new TradingActivityReportResponse();
             new AdminInsightsResponse();
 
-        AdminClientResponse client = new AdminClientResponse(id, "First", "Middle", "Last",
+        AdminClientResponse client = new AdminClientResponse(id, "First Middle Last", "First", "Middle", "Last",
             "client@example.test", LocalDate.of(1990, 1, 2), timestamp, "1234",
             PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE);
-        AdminAccountResponse account = new AdminAccountResponse(id, id, "Account",
+        AdminAccountResponse account = new AdminAccountResponse(id, id, "Client Name", "Account",
             new BigDecimal("10"), AccountStatus.ACTIVE, timestamp);
-        AdminOrderResponse order = new AdminOrderResponse(id, id, id, id, "TEST", "Test",
+        AdminOrderResponse order = new AdminOrderResponse(id, id, id, "Client Name", id, "TEST", "Test",
             OrderType.BUY, new BigDecimal("1"), new BigDecimal("10"), new BigDecimal("9"),
             OrderStatus.FILLED, timestamp, timestamp, null, null);
-        AdminAuditResponse audit = new AdminAuditResponse(id, id, id, id, "FILLED", timestamp,
+        AdminAuditResponse audit = new AdminAuditResponse(id, id, id, id, "Client Name", "FILLED", timestamp,
             "done", "{}", timestamp);
         TradingActivityReportResponse report = new TradingActivityReportResponse(1L, 1L, 0L, 0L,
             new BigDecimal("1"), new BigDecimal("9"));
@@ -173,15 +179,15 @@ class AdminResponseDtoTest {
         insights.setFilledOrderCount(2L);
         insights.setTradedValue(new BigDecimal("27"));
 
-        assertEquals(client, new AdminClientResponse(id, "First", "Middle", "Last",
+        assertEquals(client, new AdminClientResponse(id, "First Middle Last", "First", "Middle", "Last",
             "client@example.test", LocalDate.of(1990, 1, 2), timestamp, "1234",
             PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE));
-        assertEquals(account, new AdminAccountResponse(id, id, "Account", new BigDecimal("10"),
+        assertEquals(account, new AdminAccountResponse(id, id, "Client Name", "Account", new BigDecimal("10"),
             AccountStatus.ACTIVE, timestamp));
-        assertEquals(order, new AdminOrderResponse(id, id, id, id, "TEST", "Test", OrderType.BUY,
+        assertEquals(order, new AdminOrderResponse(id, id, id, "Client Name", id, "TEST", "Test", OrderType.BUY,
             new BigDecimal("1"), new BigDecimal("10"), new BigDecimal("9"), OrderStatus.FILLED,
             timestamp, timestamp, null, null));
-        assertEquals(audit, new AdminAuditResponse(id, id, id, id, "FILLED", timestamp,
+        assertEquals(audit, new AdminAuditResponse(id, id, id, id, "Client Name", "FILLED", timestamp,
             "done", "{}", timestamp));
         assertEquals(report, report);
         assertEquals(insights, insights);

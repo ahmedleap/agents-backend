@@ -15,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminClientResponse {
     private UUID clientId;
+    private String clientName;
     private String firstName;
     private String middleName;
     private String lastName;

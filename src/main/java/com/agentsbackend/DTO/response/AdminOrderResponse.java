@@ -17,6 +17,7 @@ public class AdminOrderResponse {
     private UUID orderId;
     private UUID accountId;
     private UUID clientId;
+    private String clientName;
     private UUID instrumentId;
     private String ticker;
     private String instrumentName;

@@ -15,6 +15,7 @@ import java.util.UUID;
 public class AdminAccountResponse {
     private UUID accountId;
     private UUID clientId;
+    private String clientName;
     private String name;
     private BigDecimal cashBalance;
     private AccountStatus status;

@@ -42,12 +42,14 @@ class AdminReadControllerTest {
         UUID clientId = UUID.randomUUID();
         AdminClientResponse client = new AdminClientResponse();
         client.setClientId(clientId);
+        client.setClientName("First Middle Last");
         client.setEmail("client@example.com");
         when(adminService.getClients()).thenReturn(List.of(client));
 
         mockMvc.perform(get("/admin/clients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].clientId").value(clientId.toString()))
+                .andExpect(jsonPath("$[0].clientName").value("First Middle Last"))
                 .andExpect(jsonPath("$[0].email").value("client@example.com"));
 
         verify(adminService).getClients();
@@ -86,11 +88,13 @@ class AdminReadControllerTest {
         AdminAccountResponse account = new AdminAccountResponse();
         account.setAccountId(UUID.randomUUID());
         account.setClientId(UUID.randomUUID());
+        account.setClientName("First Last");
         when(adminService.getAccounts()).thenReturn(List.of(account));
 
         mockMvc.perform(get("/api/v1/admin/accounts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].accountId").value(account.getAccountId().toString()));
+            .andExpect(jsonPath("$[0].accountId").value(account.getAccountId().toString()))
+                .andExpect(jsonPath("$[0].clientName").value("First Last"));
 
         verify(adminService).getAccounts();
     }
@@ -113,11 +117,13 @@ class AdminReadControllerTest {
     void getOrdersReturnsOrders() throws Exception {
         AdminOrderResponse order = new AdminOrderResponse();
         order.setOrderId(UUID.randomUUID());
+        order.setClientName("First Middle Last");
         when(adminService.getOrders()).thenReturn(List.of(order));
 
         mockMvc.perform(get("/api/v1/admin/orders"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].orderId").value(order.getOrderId().toString()));
+                .andExpect(jsonPath("$[0].orderId").value(order.getOrderId().toString()))
+                .andExpect(jsonPath("$[0].clientName").value("First Middle Last"));
 
         verify(adminService).getOrders();
     }
@@ -127,11 +133,13 @@ class AdminReadControllerTest {
         UUID tradeId = UUID.randomUUID();
         AdminOrderResponse trade = new AdminOrderResponse();
         trade.setOrderId(tradeId);
+        trade.setClientName("First Last");
         when(adminService.getTrade(tradeId)).thenReturn(trade);
 
         mockMvc.perform(get("/api/v1/admin/trades/{tradeId}", tradeId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.orderId").value(tradeId.toString()));
+                .andExpect(jsonPath("$.orderId").value(tradeId.toString()))
+                .andExpect(jsonPath("$.clientName").value("First Last"));
 
         verify(adminService).getTrade(tradeId);
     }
@@ -141,11 +149,13 @@ class AdminReadControllerTest {
         UUID tradeId = UUID.randomUUID();
         AdminAuditResponse audit = new AdminAuditResponse();
         audit.setOrderId(tradeId);
+        audit.setClientName("First Last");
         when(adminService.getTradeAudit(tradeId)).thenReturn(List.of(audit));
 
         mockMvc.perform(get("/admin/trades/{tradeId}/audit", tradeId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].orderId").value(tradeId.toString()));
+            .andExpect(jsonPath("$[0].orderId").value(tradeId.toString()))
+                .andExpect(jsonPath("$[0].clientName").value("First Last"));
 
         verify(adminService).getTradeAudit(tradeId);
     }

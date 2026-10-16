@@ -15,6 +15,7 @@ public class AdminAuditResponse {
     private UUID orderId;
     private UUID accountId;
     private UUID clientId;
+    private String clientName;
     private String eventType;
     private OffsetDateTime eventTime;
     private String reason;
