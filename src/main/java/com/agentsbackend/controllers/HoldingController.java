@@ -2,8 +2,6 @@ package com.agentsbackend.controllers;
 
 
 import com.agentsbackend.DTO.response.GetHoldingResponseDTO;
-import com.agentsbackend.entities.Holding;
-import com.agentsbackend.repos.transactional.HoldingRepository;
 import com.agentsbackend.services.HoldingService;
 import com.agentsbackend.services.MissionAuthorizationService;
 import org.springframework.http.HttpStatus;
@@ -11,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 
-import java.util.List;
 import java.util.UUID;
 
 

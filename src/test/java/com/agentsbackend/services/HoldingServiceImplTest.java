@@ -5,7 +5,6 @@ import com.agentsbackend.entities.Account;
 import com.agentsbackend.entities.Client;
 import com.agentsbackend.entities.Holding;
 import com.agentsbackend.entities.Instrument;
-import com.agentsbackend.entities.Order;
 import com.agentsbackend.enums.AssetClass;
 import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.repos.transactional.AccountRepository;

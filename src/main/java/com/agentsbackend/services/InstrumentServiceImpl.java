@@ -5,7 +5,6 @@ import com.agentsbackend.repos.transactional.InstrumentRepository;
 import com.agentsbackend.repos.transactional.InstrumentPriceHistoryRepository;
 import com.agentsbackend.entities.Instrument;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -11,6 +11,10 @@ param(
     [string]$DatabaseUrl,
     [string]$ClientEmail = "",
     [string]$ClientPassword = "Password123!",
+    [string]$AdminEmail = "john.admin@platform.com",
+    [string]$AdminPassword = "",
+    [string]$AnalystEmail = "sarah.analyst@platform.com",
+    [string]$AnalystPassword = "",
     [string]$AdminToken = "",
     [string]$AnalystToken = "",
     [switch]$SkipStaff
@@ -97,6 +101,28 @@ function Invoke-Backend {
     return Invoke-JsonApi -Method $Method -Url ($ApiUrl + $Path) -Token $Token -Body $Body
 }
 
+function Get-StaffToken {
+    param([string]$Email, [string]$Password, [string]$ExpectedRole)
+
+    if ([string]::IsNullOrWhiteSpace($Email) -or [string]::IsNullOrWhiteSpace($Password)) {
+        Fail-Test "Supply -$($ExpectedRole.Substring(0, 1) + $ExpectedRole.Substring(1).ToLowerInvariant())Email and password, or provide -$($ExpectedRole.Substring(0, 1) + $ExpectedRole.Substring(1).ToLowerInvariant())Token."
+    }
+
+    Write-Host "Logging in $ExpectedRole through middleware: $Email" -ForegroundColor Cyan
+    $response = Invoke-JsonApi -Method POST -Url "$MiddlewareUrl/auth/admin/login" -Body @{
+        email = $Email
+        password = $Password
+    }
+    Assert-Status $response 200 "$ExpectedRole middleware login"
+
+    $role = Get-RequiredProperty $response.Body.user "role" "$ExpectedRole middleware login"
+    if ($role.ToString().ToUpperInvariant() -ne $ExpectedRole) {
+        Fail-Test "$ExpectedRole middleware login returned role '$role'."
+    }
+
+    return Get-RequiredProperty $response.Body "accessToken" "$ExpectedRole middleware login"
+}
+
 if ([string]::IsNullOrWhiteSpace($ClientEmail)) {
     $ClientEmail = "persona.client.$([guid]::NewGuid().ToString('N'))@example.test"
 }
@@ -111,6 +137,7 @@ if ($login.Status -ne 200) {
         firstName = "Persona"
         lastName = "Client"
         dateOfBirth = "1990-01-15"
+        ssn = "123456789"
         phoneNumber = $clientPhone
         country = "US"
     }
@@ -127,12 +154,8 @@ $instrumentOne = [guid]::NewGuid()
 $instrumentTwo = [guid]::NewGuid()
 $holdingOne = [guid]::NewGuid()
 $orderOne = [guid]::NewGuid()
-$adminId = [guid]::NewGuid()
-$analystId = [guid]::NewGuid()
 $tickerOne = "P" + ([guid]::NewGuid().ToString('N').Substring(0, 8)).ToUpperInvariant()
 $tickerTwo = "Q" + ([guid]::NewGuid().ToString('N').Substring(0, 8)).ToUpperInvariant()
-$fixtureEmail = "persona.admin.$([guid]::NewGuid().ToString('N'))@example.test"
-$analystEmail = "persona.analyst.$([guid]::NewGuid().ToString('N'))@example.test"
 
 $sql = @"
 BEGIN;
@@ -150,10 +173,6 @@ INSERT INTO transactions (transaction_id, account_id, txn_type, amount, created_
 VALUES (gen_random_uuid(), '$accountOne', 'DEPOSIT', 100000.00, CURRENT_TIMESTAMP);
 INSERT INTO orders (order_id, account_id, instrument_id, order_type, quantity, limit_price, status, created_at)
 VALUES ('$orderOne', '$accountOne', '$instrumentOne', 'BUY', 1.000000, 100.0000, 'PENDING', CURRENT_TIMESTAMP);
-INSERT INTO admin (admin_id, first_name, last_name, email, password_hash, role, created_at)
-VALUES ('$adminId', 'Persona', 'Admin', '$fixtureEmail', 'middleware-issued-token-required', 'ADMIN', CURRENT_TIMESTAMP),
-       ('$analystId', 'Persona', 'Analyst', '$analystEmail', 'middleware-issued-token-required', 'ANALYST', CURRENT_TIMESTAMP)
-ON CONFLICT (email) DO NOTHING;
 COMMIT;
 "@
 
@@ -194,8 +213,11 @@ Assert-Status (Invoke-Backend GET "/api/v1/analytics/health" $clientToken) 403 "
 Assert-Status (Invoke-Backend POST "/api/admins" $clientToken @{ firstName = "Denied"; lastName = "Client"; email = "denied-$clientId@example.test"; passwordHash = "unused"; role = "ADMIN" }) 403 "client admin denial"
 
 if (-not $SkipStaff) {
-    if ([string]::IsNullOrWhiteSpace($AnalystToken) -or [string]::IsNullOrWhiteSpace($AdminToken)) {
-        Fail-Test "Supply -AnalystToken and -AdminToken, or use -SkipStaff. Middleware currently does not issue staff tokens."
+    if ([string]::IsNullOrWhiteSpace($AnalystToken)) {
+        $AnalystToken = Get-StaffToken -Email $AnalystEmail -Password $AnalystPassword -ExpectedRole "ANALYST"
+    }
+    if ([string]::IsNullOrWhiteSpace($AdminToken)) {
+        $AdminToken = Get-StaffToken -Email $AdminEmail -Password $AdminPassword -ExpectedRole "ADMIN"
     }
 
     # ANALYST: analytics and read-only market/order access work; client mutations do not.
@@ -226,7 +248,8 @@ if (-not $SkipStaff) {
     Assert-Status (Invoke-Backend POST "/api/v1/orders" $AnalystToken @{ accountId = $accountOne; instrumentId = $instrumentOne; orderType = "BUY"; quantity = 1 }) 403 "analyst order-create denial"
 
     # ADMIN: admin operations and approved read access work; analytics remain analyst-only.
-    Assert-Status (Invoke-Backend POST "/api/admins" $AdminToken @{ firstName = "Smoke"; lastName = "Admin"; email = "created-$adminId@example.test"; passwordHash = "unused"; role = "ADMIN" }) 201 "admin create-admin"
+    $createdAdminEmail = "created.admin.$([guid]::NewGuid().ToString('N'))@example.test"
+    Assert-Status (Invoke-Backend POST "/api/admins" $AdminToken @{ firstName = "Smoke"; lastName = "Admin"; email = $createdAdminEmail; passwordHash = "unused"; role = "ADMIN" }) 201 "admin create-admin"
     Assert-Status (Invoke-Backend GET "/api/v1/orders/$orderOne" $AdminToken) 200 "admin order read"
     Assert-Status (Invoke-Backend GET "/api/instruments/search?q=$tickerOne" $AdminToken) 200 "admin market data"
     Assert-Status (Invoke-Backend GET "/api/v1/analytics/health" $AdminToken) 403 "admin analytics denial"
@@ -235,5 +258,3 @@ if (-not $SkipStaff) {
 
 Write-Host "[PASS] Persona smoke test completed." -ForegroundColor Green
 Write-Host "[INFO] Client: $clientId" -ForegroundColor Gray
-Write-Host "[INFO] Admin fixture: $fixtureEmail" -ForegroundColor Gray
-Write-Host "[INFO] Analyst fixture: $analystEmail" -ForegroundColor Gray

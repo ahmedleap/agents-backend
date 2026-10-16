@@ -117,5 +117,4 @@ public interface AuthRepository {
             "AND refresh_expires_at > CURRENT_TIMESTAMP " +
             "AND last_active > CURRENT_TIMESTAMP - INTERVAL '30 minutes' ORDER BY last_active DESC")
     List<AuthSession> findActiveSessions(@Param("clientId") UUID clientId);
-
 }

@@ -2,8 +2,6 @@ package com.agentsbackend.repos.analytics;
 
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Param;
-import com.agentsbackend.entities.DimClient;
-import com.agentsbackend.entities.DimAccount;
 import com.agentsbackend.DTO.response.PlatformMetricsResponse;
 import com.agentsbackend.DTO.response.TopInstrumentResponse;
 import com.agentsbackend.DTO.response.AssetClassMetricsResponse;
@@ -14,7 +12,6 @@ import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
-import com.agentsbackend.DTO.response.ClientActivityTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
 import com.agentsbackend.DTO.response.FulfillmentTrendResponse;

@@ -60,6 +60,11 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/admins/**")
                     .hasRole("ADMIN")
 
+                .requestMatchers(
+                    "/admin/**",
+                    "/api/v1/admin/**"
+                ).hasRole("ADMIN")
+
                 .requestMatchers("/api/v1/analytics/**")
                     .hasRole("ANALYST")
 

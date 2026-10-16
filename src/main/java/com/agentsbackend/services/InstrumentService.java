@@ -1,7 +1,6 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
-import java.util.List;
 
 /**
  * Service interface for Instrument and market data operations.

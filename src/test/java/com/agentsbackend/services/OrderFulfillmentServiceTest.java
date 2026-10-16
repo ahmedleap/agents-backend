@@ -79,7 +79,7 @@ class OrderFulfillmentServiceTest {
         UUID clientId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
@@ -111,7 +111,7 @@ class OrderFulfillmentServiceTest {
         UUID clientId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal bidPrice = midPrice.subtract(new BigDecimal("0.50"));  // 49.50
+        BigDecimal bidPrice = midPrice.subtract(new BigDecimal("0.50"));
         BigDecimal quantity = new BigDecimal("50.00");
 
         Order order = createSellMarketOrder(orderId, accountId, instrumentId, quantity);
@@ -290,7 +290,7 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
@@ -402,7 +402,7 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
+        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));
         BigDecimal quantity = new BigDecimal("100.00");
 
         Order order = createBuyMarketOrder(orderId, accountId, instrumentId, quantity);
@@ -429,7 +429,6 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal askPrice = midPrice.add(new BigDecimal("0.50"));  // 50.50
         BigDecimal quantity = new BigDecimal("100.00");
         BigDecimal initialCash = new BigDecimal("10000.00");
 
@@ -459,7 +458,6 @@ class OrderFulfillmentServiceTest {
         UUID accountId = UUID.randomUUID();
         UUID instrumentId = UUID.randomUUID();
         BigDecimal midPrice = new BigDecimal("50.00");
-        BigDecimal bidPrice = midPrice.subtract(new BigDecimal("0.50"));  // 49.50
         BigDecimal quantity = new BigDecimal("100.00");
         BigDecimal initialCash = new BigDecimal("1000.00");
 

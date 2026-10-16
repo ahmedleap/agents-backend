@@ -9,7 +9,6 @@ import com.agentsbackend.entities.Holding;
 import com.agentsbackend.exceptions.AccountNotFoundException;
 import com.agentsbackend.exceptions.ClientNotFoundException;
 import com.agentsbackend.exceptions.UnauthorizedAccountAccessException;
-import com.agentsbackend.exceptions.HoldingNotFoundException;
 import com.agentsbackend.repos.transactional.AccountRepository;
 import com.agentsbackend.repos.transactional.ClientRepository;
 import com.agentsbackend.repos.transactional.InstrumentRepository;

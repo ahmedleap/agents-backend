@@ -2,6 +2,7 @@ package com.agentsbackend.config;
 
 import com.agentsbackend.controllers.AccountController;
 import com.agentsbackend.controllers.AdminController;
+import com.agentsbackend.controllers.AdminReadController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
 import com.agentsbackend.repos.transactional.AccountRepository;
@@ -217,6 +218,13 @@ class JwtRoleAuthorizationTest {
         verify(watchlistService, never()).findByClientId(OTHER_CLIENT_ID);
     }
 
+        @Test
+        void clientCannotAccessAdminReadApi() throws Exception {
+                mockMvc.perform(get("/api/v1/admin/clients")
+                                                .with(jwtWithRole("CLIENT")))
+                                .andExpect(status().isForbidden());
+        }
+
     @Test
     void pendingOrderReadRequiresAccountScope() throws Exception {
         mockMvc.perform(get("/api/v1/orders/pending")
@@ -248,7 +256,7 @@ class JwtRoleAuthorizationTest {
     @EnableWebMvc
     @EnableWebSecurity
         @Import({JwtSecurityConfig.class, AccountController.class, AdminController.class,
-                OrderController.class, WatchlistController.class})
+                AdminReadController.class, OrderController.class, WatchlistController.class})
     static class TestApplication {
         @Bean AccountService accountService() { return mock(AccountService.class); }
         @Bean AdminService adminService() { return mock(AdminService.class); }
