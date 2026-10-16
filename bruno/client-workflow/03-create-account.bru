@@ -1,0 +1,33 @@
+meta {
+  name: Create client account
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{apiUrl}}/api/accounts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "clientId": "{{clientId}}",
+    "name": "{{accountName}}",
+    "initialCashBalance": {{initialCashBalance}}
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("accountId", res.body.accountId);
+  }
+}
