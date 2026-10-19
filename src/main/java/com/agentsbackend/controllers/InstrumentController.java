@@ -7,6 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST Controller for Market Data API endpoints.
@@ -20,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/instruments")
+@Tag(name = "Instruments", description = "Instrument search, quotes, and historical market data")
+@SecurityRequirement(name = "bearerAuth")
 public class InstrumentController {
 
     private static final Logger log = LoggerFactory.getLogger(InstrumentController.class);
@@ -51,7 +59,13 @@ public class InstrumentController {
      * @throws IllegalArgumentException if query is null or invalid length
      */
     @GetMapping("/search")
+    @Operation(summary = "Search instruments", description = "Searches instruments by ticker or company name.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Search results returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid search query")
+    })
     public ResponseEntity<InstrumentResponse.SearchResultWrapper> searchInstruments(
+            @Parameter(description = "Ticker or company name to search for", example = "AAPL", required = true)
             @RequestParam(value = "q") String q) {
         log.debug("Search instruments with query: {}", q);
         
@@ -88,7 +102,13 @@ public class InstrumentController {
      * @return ResponseEntity with InstrumentDetail (HTTP 200) or 404 if not found
      */
     @GetMapping("/{ticker}")
+    @Operation(summary = "Get instrument details", description = "Returns detailed information for an instrument ticker.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Instrument details returned"),
+        @ApiResponse(responseCode = "404", description = "Instrument not found")
+    })
     public ResponseEntity<InstrumentResponse.InstrumentDetail> getInstrumentDetails(
+            @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
             @PathVariable String ticker) {
         log.debug("Get instrument details for ticker: {}", ticker);
         
@@ -127,7 +147,14 @@ public class InstrumentController {
      * @return ResponseEntity with Quote (HTTP 200) or 404 if not found
      */
     @GetMapping("/{ticker}/quote")
+    @Operation(summary = "Get current quote", description = "Returns the current market quote, using cached data when the upstream market data provider is unavailable.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Current quote returned"),
+        @ApiResponse(responseCode = "404", description = "Instrument not found"),
+        @ApiResponse(responseCode = "503", description = "Market data service unavailable")
+    })
     public ResponseEntity<InstrumentResponse.Quote> getCurrentQuote(
+            @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
             @PathVariable String ticker) {
         log.debug("Get current quote for ticker: {}", ticker);
         
@@ -187,8 +214,15 @@ public class InstrumentController {
      * @return ResponseEntity with HistoryResponse (HTTP 200) or 404 if not found
      */
     @GetMapping("/{ticker}/history")
+    @Operation(summary = "Get historical prices", description = "Returns OHLCV historical price data for an instrument and period.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Historical prices returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid ticker or period")
+    })
     public ResponseEntity<InstrumentResponse.HistoryResponse> getHistoricalPrices(
+            @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
             @PathVariable String ticker,
+            @Parameter(description = "Historical range: 1D, 1W, 1M, 3M, 6M, 1Y, or ALL", example = "1Y")
             @RequestParam(value = "period", defaultValue = "1Y") String period) {
         log.debug("Get historical prices for ticker: {} with period: {}", ticker, period);
         
