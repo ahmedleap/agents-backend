@@ -51,8 +51,18 @@ public class InstrumentServiceImpl implements InstrumentService {
 
         List<Instrument> results = instrumentRepository.searchByTickerOrName(query.trim());
         
-        List<InstrumentResponse.SearchResult> searchResults = results.stream()
+        return toSearchResultWrapper(results);
+    }
+
+    @Override
+    public InstrumentResponse.SearchResultWrapper getAllInstruments() {
+        return toSearchResultWrapper(instrumentRepository.findAll());
+    }
+
+    private InstrumentResponse.SearchResultWrapper toSearchResultWrapper(List<Instrument> instruments) {
+        List<InstrumentResponse.SearchResult> searchResults = instruments.stream()
             .map(instrument -> InstrumentResponse.SearchResult.builder()
+                .instrumentId(instrument.getInstrumentId())
                 .ticker(instrument.getTicker())
                 .name(instrument.getName())
                 .assetClass(instrument.getAssetClass() != null ? instrument.getAssetClass().toString() : null)

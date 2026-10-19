@@ -40,6 +40,15 @@ public interface InstrumentRepository {
     List<Instrument> searchByTickerOrName(@Param("query") String query);
 
     /**
+     * List all instruments for instrument pickers and the trades page.
+     *
+     * @return all instruments ordered by ticker
+     */
+    @Select("SELECT instrument_id, ticker, name, asset_class, industry, bid, ask, mid_price, price_updated_at " +
+            "FROM instruments ORDER BY ticker ASC")
+    List<Instrument> findAll();
+
+    /**
      * Find instrument by ticker symbol.
      * Used by GET /instruments/{ticker} and GET /instruments/{ticker}/quote
      *

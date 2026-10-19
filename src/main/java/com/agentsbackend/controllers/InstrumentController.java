@@ -39,6 +39,17 @@ public class InstrumentController {
     }
 
     /**
+     * List all instruments for the trades page.
+     * GET /api/instruments
+     */
+    @GetMapping
+    @Operation(summary = "List all instruments", description = "Returns all available instruments ordered by ticker. Use the search endpoint for filtering.")
+    @ApiResponse(responseCode = "200", description = "All instruments returned")
+    public ResponseEntity<InstrumentResponse.SearchResultWrapper> listInstruments() {
+        return ResponseEntity.ok(instrumentService.getAllInstruments());
+    }
+
+    /**
      * Search for instruments by ticker or company name.
      * GET /api/instruments/search?q=aapl
      *
@@ -109,7 +120,7 @@ public class InstrumentController {
     })
     public ResponseEntity<InstrumentResponse.InstrumentDetail> getInstrumentDetails(
             @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
-            @PathVariable String ticker) {
+            @PathVariable("ticker") String ticker) {
         log.debug("Get instrument details for ticker: {}", ticker);
         
         try {
@@ -155,7 +166,7 @@ public class InstrumentController {
     })
     public ResponseEntity<InstrumentResponse.Quote> getCurrentQuote(
             @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
-            @PathVariable String ticker) {
+            @PathVariable("ticker") String ticker) {
         log.debug("Get current quote for ticker: {}", ticker);
         
         try {
@@ -221,7 +232,7 @@ public class InstrumentController {
     })
     public ResponseEntity<InstrumentResponse.HistoryResponse> getHistoricalPrices(
             @Parameter(description = "Instrument ticker symbol", example = "AAPL", required = true)
-            @PathVariable String ticker,
+            @PathVariable("ticker") String ticker,
             @Parameter(description = "Historical range: 1D, 1W, 1M, 3M, 6M, 1Y, or ALL", example = "1Y")
             @RequestParam(value = "period", defaultValue = "1Y") String period) {
         log.debug("Get historical prices for ticker: {} with period: {}", ticker, period);

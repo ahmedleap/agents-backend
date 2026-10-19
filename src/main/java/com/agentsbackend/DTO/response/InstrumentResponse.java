@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * InstrumentResponse - Wrapper for all market data API responses.
@@ -12,6 +13,7 @@ import java.util.List;
 public class InstrumentResponse {
 
     public static class SearchResult {
+        private UUID instrumentId;
         private String ticker;
         private String name;
         private String assetClass;
@@ -27,12 +29,28 @@ public class InstrumentResponse {
             this.industry = industry;
         }
 
+        public SearchResult(UUID instrumentId, String ticker, String name, String assetClass, String industry) {
+            this.instrumentId = instrumentId;
+            this.ticker = ticker;
+            this.name = name;
+            this.assetClass = assetClass;
+            this.industry = industry;
+        }
+
         public static SearchResultBuilder builder() {
             return new SearchResultBuilder();
         }
 
         public String getTicker() {
             return ticker;
+        }
+
+        public UUID getInstrumentId() {
+            return instrumentId;
+        }
+
+        public void setInstrumentId(UUID instrumentId) {
+            this.instrumentId = instrumentId;
         }
 
         public void setTicker(String ticker) {
@@ -64,6 +82,7 @@ public class InstrumentResponse {
         }
 
         public static class SearchResultBuilder {
+            private UUID instrumentId;
             private String ticker;
             private String name;
             private String assetClass;
@@ -71,6 +90,11 @@ public class InstrumentResponse {
 
             public SearchResultBuilder ticker(String ticker) {
                 this.ticker = ticker;
+                return this;
+            }
+
+            public SearchResultBuilder instrumentId(UUID instrumentId) {
+                this.instrumentId = instrumentId;
                 return this;
             }
 
@@ -90,7 +114,7 @@ public class InstrumentResponse {
             }
 
             public SearchResult build() {
-                return new SearchResult(ticker, name, assetClass, industry);
+                return new SearchResult(instrumentId, ticker, name, assetClass, industry);
             }
         }
     }

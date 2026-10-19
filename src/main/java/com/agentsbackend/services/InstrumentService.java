@@ -27,6 +27,12 @@ public interface InstrumentService {
     InstrumentResponse.SearchResultWrapper searchInstruments(String query);
 
     /**
+     * List all instruments for the trades page and instrument pickers.
+     * Used by GET /api/instruments.
+     */
+    InstrumentResponse.SearchResultWrapper getAllInstruments();
+
+    /**
      * Get detailed instrument information including company profile.
      * Used by GET /instruments/{ticker}
      * Cached for 1 hour (asset class, industry, shares outstanding don't change frequently).
