@@ -150,14 +150,15 @@ public interface AccountRepository {
     /**
      * Get total portfolio value (sum of all holdings * current price).
      * Used for portfolio summary and performance calculations.
+     * Prices at the live mid price ((bid + ask) / 2), the same price the portfolio
+     * endpoints use (HoldingServiceImpl.getCurrentPrice), so both report the same value.
      *
      * @param accountId UUID of the account
-     * @return Total value of all holdings, or null if no holdings
+     * @return Total value of all holdings, or 0 if no holdings
      */
-    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(ip.close, 0)), 0) FROM holdings h " +
-            "LEFT JOIN instrument_price_history ip ON h.instrument_id = ip.instrument_id " +
-            "WHERE h.account_id = #{accountId,jdbcType=OTHER} " +
-            "AND ip.timestamp = (SELECT MAX(timestamp) FROM instrument_price_history WHERE instrument_id = h.instrument_id)")
+    @Select("SELECT COALESCE(SUM(h.quantity * COALESCE(i.mid_price, 0)), 0) FROM holdings h " +
+            "JOIN instruments i ON h.instrument_id = i.instrument_id " +
+            "WHERE h.account_id = #{accountId,jdbcType=OTHER}")
     BigDecimal getPortfolioValue(@Param("accountId") UUID accountId);
 
     /**

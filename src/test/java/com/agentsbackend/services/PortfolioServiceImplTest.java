@@ -192,7 +192,7 @@ class PortfolioServiceImplTest {
         account2.setAccountId(accountId2);
         account2.setName("Account 2");
         account2.setClient(testClient);
-            account2.setClientId(clientId);
+        account2.setClientId(clientId);
 
         GetHoldingResponseDTO holding1 = new GetHoldingResponseDTO();
         holding1.setQuantity(new BigDecimal("10"));
