@@ -381,6 +381,9 @@ class OrderServiceImplTest {
         List<Order> orders = new ArrayList<>();
         Order order1 = new Order();
         order1.setOrderId(UUID.randomUUID());
+        Instrument instrument = new Instrument();
+        instrument.setTicker("AAPL");
+        order1.setInstrument(instrument);
         order1.setOrderType(OrderType.BUY);
         order1.setQuantity(new BigDecimal("100.00"));
         order1.setStatus(OrderStatus.FILLED);
@@ -395,6 +398,7 @@ class OrderServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
+        assertEquals("AAPL", result.get(0).getTicker());
         verify(accountRepository).findById(accountId);
         verify(orderRepository).findAllByAccount(accountId);
     }

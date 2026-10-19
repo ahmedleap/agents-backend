@@ -11,6 +11,7 @@ import com.agentsbackend.enums.OrderStatus;
 public class OrderSummaryResponse {
 
     private UUID orderId;
+    private String ticker;
     private OrderType orderType;
     private Integer quantity;
     private BigDecimal limitPrice;
@@ -30,6 +31,17 @@ public class OrderSummaryResponse {
         this.status = status;
     }
 
+    public OrderSummaryResponse(UUID orderId, String ticker, OrderType orderType, Integer quantity,
+                               BigDecimal limitPrice, BigDecimal filledPrice, OrderStatus status) {
+        this.orderId = orderId;
+        this.ticker = ticker;
+        this.orderType = orderType;
+        this.quantity = quantity;
+        this.limitPrice = limitPrice;
+        this.filledPrice = filledPrice;
+        this.status = status;
+    }
+
     // Getters and Setters
     public UUID getOrderId() {
         return orderId;
@@ -37,6 +49,14 @@ public class OrderSummaryResponse {
 
     public void setOrderId(UUID orderId) {
         this.orderId = orderId;
+    }
+
+    public String getTicker() {
+        return ticker;
+    }
+
+    public void setTicker(String ticker) {
+        this.ticker = ticker;
     }
 
     public OrderType getOrderType() {

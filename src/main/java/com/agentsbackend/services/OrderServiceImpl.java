@@ -566,6 +566,7 @@ public class OrderServiceImpl implements OrderService {
         for (Order order : orders) {
             summaries.add(new OrderSummaryResponse(
                 order.getOrderId(),
+                order.getInstrument() != null ? order.getInstrument().getTicker() : null,
                 order.getOrderType(),
                 order.getQuantity().intValue(),
                 order.getLimitPrice(),
