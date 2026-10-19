@@ -54,6 +54,11 @@ public class JwtSecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
+                .requestMatchers(
                     "/api/accounts/**",
                     "/api/watchlists/**"
                 ).hasRole("CLIENT")
