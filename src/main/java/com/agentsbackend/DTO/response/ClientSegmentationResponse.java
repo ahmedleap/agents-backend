@@ -1,6 +1,5 @@
 package com.agentsbackend.DTO.response;
 
-import java.util.UUID;
 import java.math.BigDecimal;
 
 /**

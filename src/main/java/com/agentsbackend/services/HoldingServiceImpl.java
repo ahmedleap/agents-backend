@@ -23,7 +23,6 @@ import java.util.UUID;
 public class HoldingServiceImpl implements HoldingService {
 
     private final HoldingRepository holdingRepository;
-    private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
     private static final Logger logger = LoggerFactory.getLogger(HoldingServiceImpl.class);
     
@@ -33,7 +32,6 @@ public class HoldingServiceImpl implements HoldingService {
                              AccountRepository accountRepository,
                              InstrumentRepository instrumentRepository) {
         this.holdingRepository = holdingRepository;
-        this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
     }
     

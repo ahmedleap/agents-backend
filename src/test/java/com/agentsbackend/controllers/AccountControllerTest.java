@@ -3,6 +3,7 @@ package com.agentsbackend.controllers;
 import com.agentsbackend.DTO.requests.AccountsRequest;
 import com.agentsbackend.DTO.response.AccountsResponse;
 import com.agentsbackend.services.AccountService;
+import com.agentsbackend.services.MissionAuthorizationService;
 import com.agentsbackend.services.TransactionsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.core.MethodParameter;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -46,6 +51,9 @@ class AccountControllerTest {
     @Mock
     private TransactionsService transactionsService;
 
+        @Mock
+        private MissionAuthorizationService authorizationService;
+
     @InjectMocks
     private AccountController accountController;
 
@@ -54,14 +62,35 @@ class AccountControllerTest {
     private UUID accountId;
     private UUID clientId;
     private UUID testAccountId;
+        private Jwt clientJwt;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(accountController).build();
         objectMapper = new ObjectMapper();
         accountId = UUID.randomUUID();
         clientId = UUID.randomUUID();
         testAccountId = UUID.randomUUID();
+        clientJwt = Jwt.withTokenValue("synthetic-token")
+                .header("alg", "RS256")
+                .subject(clientId.toString())
+                .build();
+        mockMvc = MockMvcBuilders.standaloneSetup(accountController)
+                                .setCustomArgumentResolvers(new HandlerMethodArgumentResolver() {
+                                        @Override
+                                        public boolean supportsParameter(MethodParameter parameter) {
+                                                return parameter.getParameterType().equals(Jwt.class);
+                                        }
+
+                                        @Override
+                                            public Object resolveArgument(MethodParameter parameter,
+                                                                          org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                                                                          NativeWebRequest webRequest,
+                                                                                                  org.springframework.web.bind.support.WebDataBinderFactory binderFactory)
+                                                        throws Exception {
+                                                return clientJwt;
+                                        }
+                                })
+                .build();
     }
 
     // ==================== GET RECENT TRANSACTIONS TESTS ====================
@@ -90,7 +119,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 10);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 10);
 
         // Assert
         assertNotNull(response);
@@ -119,7 +148,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 10);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 10);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -157,7 +186,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 5);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 5);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -174,7 +203,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 10);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 10);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -191,7 +220,7 @@ class AccountControllerTest {
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class,
-                () -> accountController.getRecentTransactions(testAccountId, 10));
+                () -> accountController.getRecentTransactions(clientJwt, testAccountId, 10));
         verify(transactionsService, times(1)).getRecentTransactions(testAccountId, 10);
     }
 
@@ -213,7 +242,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 1);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -239,7 +268,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 100);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 100);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -267,7 +296,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 10);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 10);
 
         // Assert
         assertEquals(txnId1, response.getBody().get(0).getTransactionId());
@@ -290,7 +319,7 @@ class AccountControllerTest {
 
         // Act
         ResponseEntity<List<AccountsResponse.TransactionItem>> response =
-                accountController.getRecentTransactions(testAccountId, 10);
+                accountController.getRecentTransactions(clientJwt, testAccountId, 10);
 
         // Assert
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -309,37 +338,37 @@ class AccountControllerTest {
         accounts.add(account1);
         accounts.add(account2);
 
-        when(accountService.listAccounts()).thenReturn(accounts);
+        when(accountService.listAccounts(clientId)).thenReturn(accounts);
 
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(2));
 
-        verify(accountService, times(1)).listAccounts();
+        verify(accountService, times(1)).listAccounts(clientId);
     }
 
     @Test
     @DisplayName("Should list accounts with empty result")
     void testListAccounts_Empty() throws Exception {
-        when(accountService.listAccounts()).thenReturn(new ArrayList<>());
+        when(accountService.listAccounts(clientId)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(0));
 
-        verify(accountService).listAccounts();
+        verify(accountService).listAccounts(clientId);
     }
 
     @Test
     @DisplayName("Should call service method once for list accounts")
     void testListAccounts_ServiceMethodCalledOnce() throws Exception {
-        when(accountService.listAccounts()).thenReturn(new ArrayList<>());
+        when(accountService.listAccounts(clientId)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/api/accounts"));
 
-        verify(accountService).listAccounts();
+        verify(accountService).listAccounts(clientId);
     }
 
     // ==================== CREATE ACCOUNT TESTS ====================
@@ -684,7 +713,7 @@ class AccountControllerTest {
     @Test
     @DisplayName("All endpoints should respond with content type JSON")
     void testAllEndpoints_ResponseContentType() throws Exception {
-        when(accountService.listAccounts()).thenReturn(new ArrayList<>());
+        when(accountService.listAccounts(clientId)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
@@ -693,7 +722,7 @@ class AccountControllerTest {
     @Test
     @DisplayName("Should handle correct HTTP methods")
     void testCorrectHttpMethods() throws Exception {
-        when(accountService.listAccounts()).thenReturn(new ArrayList<>());
+        when(accountService.listAccounts(clientId)).thenReturn(new ArrayList<>());
 
         // GET should work
         mockMvc.perform(get("/api/accounts"))

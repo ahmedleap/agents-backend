@@ -1,6 +1,7 @@
 package com.agentsbackend.controllers;
 
 import com.agentsbackend.services.OrderService;
+import com.agentsbackend.services.MissionAuthorizationService;
 import com.agentsbackend.DTO.requests.CreateOrderRequest;
 import com.agentsbackend.DTO.requests.CancelOrderRequest;
 import com.agentsbackend.DTO.response.CreateOrderResponse;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.http.MediaType;
 
 import java.util.UUID;
@@ -30,13 +32,18 @@ class OrderControllerTest {
     @Mock
     private OrderService orderService;
 
+    @Mock
+    private MissionAuthorizationService authorizationService;
+
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        OrderController orderController = new OrderController(orderService);
-        mockMvc = MockMvcBuilders.standaloneSetup(orderController).build();
+        OrderController orderController = new OrderController(orderService, authorizationService);
+        mockMvc = MockMvcBuilders.standaloneSetup(orderController)
+            .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+            .build();
         objectMapper = new ObjectMapper();
     }
 
@@ -118,14 +125,14 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Should retrieve pending orders without account filter")
+    @DisplayName("Should reject pending orders without account filter")
     void testGetPendingOrdersWithoutFilter() throws Exception {
         // Act & Assert
         mockMvc.perform(get("/api/v1/orders/pending")
                 .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+            .andExpect(status().isBadRequest());
 
-        verify(orderService).getPendingOrders(any());
+        verify(orderService, never()).getPendingOrders(any());
     }
 
     @Test

@@ -40,12 +40,16 @@ ENV TZ=America/New_York
 RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser \
+    && mkdir -p /run/secrets \
+    && chown -R appuser:appuser /app /run/secrets
 USER appuser
 
 # Set environment variables
 ENV SPRING_PROFILES_ACTIVE=production
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0"
+# The public key is supplied at runtime as a read-only mounted secret.
+ENV JWT_PUBLIC_KEY_FILE=/run/secrets/jwt_public_key.pem
 
 # Expose the configured Spring Boot port
 EXPOSE 8080

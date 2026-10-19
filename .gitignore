@@ -27,4 +27,6 @@ test-api.ps1
 .vs/
 *.code-workspace
 
+.env
 *.pem
+issuer.py

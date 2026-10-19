@@ -2,7 +2,6 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.services.AnalyticsService;
 import com.agentsbackend.DTO.response.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -14,9 +13,7 @@ import org.springframework.http.MediaType;
 
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -30,14 +27,12 @@ class AnalyticsControllerTest {
     @Mock
     private AnalyticsService analyticsService;
 
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         AnalyticsController analyticsController = new AnalyticsController(analyticsService);
         mockMvc = MockMvcBuilders.standaloneSetup(analyticsController).build();
-        objectMapper = new ObjectMapper();
     }
 
     @Test

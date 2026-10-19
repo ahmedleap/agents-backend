@@ -15,6 +15,11 @@ public class Client {
     private String lastName;
     private String email;
     private String passwordHash;
+
+    private String phone;
+
+    private String country;
+    private boolean emailVerified;
     private LocalDate dateOfBirth;
     private OffsetDateTime joinDate;
     private String ssnLast4;
@@ -90,6 +95,30 @@ public class Client {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public LocalDate getDateOfBirth() {

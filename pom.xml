@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.agentsbackend</groupId>
     <artifactId>agents-backend</artifactId>
-    <version>0.11.0</version>
+    <version>0.13.0</version>
     <packaging>jar</packaging>
     <name>Agents Backend</name>
     <description>Spring Boot Backend for Agents System</description>
@@ -28,13 +28,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- Spring Data JPA (for annotations only, configured for MyBatis) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
         <!-- Spring Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -62,6 +55,36 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- BCrypt password hashing for the retained transitional Spring auth endpoints -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Verify signed access JWTs from the trusted identity issuer -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- Claims API used by the explicit JWT verification endpoint; verification keys remain JWKS-backed. -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
         <!-- Lombok for annotations like @Slf4j, @Data, @Builder -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -80,6 +103,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
