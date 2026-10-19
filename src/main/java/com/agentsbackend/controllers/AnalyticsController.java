@@ -243,9 +243,9 @@ public class AnalyticsController {
     })
     public ResponseEntity<List<VolumeTrendResponse>> getVolumeTrend(
             @Parameter(description = "Inclusive start date", example = "2026-10-01")
-            @RequestParam LocalDate startDate,
+            @RequestParam("startDate") LocalDate startDate,
             @Parameter(description = "Inclusive end date", example = "2026-10-19")
-            @RequestParam LocalDate endDate) {
+            @RequestParam("endDate") LocalDate endDate) {
         logger.info("GET /dashboard/volume-trend?startDate={}&endDate={}", startDate, endDate);
         
         try {
@@ -274,9 +274,9 @@ public class AnalyticsController {
     })
     public ResponseEntity<List<InstrumentTrendResponse>> getInstrumentTrend(
             @Parameter(description = "Inclusive start date", example = "2026-10-01")
-            @RequestParam LocalDate startDate,
+            @RequestParam("startDate") LocalDate startDate,
             @Parameter(description = "Inclusive end date", example = "2026-10-19")
-            @RequestParam LocalDate endDate) {
+            @RequestParam("endDate") LocalDate endDate) {
         logger.info("GET /dashboard/instrument-trend?startDate={}&endDate={}", startDate, endDate);
         
         try {

@@ -32,7 +32,7 @@ public class AdminReadController {
     }
 
     @GetMapping("/clients/{clientId}")
-    public ResponseEntity<AdminClientResponse> getClient(@PathVariable UUID clientId) {
+    public ResponseEntity<AdminClientResponse> getClient(@PathVariable("clientId") UUID clientId) {
         return ResponseEntity.ok(adminService.getClient(clientId));
     }
 
@@ -42,7 +42,7 @@ public class AdminReadController {
     }
 
     @GetMapping("/accounts/{accountId}")
-    public ResponseEntity<AdminAccountResponse> getAccount(@PathVariable UUID accountId) {
+    public ResponseEntity<AdminAccountResponse> getAccount(@PathVariable("accountId") UUID accountId) {
         return ResponseEntity.ok(adminService.getAccount(accountId));
     }
 
@@ -52,17 +52,17 @@ public class AdminReadController {
     }
 
     @GetMapping("/orders/{orderId}")
-    public ResponseEntity<AdminOrderResponse> getOrder(@PathVariable UUID orderId) {
+    public ResponseEntity<AdminOrderResponse> getOrder(@PathVariable("orderId") UUID orderId) {
         return ResponseEntity.ok(adminService.getOrder(orderId));
     }
 
     @GetMapping("/trades/{tradeId}")
-    public ResponseEntity<AdminOrderResponse> getTrade(@PathVariable UUID tradeId) {
+    public ResponseEntity<AdminOrderResponse> getTrade(@PathVariable("tradeId") UUID tradeId) {
         return ResponseEntity.ok(adminService.getTrade(tradeId));
     }
 
     @GetMapping("/trades/{tradeId}/audit")
-    public ResponseEntity<List<AdminAuditResponse>> getTradeAudit(@PathVariable UUID tradeId) {
+    public ResponseEntity<List<AdminAuditResponse>> getTradeAudit(@PathVariable("tradeId") UUID tradeId) {
         return ResponseEntity.ok(adminService.getTradeAudit(tradeId));
     }
 

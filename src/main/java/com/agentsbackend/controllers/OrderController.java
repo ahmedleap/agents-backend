@@ -110,7 +110,7 @@ public class OrderController {
     // HTTP GET endpoint for retrieving order history for an account
     @GetMapping
         @Operation(summary = "Get order history", description = "Returns order history for an account the caller may access.")
-    @ApiResponse(responseCode = "200", description = "Order history returned, including instrument ticker")
+    @ApiResponse(responseCode = "200", description = "Order history returned, including account ID, instrument ticker, and submission time")
     public ResponseEntity<List<OrderSummaryResponse>> getOrderHistory(
             @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Account whose order history should be returned", required = true)

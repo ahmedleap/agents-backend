@@ -2,6 +2,7 @@ package com.agentsbackend.DTO.response;
 
 import java.util.UUID;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import com.agentsbackend.enums.OrderType;
 import com.agentsbackend.enums.OrderStatus;
 
@@ -11,7 +12,9 @@ import com.agentsbackend.enums.OrderStatus;
 public class OrderSummaryResponse {
 
     private UUID orderId;
+    private UUID accountId;
     private String ticker;
+    private OffsetDateTime submittedAt;
     private OrderType orderType;
     private Integer quantity;
     private BigDecimal limitPrice;
@@ -42,6 +45,20 @@ public class OrderSummaryResponse {
         this.status = status;
     }
 
+    public OrderSummaryResponse(UUID orderId, UUID accountId, String ticker, OffsetDateTime submittedAt,
+                               OrderType orderType, Integer quantity, BigDecimal limitPrice,
+                               BigDecimal filledPrice, OrderStatus status) {
+        this.orderId = orderId;
+        this.accountId = accountId;
+        this.ticker = ticker;
+        this.submittedAt = submittedAt;
+        this.orderType = orderType;
+        this.quantity = quantity;
+        this.limitPrice = limitPrice;
+        this.filledPrice = filledPrice;
+        this.status = status;
+    }
+
     // Getters and Setters
     public UUID getOrderId() {
         return orderId;
@@ -51,12 +68,28 @@ public class OrderSummaryResponse {
         this.orderId = orderId;
     }
 
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(UUID accountId) {
+        this.accountId = accountId;
+    }
+
     public String getTicker() {
         return ticker;
     }
 
     public void setTicker(String ticker) {
         this.ticker = ticker;
+    }
+
+    public OffsetDateTime getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(OffsetDateTime submittedAt) {
+        this.submittedAt = submittedAt;
     }
 
     public OrderType getOrderType() {

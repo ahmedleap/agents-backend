@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.Optional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -381,6 +382,9 @@ class OrderServiceImplTest {
         List<Order> orders = new ArrayList<>();
         Order order1 = new Order();
         order1.setOrderId(UUID.randomUUID());
+        order1.setAccountId(accountId);
+        OffsetDateTime submittedAt = OffsetDateTime.now();
+        order1.setCreatedAt(submittedAt);
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
         order1.setInstrument(instrument);
@@ -398,7 +402,9 @@ class OrderServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
+        assertEquals(accountId, result.get(0).getAccountId());
         assertEquals("AAPL", result.get(0).getTicker());
+        assertEquals(submittedAt, result.get(0).getSubmittedAt());
         verify(accountRepository).findById(accountId);
         verify(orderRepository).findAllByAccount(accountId);
     }

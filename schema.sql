@@ -24,7 +24,9 @@ CREATE TYPE account_status AS ENUM (
 CREATE TYPE asset_class AS ENUM (
     'STOCK',
     'ETF',
-    'MUTUAL_FUND'
+    'MUTUAL_FUND',
+    'CRYPTO',
+    'FOREX'
 );
 
 CREATE TYPE order_type AS ENUM (
