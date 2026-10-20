@@ -79,7 +79,8 @@ public class JwtSecurityConfig {
 
                 .requestMatchers(
                     "/api/portfolio/**",
-                    "/api/holding/**"
+                    "/api/holding/**",
+                    "/api/client/**"
                 ).hasRole("CLIENT")
 
                 .requestMatchers("/dashboard")
