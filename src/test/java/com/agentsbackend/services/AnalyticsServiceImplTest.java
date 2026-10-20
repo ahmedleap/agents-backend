@@ -369,6 +369,30 @@ class AnalyticsServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should get hourly intraday volume")
+    void testGetIntradayVolume() {
+        LocalDate date = LocalDate.now();
+        List<IntradayVolumeResponse> volume = Arrays.asList(
+            new IntradayVolumeResponse(java.time.LocalDateTime.of(2026, 10, 20, 10, 0),
+                120L, 25000.0, 4L, 3L, 1L));
+        when(analyticsRepository.getIntradayVolume(date, "hour")).thenReturn(volume);
+
+        List<IntradayVolumeResponse> result = analyticsService.getIntradayVolume(date, "HOUR");
+
+        assertEquals(1, result.size());
+        assertEquals(4L, result.get(0).getTradeCount());
+        verify(analyticsRepository).getIntradayVolume(date, "hour");
+    }
+
+    @Test
+    @DisplayName("Should reject unsupported intraday volume interval")
+    void testGetIntradayVolumeInvalidInterval() {
+        assertThrows(IllegalArgumentException.class,
+            () -> analyticsService.getIntradayVolume(LocalDate.now(), "minute"));
+        verifyNoInteractions(analyticsRepository);
+    }
+
+    @Test
     @DisplayName("Should get instrument trend by date range")
     void testGetInstrumentTrendByDateRange() {
         // Arrange

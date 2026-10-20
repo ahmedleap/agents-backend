@@ -16,6 +16,7 @@ import com.agentsbackend.DTO.response.TotalVolumeResponse;
 import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
+import com.agentsbackend.DTO.response.IntradayVolumeResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
@@ -253,6 +254,29 @@ public class AnalyticsController {
             return ResponseEntity.ok(volumeTrend);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid date range for volume trend", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * GET /api/v1/analytics/dashboard/intraday-volume?date=2026-10-20&interval=hour
+     * Returns hourly filled-order volume buckets for a single day.
+     */
+    @GetMapping("/dashboard/intraday-volume")
+    @Operation(summary = "Get intraday volume", description = "Returns hourly order volume buckets for a single day, suitable for a line chart.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Intraday volume returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid date or interval")
+    })
+    public ResponseEntity<List<IntradayVolumeResponse>> getIntradayVolume(
+            @Parameter(description = "Trading date", example = "2026-10-20", required = true)
+            @RequestParam("date") LocalDate date,
+            @Parameter(description = "Bucket interval; currently hour", example = "hour")
+            @RequestParam(value = "interval", defaultValue = "hour") String interval) {
+        try {
+            return ResponseEntity.ok(analyticsService.getIntradayVolume(date, interval));
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid intraday volume request", e);
             return ResponseEntity.badRequest().build();
         }
     }

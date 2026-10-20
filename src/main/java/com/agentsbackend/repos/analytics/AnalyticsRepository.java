@@ -11,6 +11,7 @@ import com.agentsbackend.DTO.response.TotalVolumeResponse;
 import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
+import com.agentsbackend.DTO.response.IntradayVolumeResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
@@ -387,6 +388,24 @@ public interface AnalyticsRepository {
             "GROUP BY DATE(fo.created_at) " +
             "ORDER BY DATE(fo.created_at) ASC")
     List<VolumeTrendResponse> getVolumeTrend(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    /**
+     * Get intraday trading volume grouped into time buckets for one date.
+     */
+    @Select("SELECT " +
+            "DATE_TRUNC(#{interval}, fo.created_at) as bucket_start, " +
+            "COALESCE(SUM(fo.quantity), 0) as total_quantity_traded, " +
+            "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value_traded, " +
+            "COUNT(*) as trade_count, " +
+            "COUNT(CASE WHEN fo.order_type = 'BUY' THEN 1 END) as buy_count, " +
+            "COUNT(CASE WHEN fo.order_type = 'SELL' THEN 1 END) as sell_count " +
+            "FROM fact_orders fo " +
+            "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) = #{date} " +
+            "GROUP BY DATE_TRUNC(#{interval}, fo.created_at) " +
+            "ORDER BY bucket_start ASC")
+    List<IntradayVolumeResponse> getIntradayVolume(
+            @Param("date") LocalDate date,
+            @Param("interval") String interval);
 
     /**
      * Get top instruments trading trend over a date range.
