@@ -3,6 +3,9 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.One;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
 import com.agentsbackend.entities.Order;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +26,10 @@ public interface OrderRepository {
         UUID findAccountIdByOrderId(@Param("orderId") UUID orderId);
 
     @Select("SELECT * FROM orders WHERE account_id = #{accountId} ORDER BY created_at DESC")
+        @Results({
+                @Result(property = "instrument", column = "instrument_id",
+                                one = @One(select = "com.agentsbackend.repos.transactional.InstrumentRepository.findById"))
+        })
     List<Order> findAllByAccount(@Param("accountId") UUID accountId);
 
     @Update("UPDATE orders SET status = #{status}::order_status, filled_price = #{filledPrice}, filled_at = #{filledAt}, cancelled_at = #{cancelledAt}, cancel_reason = #{cancelReason} WHERE order_id = #{orderId}")

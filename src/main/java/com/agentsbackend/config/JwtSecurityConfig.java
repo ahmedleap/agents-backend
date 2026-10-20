@@ -77,6 +77,12 @@ public class JwtSecurityConfig {
                     .hasRole("ANALYST")
 
                 .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
+                .requestMatchers(
                     "/api/portfolio/**",
                     "/api/holding/**"
                 ).hasRole("CLIENT")

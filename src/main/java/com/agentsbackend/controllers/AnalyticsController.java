@@ -23,6 +23,15 @@ import com.agentsbackend.DTO.response.FulfillmentTrendResponse;
 import com.agentsbackend.DTO.response.AssetClassTrendResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * AnalyticsController - REST API endpoints for platform-wide analytics.
@@ -32,6 +41,15 @@ import org.slf4j.LoggerFactory;
  */
 @RestController
 @RequestMapping("/api/v1/analytics")
+@Tag(name = "Analytics", description = "Platform-wide metrics and dashboard trend analytics")
+@SecurityRequirement(name = "bearerAuth")
+@SecurityScheme(
+    name = "bearerAuth",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "JWT",
+    in = SecuritySchemeIn.HEADER
+)
 public class AnalyticsController {
 
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsController.class);
@@ -51,6 +69,8 @@ public class AnalyticsController {
      * Includes: total clients, accounts, AUM, order fulfillment rate, trading volume.
      */
     @GetMapping("/platform/metrics")
+    @Operation(summary = "Get platform metrics", description = "Returns the comprehensive platform KPI snapshot.")
+    @ApiResponse(responseCode = "200", description = "Platform metrics returned")
     public ResponseEntity<PlatformMetricsResponse> getPlatformMetrics() {
         logger.info("GET /platform/metrics");
         
@@ -69,7 +89,10 @@ public class AnalyticsController {
      * Note: For dashboard, use /dashboard/most-active-instruments instead.
      */
     @GetMapping("/instruments/top-traded")
+        @Operation(summary = "Get top traded instruments", description = "Returns instruments ranked by platform-wide trade count.")
+        @ApiResponse(responseCode = "200", description = "Top traded instruments returned")
     public ResponseEntity<List<TopInstrumentResponse>> getTopTradedInstruments(
+            @Parameter(description = "Maximum number of instruments to return", example = "20")
             @RequestParam(value = "limit", required = false, defaultValue = "20") Integer limit) {
         logger.info("GET /instruments/top-traded?limit={}", limit);
         
@@ -87,6 +110,8 @@ public class AnalyticsController {
      * Shows trading activity by asset class (stocks, bonds, crypto, etc.)
      */
     @GetMapping("/assets/by-class")
+    @Operation(summary = "Get asset class metrics", description = "Returns platform-wide trading activity grouped by asset class.")
+    @ApiResponse(responseCode = "200", description = "Asset class metrics returned")
     public ResponseEntity<List<AssetClassMetricsResponse>> getAssetClassMetrics() {
         logger.info("GET /assets/by-class");
         
@@ -104,6 +129,8 @@ public class AnalyticsController {
      * Shows how many clients are conservative, moderate, or aggressive investors.
      */
     @GetMapping("/clients/by-risk-tolerance")
+    @Operation(summary = "Get client metrics by risk tolerance", description = "Returns client distribution grouped by risk tolerance.")
+    @ApiResponse(responseCode = "200", description = "Client segmentation returned")
     public ResponseEntity<List<ClientSegmentationResponse>> getClientSegmentationByRiskTolerance() {
         logger.info("GET /clients/by-risk-tolerance");
         
@@ -118,6 +145,8 @@ public class AnalyticsController {
      * Shows how many clients fall into different AUM brackets.
      */
     @GetMapping("/clients/by-portfolio-size")
+    @Operation(summary = "Get client metrics by portfolio size", description = "Returns client distribution grouped by portfolio size.")
+    @ApiResponse(responseCode = "200", description = "Client segmentation returned")
     public ResponseEntity<List<ClientSegmentationResponse>> getClientSegmentationByPortfolioSize() {
         logger.info("GET /clients/by-portfolio-size");
         
@@ -137,7 +166,10 @@ public class AnalyticsController {
      * Optional: Query parameter 'date' for specific date (defaults to today).
      */
     @GetMapping("/dashboard/total-volume")
+        @Operation(summary = "Get daily total volume", description = "Returns total quantity, value, order count, and averages for a date.")
+        @ApiResponse(responseCode = "200", description = "Daily volume metrics returned")
     public ResponseEntity<TotalVolumeResponse> getTotalVolume(
+            @Parameter(description = "Date to analyze; defaults to today", example = "2026-10-19")
             @RequestParam(value = "date", required = false) LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
@@ -155,7 +187,10 @@ public class AnalyticsController {
      * Optional: Query parameter 'date' for specific date (defaults to today).
      */
     @GetMapping("/dashboard/total-trades")
+        @Operation(summary = "Get daily total trades", description = "Returns trade counts, fulfillment rate, cancellation rate, and buy/sell split for a date.")
+        @ApiResponse(responseCode = "200", description = "Daily trade metrics returned")
     public ResponseEntity<TotalTradesResponse> getTotalTrades(
+            @Parameter(description = "Date to analyze; defaults to today", example = "2026-10-19")
             @RequestParam(value = "date", required = false) LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
@@ -173,7 +208,10 @@ public class AnalyticsController {
      * Optional: Query parameter 'date' for specific date (defaults to today).
      */
     @GetMapping("/dashboard/active-clients")
+        @Operation(summary = "Get daily active clients", description = "Returns active client, account, and activity percentage metrics for a date.")
+        @ApiResponse(responseCode = "200", description = "Active client metrics returned")
     public ResponseEntity<ActiveClientsResponse> getActiveClients(
+            @Parameter(description = "Date to analyze; defaults to today", example = "2026-10-19")
             @RequestParam(value = "date", required = false) LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
@@ -198,9 +236,16 @@ public class AnalyticsController {
      * Returns daily aggregated volume data.
      */
     @GetMapping("/dashboard/volume-trend")
+    @Operation(summary = "Get volume trend", description = "Returns daily aggregated trading volume for a date range.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Volume trend returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid date range")
+    })
     public ResponseEntity<List<VolumeTrendResponse>> getVolumeTrend(
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
+            @RequestParam("startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
+            @RequestParam("endDate") LocalDate endDate) {
         logger.info("GET /dashboard/volume-trend?startDate={}&endDate={}", startDate, endDate);
         
         try {
@@ -222,9 +267,16 @@ public class AnalyticsController {
      * Returns daily trading data for each instrument.
      */
     @GetMapping("/dashboard/instrument-trend")
+    @Operation(summary = "Get instrument trend", description = "Returns daily trading activity for instruments over a date range.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Instrument trend returned"),
+        @ApiResponse(responseCode = "400", description = "Invalid date range")
+    })
     public ResponseEntity<List<InstrumentTrendResponse>> getInstrumentTrend(
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate) {
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
+            @RequestParam("startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
+            @RequestParam("endDate") LocalDate endDate) {
         logger.info("GET /dashboard/instrument-trend?startDate={}&endDate={}", startDate, endDate);
         
         try {
@@ -245,8 +297,12 @@ public class AnalyticsController {
      *   - limit: Number of top instruments to return - optional (defaults to 20)
      */
     @GetMapping("/dashboard/most-active-instruments")
+        @Operation(summary = "Get most active instruments", description = "Returns the most active instruments for a date.")
+        @ApiResponse(responseCode = "200", description = "Most active instruments returned")
     public ResponseEntity<List<InstrumentTrendResponse>> getMostActiveInstruments(
+            @Parameter(description = "Date to analyze; defaults to today", example = "2026-10-19")
             @RequestParam(value = "date", required = false) LocalDate date,
+            @Parameter(description = "Maximum number of instruments to return", example = "20")
             @RequestParam(value = "limit", required = false, defaultValue = "20") Integer limit) {
         if (date == null) {
             date = LocalDate.now();
@@ -267,9 +323,14 @@ public class AnalyticsController {
      * Query params: ticker, startDate, endDate
      */
     @GetMapping("/dashboard/instrument-analysis")
+        @Operation(summary = "Analyze an instrument", description = "Returns detailed metrics for one instrument over a date range.")
+        @ApiResponse(responseCode = "200", description = "Instrument analysis returned")
     public ResponseEntity<InstrumentAnalysisResponse> instrumentAnalysis(
+            @Parameter(description = "Instrument ticker", example = "AAPL")
             @RequestParam(value = "ticker") String ticker,
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
             @RequestParam(value = "startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
             @RequestParam(value = "endDate") LocalDate endDate) {
         logger.info("GET /dashboard/instrument-analysis?ticker={}&startDate={}&endDate={}", ticker, startDate, endDate);
         
@@ -287,9 +348,14 @@ public class AnalyticsController {
      * Query params: segmentType, startDate, endDate
      */
     @GetMapping("/dashboard/segment-trends")
+        @Operation(summary = "Get client segment trends", description = "Returns client trading trends grouped by risk tolerance or portfolio size.")
+        @ApiResponse(responseCode = "200", description = "Segment trends returned")
     public ResponseEntity<List<SegmentTrendResponse>> segmentTrends(
+            @Parameter(description = "Segment dimension", example = "RISK_TOLERANCE")
             @RequestParam(value = "segmentType") String segmentType,
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
             @RequestParam(value = "startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
             @RequestParam(value = "endDate") LocalDate endDate) {
         logger.info("GET /dashboard/segment-trends?segmentType={}&startDate={}&endDate={}", segmentType, startDate, endDate);
         
@@ -307,8 +373,12 @@ public class AnalyticsController {
      * Query params: startDate, endDate
      */
     @GetMapping("/dashboard/fulfillment-trends")
+        @Operation(summary = "Get fulfillment trends", description = "Returns daily order fulfillment metrics for a date range.")
+        @ApiResponse(responseCode = "200", description = "Fulfillment trends returned")
     public ResponseEntity<List<FulfillmentTrendResponse>> fulfillmentTrends(
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
             @RequestParam(value = "startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
             @RequestParam(value = "endDate") LocalDate endDate) {
         logger.info("GET /dashboard/fulfillment-trends?startDate={}&endDate={}", startDate, endDate);
         
@@ -326,8 +396,12 @@ public class AnalyticsController {
      * Query params: startDate, endDate
      */
     @GetMapping("/dashboard/asset-class-trends")
+        @Operation(summary = "Get asset class trends", description = "Returns daily trading trends grouped by asset class for a date range.")
+        @ApiResponse(responseCode = "200", description = "Asset class trends returned")
     public ResponseEntity<List<AssetClassTrendResponse>> assetClassTrends(
+            @Parameter(description = "Inclusive start date", example = "2026-10-01")
             @RequestParam(value = "startDate") LocalDate startDate,
+            @Parameter(description = "Inclusive end date", example = "2026-10-19")
             @RequestParam(value = "endDate") LocalDate endDate) {
         logger.info("GET /dashboard/asset-class-trends?startDate={}&endDate={}", startDate, endDate);
         
@@ -344,6 +418,8 @@ public class AnalyticsController {
      * Simple health check for analytics service.
      */
     @GetMapping("/health")
+    @Operation(summary = "Check analytics health", description = "Returns the current analytics service health status.")
+    @ApiResponse(responseCode = "200", description = "Analytics service is available")
     public ResponseEntity<Map<String, String>> healthCheck() {
         logger.info("GET /health");
         

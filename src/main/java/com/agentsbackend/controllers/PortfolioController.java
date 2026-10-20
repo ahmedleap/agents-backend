@@ -46,8 +46,8 @@ public class PortfolioController {
      */
     public ResponseEntity<GetAccountPortfolioResponseDTO> getPortfolioByAccountId(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID clientId,
-            @PathVariable UUID accountId) {
+            @PathVariable("clientId") UUID clientId,
+            @PathVariable("accountId") UUID accountId) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         authorizationService.requireOwnAccount(authorizationService.clientId(jwt), accountId);
         GetAccountPortfolioResponseDTO response = portfolioService.getPortfolioByAccountId(clientId, accountId);
@@ -64,7 +64,7 @@ public class PortfolioController {
      */
     public ResponseEntity<EntirePortfolioResponseDTO> getEntirePortfolio(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID clientId) {
+            @PathVariable("clientId") UUID clientId) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         EntirePortfolioResponseDTO response = portfolioService.getEntirePortfolioByClientId(clientId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -80,7 +80,7 @@ public class PortfolioController {
      */
     public ResponseEntity<GetAllocationResponseDTO> getPortfolioAllocation(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID clientId) {
+            @PathVariable("clientId") UUID clientId) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         GetAllocationResponseDTO response = portfolioService.getPortfolioAllocation(clientId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -98,8 +98,8 @@ public class PortfolioController {
      */
     public ResponseEntity<GetAllocationResponseDTO> getAccountAllocation(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID clientId,
-            @PathVariable UUID accountId) {
+            @PathVariable("clientId") UUID clientId,
+            @PathVariable("accountId") UUID accountId) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         authorizationService.requireOwnAccount(authorizationService.clientId(jwt), accountId);
         GetAllocationResponseDTO response = portfolioService.getAccountAllocation(clientId, accountId);

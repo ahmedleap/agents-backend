@@ -37,11 +37,34 @@ class InstrumentControllerTest {
     // ============================================================
 
     @Test
+    @DisplayName("listInstruments - should return all instruments")
+    void listInstruments_ReturnsResults() {
+        InstrumentResponse.SearchResult result = InstrumentResponse.SearchResult.builder()
+            .instrumentId(java.util.UUID.randomUUID())
+            .ticker("TECH")
+            .name("Technology Stock")
+            .assetClass("STOCK")
+            .industry("Technology")
+            .build();
+        InstrumentResponse.SearchResultWrapper wrapper =
+            new InstrumentResponse.SearchResultWrapper(Arrays.asList(result));
+        when(instrumentService.getAllInstruments()).thenReturn(wrapper);
+
+        ResponseEntity<InstrumentResponse.SearchResultWrapper> response = controller.listInstruments();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().getResults().size());
+        assertNotNull(response.getBody().getResults().get(0).getInstrumentId());
+        verify(instrumentService).getAllInstruments();
+    }
+
+    @Test
     @DisplayName("searchInstruments - should return results for valid query")
     void searchInstruments_ValidQuery_ReturnsResults() {
         // Arrange
         String query = "tech";
         InstrumentResponse.SearchResult result = InstrumentResponse.SearchResult.builder()
+            .instrumentId(java.util.UUID.randomUUID())
             .ticker("TECH")
             .name("Technology Stock")
             .assetClass("STOCK")
@@ -61,6 +84,7 @@ class InstrumentControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().getResults().size());
+        assertNotNull(response.getBody().getResults().get(0).getInstrumentId());
         assertEquals("TECH", response.getBody().getResults().get(0).getTicker());
         verify(instrumentService, times(1)).searchInstruments(query);
     }
