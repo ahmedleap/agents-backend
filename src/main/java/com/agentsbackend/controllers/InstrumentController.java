@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,6 +48,13 @@ public class InstrumentController {
     @ApiResponse(responseCode = "200", description = "All instruments returned")
     public ResponseEntity<InstrumentResponse.SearchResultWrapper> listInstruments() {
         return ResponseEntity.ok(instrumentService.getAllInstruments());
+    }
+
+    @GetMapping("/with-quotes")
+    @Operation(summary = "List instruments with latest quotes", description = "Returns all instruments and their latest stored quote in one request. Prefer this endpoint when loading the trades page.")
+    @ApiResponse(responseCode = "200", description = "Instruments and latest quotes returned")
+    public ResponseEntity<List<InstrumentResponse.InstrumentWithQuote>> listInstrumentsWithQuotes() {
+        return ResponseEntity.ok(instrumentService.getAllInstrumentsWithQuotes());
     }
 
     /**

@@ -155,6 +155,59 @@ public class InstrumentResponse {
         }
     }
 
+    public static class InstrumentWithQuote {
+        private UUID instrumentId;
+        private String ticker;
+        private String name;
+        private String assetClass;
+        private String industry;
+        private BigDecimal bid;
+        private BigDecimal ask;
+        private BigDecimal lastPrice;
+        private LocalDateTime timestamp;
+        private boolean stale;
+
+        public InstrumentWithQuote() {
+        }
+
+        public InstrumentWithQuote(UUID instrumentId, String ticker, String name, String assetClass,
+                                   String industry, BigDecimal bid, BigDecimal ask, BigDecimal lastPrice,
+                                   LocalDateTime timestamp, boolean stale) {
+            this.instrumentId = instrumentId;
+            this.ticker = ticker;
+            this.name = name;
+            this.assetClass = assetClass;
+            this.industry = industry;
+            this.bid = bid;
+            this.ask = ask;
+            this.lastPrice = lastPrice;
+            this.timestamp = timestamp;
+            this.stale = stale;
+        }
+
+        public UUID getInstrumentId() { return instrumentId; }
+        public String getTicker() { return ticker; }
+        public String getName() { return name; }
+        public String getAssetClass() { return assetClass; }
+        public String getIndustry() { return industry; }
+        public BigDecimal getBid() { return bid; }
+        public BigDecimal getAsk() { return ask; }
+        public BigDecimal getLastPrice() { return lastPrice; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public boolean isStale() { return stale; }
+
+        public void setInstrumentId(UUID instrumentId) { this.instrumentId = instrumentId; }
+        public void setTicker(String ticker) { this.ticker = ticker; }
+        public void setName(String name) { this.name = name; }
+        public void setAssetClass(String assetClass) { this.assetClass = assetClass; }
+        public void setIndustry(String industry) { this.industry = industry; }
+        public void setBid(BigDecimal bid) { this.bid = bid; }
+        public void setAsk(BigDecimal ask) { this.ask = ask; }
+        public void setLastPrice(BigDecimal lastPrice) { this.lastPrice = lastPrice; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+        public void setStale(boolean stale) { this.stale = stale; }
+    }
+
     public static class InstrumentDetail {
         private String ticker;
         private String name;
