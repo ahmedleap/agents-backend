@@ -21,7 +21,7 @@ RUN mvn -B -q dependency:go-offline
 #   docker build --build-arg SKIP_TESTS=false .
 ARG SKIP_TESTS=true
 COPY src ./src
-RUN mvn -B -o clean package -DskipTests=${SKIP_TESTS}
+RUN mvn -B clean package -DskipTests=${SKIP_TESTS}
 
 # ---------- Stage 2: runtime ----------
 FROM eclipse-temurin:${JAVA_VERSION}-jre-jammy
