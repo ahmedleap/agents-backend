@@ -43,13 +43,11 @@ RUN useradd -m -u 1000 appuser \
 
 WORKDIR /app
 COPY --from=builder --chown=appuser:appuser /build/target/agents-backend.jar app.jar
-COPY --chown=appuser:appuser deploy_application.properties /app/deploy_application.properties
 
 USER appuser
 
 ENV TZ=America/New_York \
     SPRING_PROFILES_ACTIVE=production \
-    SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/app/deploy_application.properties \
     SERVER_PORT=8080 \
     JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0" \
     JWT_PUBLIC_KEY_FILE=/run/secrets/jwt_public_key.pem
