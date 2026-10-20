@@ -1,0 +1,31 @@
+meta {
+  name: patch client test copy
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{apiUrl}}/api/client/v1/{{clientId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+    { "firstName": "Bruno2" }
+}
+
+tests {
+  test("status", () => {
+    expect(res.status).to.equal(Number(bru.getVar("expect") || 200));
+  });
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
