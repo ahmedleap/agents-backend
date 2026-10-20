@@ -1,6 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
+import java.util.List;
 
 /**
  * Service interface for Instrument and market data operations.
@@ -25,6 +26,17 @@ public interface InstrumentService {
      * @throws IllegalArgumentException if query is null or invalid length
      */
     InstrumentResponse.SearchResultWrapper searchInstruments(String query);
+
+    /**
+     * List all instruments for the trades page and instrument pickers.
+     * Used by GET /api/instruments.
+     */
+    InstrumentResponse.SearchResultWrapper getAllInstruments();
+
+    /**
+     * Lists all instruments with their latest stored quote in one database read.
+     */
+    List<InstrumentResponse.InstrumentWithQuote> getAllInstrumentsWithQuotes();
 
     /**
      * Get detailed instrument information including company profile.

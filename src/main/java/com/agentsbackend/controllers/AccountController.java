@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST Controller for Account endpoints.
@@ -21,6 +29,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/accounts")
+@Tag(name = "Accounts", description = "Account management, balances, and transactions")
+@SecurityRequirement(name = "bearerAuth")
 public class AccountController {
 
     private final AccountService accountService;
@@ -42,6 +52,8 @@ public class AccountController {
      * @return ResponseEntity with list of AccountListItem (HTTP 200)
      */
     @GetMapping
+    @Operation(summary = "List accounts", description = "Returns all accounts belonging to the authenticated client.")
+    @ApiResponse(responseCode = "200", description = "Accounts returned")
     public ResponseEntity<List<AccountsResponse.AccountListItem>> listAccounts(@AuthenticationPrincipal Jwt jwt) {
         List<AccountsResponse.AccountListItem> accounts = accountService.listAccounts(clientId(jwt));
         return ResponseEntity.ok(accounts);
@@ -55,7 +67,17 @@ public class AccountController {
      * @return ResponseEntity with created AccountsResponse.Account (HTTP 201)
      */
     @PostMapping
+    @Operation(summary = "Create an account", description = "Creates a new trading account for the authenticated client.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Account created"),
+        @ApiResponse(responseCode = "400", description = "Invalid account request")
+    })
     public ResponseEntity<AccountsResponse.Account> createAccount(@AuthenticationPrincipal Jwt jwt,
+                                                                   @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                                                       description = "Account creation details",
+                                                                       required = true,
+                                                                       content = @Content(schema = @Schema(implementation = AccountsRequest.CreateAccount.class))
+                                                                   )
                                                                    @Valid @RequestBody AccountsRequest.CreateAccount request) {
         authorizationService.requireOwnClient(clientId(jwt), request.getClientId());
         AccountsResponse.Account account = accountService.createAccount(request);
@@ -70,8 +92,11 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.AccountDetail (HTTP 200)
      */
     @GetMapping("/{accountId}")
+    @Operation(summary = "Get account details", description = "Returns details for an account owned by the authenticated client.")
+    @ApiResponse(responseCode = "200", description = "Account details returned")
     public ResponseEntity<AccountsResponse.AccountDetail> getAccountDetails(@AuthenticationPrincipal Jwt jwt,
-                                                                             @PathVariable UUID accountId) {
+                                                                             @Parameter(description = "Account identifier", required = true)
+                                                                             @PathVariable("accountId") UUID accountId) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.AccountDetail account = accountService.getAccountDetails(accountId);
         return ResponseEntity.ok(account);
@@ -85,8 +110,11 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.Summary showing portfolio valuation (HTTP 200)
      */
     @GetMapping("/{accountId}/summary")
+    @Operation(summary = "Get account summary", description = "Returns cash, holdings, and total portfolio value for an account.")
+    @ApiResponse(responseCode = "200", description = "Account summary returned")
     public ResponseEntity<AccountsResponse.Summary> getAccountSummary(@AuthenticationPrincipal Jwt jwt,
-                                                                       @PathVariable UUID accountId) {
+                                                                       @Parameter(description = "Account identifier", required = true)
+                                                                       @PathVariable("accountId") UUID accountId) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Summary summary = accountService.getAccountSummary(accountId);
         return ResponseEntity.ok(summary);
@@ -104,9 +132,13 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.Performance (HTTP 200)
      */
     @GetMapping("/{accountId}/performance")
+        @Operation(summary = "Get account performance", description = "Returns performance metrics for an account and period.")
+        @ApiResponse(responseCode = "200", description = "Performance metrics returned")
     public ResponseEntity<AccountsResponse.Performance> getAccountPerformance(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID accountId,
+            @Parameter(description = "Account identifier", required = true)
+            @PathVariable("accountId") UUID accountId,
+            @Parameter(description = "Performance period: 1D, 1W, 1M, 3M, 6M, 1Y, or ALL", example = "1Y")
             @RequestParam(value = "period", defaultValue = "1Y") String period) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Performance performance = accountService.getAccountPerformance(accountId, period);
@@ -125,9 +157,13 @@ public class AccountController {
      * @return ResponseEntity with list of TransactionItem ordered by most recent first (HTTP 200)
      */
     @GetMapping("/{accountId}/transactions")
+        @Operation(summary = "Get recent transactions", description = "Returns recent deposits and withdrawals for an account.")
+        @ApiResponse(responseCode = "200", description = "Transactions returned")
     public ResponseEntity<List<AccountsResponse.TransactionItem>> getRecentTransactions(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID accountId,
+            @Parameter(description = "Account identifier", required = true)
+            @PathVariable("accountId") UUID accountId,
+            @Parameter(description = "Maximum number of transactions", example = "10")
             @RequestParam(value = "limit", defaultValue = "10") int limit) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         List<AccountsResponse.TransactionItem> transactions = transactionsService.getRecentTransactions(accountId, limit);
@@ -143,9 +179,20 @@ public class AccountController {
      * @return ResponseEntity with updated AccountsResponse.Account (HTTP 200)
      */
     @PutMapping("/{accountId}")
+    @Operation(summary = "Update an account", description = "Updates an account name or status.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid account update")
+    })
     public ResponseEntity<AccountsResponse.Account> updateAccount(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID accountId,
+            @Parameter(description = "Account identifier", required = true)
+            @PathVariable("accountId") UUID accountId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Account update details",
+                required = true,
+                content = @Content(schema = @Schema(implementation = AccountsRequest.UpdateAccount.class))
+            )
             @Valid @RequestBody AccountsRequest.UpdateAccount request) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Account account = accountService.updateAccount(accountId, request);
@@ -161,9 +208,20 @@ public class AccountController {
      * @return ResponseEntity with AccountsResponse.Transaction showing new balance (HTTP 200)
      */
     @PatchMapping("/{accountId}/deposit")
+    @Operation(summary = "Deposit cash", description = "Deposits cash into an account.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Deposit completed"),
+        @ApiResponse(responseCode = "400", description = "Invalid deposit amount")
+    })
     public ResponseEntity<AccountsResponse.Transaction> depositCash(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID accountId,
+            @Parameter(description = "Account identifier", required = true)
+            @PathVariable("accountId") UUID accountId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Deposit amount",
+                required = true,
+                content = @Content(schema = @Schema(implementation = AccountsRequest.Deposit.class))
+            )
             @Valid @RequestBody AccountsRequest.Deposit request) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Transaction response = accountService.depositCash(accountId, request.getAmount());
@@ -180,9 +238,20 @@ public class AccountController {
      * @throws IllegalArgumentException if insufficient funds or account is closed
      */
     @PatchMapping("/{accountId}/withdraw")
+    @Operation(summary = "Withdraw cash", description = "Withdraws cash from an account when sufficient funds are available.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Withdrawal completed"),
+        @ApiResponse(responseCode = "400", description = "Invalid withdrawal or insufficient funds")
+    })
     public ResponseEntity<AccountsResponse.Transaction> withdrawCash(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID accountId,
+            @Parameter(description = "Account identifier", required = true)
+            @PathVariable("accountId") UUID accountId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Withdrawal amount",
+                required = true,
+                content = @Content(schema = @Schema(implementation = AccountsRequest.Withdrawal.class))
+            )
             @Valid @RequestBody AccountsRequest.Withdrawal request) {
         authorizationService.requireOwnAccount(clientId(jwt), accountId);
         AccountsResponse.Transaction response = accountService.withdrawCash(accountId, request.getAmount());

@@ -51,8 +51,42 @@ public class InstrumentServiceImpl implements InstrumentService {
 
         List<Instrument> results = instrumentRepository.searchByTickerOrName(query.trim());
         
-        List<InstrumentResponse.SearchResult> searchResults = results.stream()
+        return toSearchResultWrapper(results);
+    }
+
+    @Override
+    public InstrumentResponse.SearchResultWrapper getAllInstruments() {
+        return toSearchResultWrapper(instrumentRepository.findAll());
+    }
+
+    @Override
+    public List<InstrumentResponse.InstrumentWithQuote> getAllInstrumentsWithQuotes() {
+        return instrumentRepository.findAll().stream()
+            .map(instrument -> {
+                OffsetDateTime updatedAt = instrument.getPriceUpdatedAt();
+                boolean isStale = updatedAt == null ||
+                    OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(1).isAfter(updatedAt);
+
+                return new InstrumentResponse.InstrumentWithQuote(
+                    instrument.getInstrumentId(),
+                    instrument.getTicker(),
+                    instrument.getName(),
+                    instrument.getAssetClass() != null ? instrument.getAssetClass().toString() : null,
+                    instrument.getIndustry(),
+                    instrument.getBid(),
+                    instrument.getAsk(),
+                    getLastPrice(instrument),
+                    updatedAt != null ? updatedAt.toLocalDateTime() : null,
+                    isStale
+                );
+            })
+            .collect(Collectors.toList());
+    }
+
+    private InstrumentResponse.SearchResultWrapper toSearchResultWrapper(List<Instrument> instruments) {
+        List<InstrumentResponse.SearchResult> searchResults = instruments.stream()
             .map(instrument -> InstrumentResponse.SearchResult.builder()
+                .instrumentId(instrument.getInstrumentId())
                 .ticker(instrument.getTicker())
                 .name(instrument.getName())
                 .assetClass(instrument.getAssetClass() != null ? instrument.getAssetClass().toString() : null)

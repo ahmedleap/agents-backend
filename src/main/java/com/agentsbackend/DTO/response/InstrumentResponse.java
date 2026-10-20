@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * InstrumentResponse - Wrapper for all market data API responses.
@@ -12,6 +13,7 @@ import java.util.List;
 public class InstrumentResponse {
 
     public static class SearchResult {
+        private UUID instrumentId;
         private String ticker;
         private String name;
         private String assetClass;
@@ -27,12 +29,28 @@ public class InstrumentResponse {
             this.industry = industry;
         }
 
+        public SearchResult(UUID instrumentId, String ticker, String name, String assetClass, String industry) {
+            this.instrumentId = instrumentId;
+            this.ticker = ticker;
+            this.name = name;
+            this.assetClass = assetClass;
+            this.industry = industry;
+        }
+
         public static SearchResultBuilder builder() {
             return new SearchResultBuilder();
         }
 
         public String getTicker() {
             return ticker;
+        }
+
+        public UUID getInstrumentId() {
+            return instrumentId;
+        }
+
+        public void setInstrumentId(UUID instrumentId) {
+            this.instrumentId = instrumentId;
         }
 
         public void setTicker(String ticker) {
@@ -64,6 +82,7 @@ public class InstrumentResponse {
         }
 
         public static class SearchResultBuilder {
+            private UUID instrumentId;
             private String ticker;
             private String name;
             private String assetClass;
@@ -71,6 +90,11 @@ public class InstrumentResponse {
 
             public SearchResultBuilder ticker(String ticker) {
                 this.ticker = ticker;
+                return this;
+            }
+
+            public SearchResultBuilder instrumentId(UUID instrumentId) {
+                this.instrumentId = instrumentId;
                 return this;
             }
 
@@ -90,7 +114,7 @@ public class InstrumentResponse {
             }
 
             public SearchResult build() {
-                return new SearchResult(ticker, name, assetClass, industry);
+                return new SearchResult(instrumentId, ticker, name, assetClass, industry);
             }
         }
     }
@@ -129,6 +153,59 @@ public class InstrumentResponse {
                 return new SearchResultWrapper(results);
             }
         }
+    }
+
+    public static class InstrumentWithQuote {
+        private UUID instrumentId;
+        private String ticker;
+        private String name;
+        private String assetClass;
+        private String industry;
+        private BigDecimal bid;
+        private BigDecimal ask;
+        private BigDecimal lastPrice;
+        private LocalDateTime timestamp;
+        private boolean stale;
+
+        public InstrumentWithQuote() {
+        }
+
+        public InstrumentWithQuote(UUID instrumentId, String ticker, String name, String assetClass,
+                                   String industry, BigDecimal bid, BigDecimal ask, BigDecimal lastPrice,
+                                   LocalDateTime timestamp, boolean stale) {
+            this.instrumentId = instrumentId;
+            this.ticker = ticker;
+            this.name = name;
+            this.assetClass = assetClass;
+            this.industry = industry;
+            this.bid = bid;
+            this.ask = ask;
+            this.lastPrice = lastPrice;
+            this.timestamp = timestamp;
+            this.stale = stale;
+        }
+
+        public UUID getInstrumentId() { return instrumentId; }
+        public String getTicker() { return ticker; }
+        public String getName() { return name; }
+        public String getAssetClass() { return assetClass; }
+        public String getIndustry() { return industry; }
+        public BigDecimal getBid() { return bid; }
+        public BigDecimal getAsk() { return ask; }
+        public BigDecimal getLastPrice() { return lastPrice; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public boolean isStale() { return stale; }
+
+        public void setInstrumentId(UUID instrumentId) { this.instrumentId = instrumentId; }
+        public void setTicker(String ticker) { this.ticker = ticker; }
+        public void setName(String name) { this.name = name; }
+        public void setAssetClass(String assetClass) { this.assetClass = assetClass; }
+        public void setIndustry(String industry) { this.industry = industry; }
+        public void setBid(BigDecimal bid) { this.bid = bid; }
+        public void setAsk(BigDecimal ask) { this.ask = ask; }
+        public void setLastPrice(BigDecimal lastPrice) { this.lastPrice = lastPrice; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+        public void setStale(boolean stale) { this.stale = stale; }
     }
 
     public static class InstrumentDetail {

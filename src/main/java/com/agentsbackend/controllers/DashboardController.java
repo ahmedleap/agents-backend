@@ -29,8 +29,8 @@ public class DashboardController {
     @GetMapping
     public ResponseEntity<DashboardResponse> getDashboard(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam UUID clientId,
-            @RequestParam(defaultValue = "30D") String period) {
+            @RequestParam("clientId") UUID clientId,
+            @RequestParam(value = "period", defaultValue = "30D") String period) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         return ResponseEntity.ok(dashboardService.getDashboard(clientId, period));
     }
