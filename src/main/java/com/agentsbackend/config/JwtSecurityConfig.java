@@ -54,6 +54,11 @@ public class JwtSecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/health/**"
+                ).permitAll()
+
+                .requestMatchers(
                     "/api/accounts/**",
                     "/api/watchlists/**"
                 ).hasRole("CLIENT")
