@@ -43,6 +43,8 @@ public class JwtSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
 
+        boolean bootstrapEnabled = adminBootstrapEnabled;
+
         http
             // Use the CorsConfig rules so browser preflight (OPTIONS) requests aren't rejected before auth
             .cors(Customizer.withDefaults())
@@ -52,7 +54,17 @@ public class JwtSecurityConfig {
                     SessionCreationPolicy.STATELESS
                 )
             )
-            .authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> {
+                if (bootstrapEnabled) {
+                    auth.requestMatchers(HttpMethod.POST, "/api/admins").permitAll();
+                }
+
+                auth
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
                 .requestMatchers(
                     "/actuator/health",
                     "/actuator/health/**"
@@ -114,8 +126,8 @@ public class JwtSecurityConfig {
                     .authenticated()
 
                 // Public endpoints must be explicitly reviewed.
-                .anyRequest().denyAll()
-            )
+                .anyRequest().denyAll();
+            })
             .oauth2ResourceServer(oauth ->
                 oauth.jwt(jwt ->
                     jwt.jwtAuthenticationConverter(
@@ -126,6 +138,9 @@ public class JwtSecurityConfig {
 
         return http.build();
     }
+
+    @Value("${app.admin-bootstrap.enabled:false}")
+    private boolean adminBootstrapEnabled;
 
     @Bean
     public JwtDecoder jwtDecoder(
