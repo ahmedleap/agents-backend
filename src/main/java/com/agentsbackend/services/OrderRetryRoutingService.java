@@ -40,6 +40,10 @@ public class OrderRetryRoutingService {
     }
 
     public void sendToRetry(Order order, String reason) {
+        if (isCancelled(order)) {
+            logger.info("Not routing cancelled order {} to retry topic", order.getOrderId());
+            return;
+        }
         String key = order.getAccount().getAccountId().toString();
         kafkaTemplate.send(
             MessageBuilder.withPayload(order)
@@ -53,6 +57,10 @@ public class OrderRetryRoutingService {
     }
 
     public void sendToDeadLetter(Order order, String reason) {
+        if (isCancelled(order)) {
+            logger.info("Not routing cancelled order {} to dead-letter topic", order.getOrderId());
+            return;
+        }
         // Persist order state as REJECTED when routed to DLT.
         order.setStatus(OrderStatus.REJECTED);
         order.setCancelReason("Moved to dead-letter topic: " + reason);
@@ -69,5 +77,10 @@ public class OrderRetryRoutingService {
         );
 
         logger.info("Order {} routed to dead-letter topic {}", order.getOrderId(), deadLetterTopic);
+    }
+
+    private boolean isCancelled(Order order) {
+        Order currentOrder = orderRepository.findById(order.getOrderId());
+        return currentOrder != null && currentOrder.getStatus() == OrderStatus.CANCELLED;
     }
 }

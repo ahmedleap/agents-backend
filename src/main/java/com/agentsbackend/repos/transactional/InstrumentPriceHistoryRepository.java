@@ -2,6 +2,7 @@ package com.agentsbackend.repos.transactional;
 
 import com.agentsbackend.entities.InstrumentPriceHistory;
 import org.apache.ibatis.annotations.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -33,4 +34,13 @@ public interface InstrumentPriceHistoryRepository {
         @Param("startTime") LocalDateTime startTime,
         @Param("endTime") LocalDateTime endTime
     );
+
+    /**
+     * Find the latest completed daily close before the current trading day.
+     */
+    @Select("SELECT close FROM instrument_price_history " +
+            "WHERE instrument_id = #{instrumentId} " +
+            "AND timestamp < CURRENT_DATE " +
+            "ORDER BY timestamp DESC LIMIT 1")
+    BigDecimal findLatestEodClose(@Param("instrumentId") UUID instrumentId);
 }

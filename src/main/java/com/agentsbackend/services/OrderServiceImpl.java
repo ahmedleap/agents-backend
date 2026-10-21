@@ -41,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
     private final InstrumentRepository instrumentRepository;
+    private final OrderQueue orderQueue;
     private final AuditTrailService auditTrailService;
     private final OrderSubmissionService orderSubmissionService;
 
@@ -52,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
         this.instrumentRepository = instrumentRepository;
+        this.orderQueue = orderQueue;
         this.auditTrailService = auditTrailService;
         this.orderSubmissionService = orderSubmissionService;
     }
@@ -524,6 +526,7 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelReason(request.getCancellationReason());
         order.setCancelledAt(OffsetDateTime.now(ZoneOffset.UTC));
         orderRepository.updateOrder(order);
+        orderQueue.remove(order);
         
         // Log order cancellation to audit trail
         if (account != null && account.getClient() != null && account.getClient().getClientId() != null) {

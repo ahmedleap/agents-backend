@@ -49,6 +49,11 @@ public class OrderRetryConsumerService {
         try {
             logger.info("Received order {} from retry topic", order.getOrderId());
 
+            if (orderConsumerService.isCancelled(order)) {
+                logger.info("Skipping cancelled order {} from retry topic", order.getOrderId());
+                return;
+            }
+
             if (order.getLimitPrice() == null) {
                 logger.warn("Order {} on retry topic is not a limit order; routing to DLQ", order.getOrderId());
                 orderRetryRoutingService.sendToDeadLetter(order, "Non-limit order received on retry topic");
@@ -66,6 +71,10 @@ public class OrderRetryConsumerService {
 
     private void processDelayedRetry(Order order) {
         try {
+            if (orderConsumerService.isCancelled(order)) {
+                logger.info("Skipping cancelled order {} during delayed retry", order.getOrderId());
+                return;
+            }
             boolean filled = orderConsumerService.attemptFill(order);
             if (!filled) {
                 orderRetryRoutingService.sendToDeadLetter(order, "Limit price was not reached after scheduled retry attempt");

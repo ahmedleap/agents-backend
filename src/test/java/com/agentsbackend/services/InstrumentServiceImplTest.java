@@ -377,6 +377,24 @@ class InstrumentServiceImplTest {
     }
 
     @Test
+    @DisplayName("getHistoricalPrices - 1D compares EOD close with current instrument price")
+    void getHistoricalPrices_OneDay_UsesEodAndCurrentPrice() {
+        String ticker = "TECH";
+
+        when(instrumentRepository.findByTicker(ticker)).thenReturn(Optional.of(mockInstrument));
+        when(priceHistoryRepository.findHistoricalPrices(eq(instrumentId), any(), any()))
+            .thenReturn(Collections.emptyList());
+        when(priceHistoryRepository.findLatestEodClose(instrumentId)).thenReturn(new BigDecimal("248.00"));
+
+        InstrumentResponse.HistoryResponse response = service.getHistoricalPrices(ticker, "1D");
+
+        assertEquals(new BigDecimal("248.00"), response.getSummary().getStartPrice());
+        assertEquals(new BigDecimal("250.75"), response.getSummary().getEndPrice());
+        assertEquals(new BigDecimal("2.75"), response.getSummary().getChange());
+        assertEquals(new BigDecimal("1.1100"), response.getSummary().getChangePercent());
+    }
+
+    @Test
     @DisplayName("getHistoricalPrices - should throw for invalid period")
     void getHistoricalPrices_InvalidPeriod_ThrowsException() {
         // Arrange
