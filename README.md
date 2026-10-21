@@ -60,6 +60,10 @@ CREATE DATABASE agents_of_leap;
 For an existing database created before authentication was added, apply the additive,
 rerunnable migration with `\i auth_schema.sql` after `schema.sql`.
 
+If your middleware issues staff (ADMIN/ANALYST) tokens from the `admin` table,
+also apply `\i auth_sessions_staff_identity_migration.sql` once to remove the
+client-only foreign key on `auth_sessions.client_id`.
+
 #### Verify Schema
 ```sql
 \dt  -- Should show: admin, accounts, clients, orders, holdings, instruments, transactions, etc.
@@ -104,6 +108,8 @@ spring.datasource.warehouse.password=your_warehouse_password
 ```
 
 ### JWT-protected Mission API
+
+Spring Security is the single JWT decoding and signature-verification path. The `/api/jwt/verify` and `/api/jwt/verify-header` diagnostic endpoints report the already-authenticated principal; they do not decode the token again. The POST endpoint still requires its body token to match the authenticated bearer token. Session/revocation validation remains a separate check and is unchanged by this cleanup. Session ownership is validated against the JWT `sub` claim for all roles (CLIENT, ADMIN, ANALYST), so staff sessions are enforced with the same revocation/expiry/inactivity checks.
 
 This Spring Boot application validates RS256 JWT signatures using a statically supplied RSA public PEM, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
 

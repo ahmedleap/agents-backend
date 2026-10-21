@@ -30,8 +30,9 @@ public class SessionValidationFilter extends OncePerRequestFilter {
         if (authentication instanceof JwtAuthenticationToken jwtAuth && jwtAuth.isAuthenticated()) {
             boolean valid;
             try {
+                UUID subjectId = UUID.fromString(jwtAuth.getToken().getSubject());
                 valid = authService.isSessionValid(
-                        jwtAuth.getToken().getTokenValue(), UUID.fromString(jwtAuth.getToken().getSubject()));
+                        jwtAuth.getToken().getTokenValue(), subjectId);
             } catch (IllegalArgumentException exception) {
                 valid = false;
             }

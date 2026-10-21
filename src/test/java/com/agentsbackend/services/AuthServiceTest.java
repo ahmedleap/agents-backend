@@ -17,10 +17,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.agentsbackend.entities.AuthSession;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -40,6 +44,49 @@ class AuthServiceTest {
     void setUp() {
         // AuthService no longer requires PasswordEncoder.
         service = new AuthService(repository);
+    }
+
+    @Test
+    void isSessionValidAcceptsMatchingSubjectForAnyIdentityRole() {
+        UUID subjectId = UUID.fromString("b0000000-0000-4000-8000-000000000001");
+        UUID sessionId = UUID.fromString("b0000000-0000-4000-8000-000000000002");
+        String accessToken = "access-token-value";
+
+        AuthSession session = new AuthSession();
+        session.setSessionId(sessionId);
+        session.setClientId(subjectId);
+        session.setAccessExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(10));
+        session.setLastActive(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5));
+
+        when(repository.findByAccessHash(anyString())).thenReturn(Optional.of(session));
+        when(repository.touchSession(sessionId)).thenReturn(1);
+
+        boolean valid = service.isSessionValid(accessToken, subjectId);
+
+        assertTrue(valid);
+        verify(repository).findByAccessHash(anyString());
+        verify(repository).touchSession(sessionId);
+    }
+
+    @Test
+    void isSessionValidRejectsMismatchedSubject() {
+        UUID subjectId = UUID.fromString("c0000000-0000-4000-8000-000000000001");
+        UUID differentSessionOwner = UUID.fromString("c0000000-0000-4000-8000-000000000002");
+        String accessToken = "access-token-value";
+
+        AuthSession session = new AuthSession();
+        session.setSessionId(UUID.fromString("c0000000-0000-4000-8000-000000000003"));
+        session.setClientId(differentSessionOwner);
+        session.setAccessExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(10));
+        session.setLastActive(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5));
+
+        when(repository.findByAccessHash(anyString())).thenReturn(Optional.of(session));
+
+        boolean valid = service.isSessionValid(accessToken, subjectId);
+
+        assertFalse(valid);
+        verify(repository).findByAccessHash(anyString());
+        verify(repository, never()).touchSession(any(UUID.class));
     }
 
     @Test

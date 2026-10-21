@@ -33,15 +33,18 @@ public class AuthService {
         this.repository = repository;
     }
 
-    /** True when the access token's SHA-256 hash has a live session owned by clientId; refreshes last_active. */
+    /**
+     * True when the access token's SHA-256 hash has a live session owned by the JWT subject UUID;
+     * refreshes last_active. The subject can represent either a client or staff identity.
+     */
     @Transactional
-    public boolean isSessionValid(String accessToken, UUID clientId) {
-        if (accessToken == null || accessToken.isBlank() || clientId == null) {
+    public boolean isSessionValid(String accessToken, UUID subjectId) {
+        if (accessToken == null || accessToken.isBlank() || subjectId == null) {
             return false;
         }
 
         var session = repository.findByAccessHash(sha256(accessToken)).orElse(null);
-        if (session == null || !clientId.equals(session.getClientId())) {
+        if (session == null || !subjectId.equals(session.getClientId())) {
             return false;
         }
 
