@@ -54,6 +54,27 @@ class JwtDecoderValidationTest {
     }
 
     @Test
+        void rejectsMissingStaticPublicKey() {
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> new JwtSecurityConfig().jwtDecoder("", "", ISSUER, AUDIENCE));
+
+        assertEquals("A static RSA public key is required via auth.jwt.public-key-file or "
+            + "auth.jwt.public-key-base64", exception.getMessage());
+        }
+
+        @Test
+        void acceptsValidRs256TokenUsingBase64Pem() throws Exception {
+        String encodedPem = Base64.getEncoder().encodeToString(Files.readAllBytes(publicKeyFile));
+        JwtDecoder inlineDecoder = new JwtSecurityConfig()
+            .jwtDecoder("", encodedPem, ISSUER, AUDIENCE);
+
+        Jwt jwt = inlineDecoder.decode(signedToken(trustedKeyPair, ISSUER, AUDIENCE, SUBJECT,
+            Instant.now().minusSeconds(1), Instant.now().plusSeconds(300)));
+
+        assertEquals(SUBJECT, jwt.getSubject());
+        }
+
+        @Test
     void acceptsValidRs256TokenFromStaticPublicKey() throws Exception {
         Jwt jwt = decoder.decode(signedToken(trustedKeyPair, ISSUER, AUDIENCE, SUBJECT,
                 Instant.now().minusSeconds(1), Instant.now().plusSeconds(300)));

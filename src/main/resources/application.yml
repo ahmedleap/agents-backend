@@ -1,5 +1,5 @@
 # JWT Configuration (Asymmetric RSA Keys)
-# Generate keys using: openssl genrsa -out private_key.pem 2048 && openssl rsa -in private_key.pem -pubout -out public_key.pem
+# Use the existing middleware signing public key; do not generate a separate backend key pair.
 # The backend must receive only the public key, either as a PEM file or as a
 # Base64-encoded PEM value in JWT_PUBLIC_KEY.
 auth:
