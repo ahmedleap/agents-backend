@@ -6,6 +6,9 @@ import com.agentsbackend.controllers.AdminReadController;
 import com.agentsbackend.controllers.AnalyticsController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
+import com.agentsbackend.entities.Admin;
+import com.agentsbackend.enums.AdminRole;
 import com.agentsbackend.repos.transactional.AccountRepository;
 import com.agentsbackend.repos.transactional.OrderRepository;
 import com.agentsbackend.services.AccountService;
@@ -40,6 +43,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "auth.jwt.public-key-base64=LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2ZkJDaDB5cTlWOGVzZ0xxSVBxK0dMM3JYczlUU3BHb3MrUHRKQzl1aWs5dEIzdnMzRGlTM2JTYlJQa1JWUllaVHBBN3gxdzZ3WTZzQWZrUHM0QjREcEFud2tIR2I1TmFWaXZkVDdHaTJHNlRQZ3dYaUJ1Z0ZEQklrMXZGWFBIcUR3bEwzY0VVYkw5ZmptMm5rbjkrdTBjZE5jNmUvYzFZOHZCWmt4bVFNNXRnTWZsT2RYVDgzUFBxSGlOY0w0eXdVakNKaWQwdFJzRGQ2SlNseWd1Qk1ENFNmb0pUMGgxRDF2RzBPNUtiQ2FHN25GNWtnWnFkK09EQzJnMHE2RlQwNGhyby9kdUVnL1pteUdXV1hBem5vQnBFSUxBU294NC9Cc2FvWWtrOHY1SStsZ2hrYWxwekJ1WEdSbE1wSlRmZ2VBU1B5cURRMVdwZmFnamVDeFJweXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
         "auth.jwt.issuer=agents-middleware",
         "auth.jwt.audience=agents-backend",
+        "app.admin-bootstrap.enabled=false",
         "auth.session-validation.enabled=false"
 })
 class JwtRoleAuthorizationTest {
@@ -67,6 +72,7 @@ class JwtRoleAuthorizationTest {
     @Autowired private WebApplicationContext applicationContext;
     @Autowired private AccountService accountService;
         @Autowired private AnalyticsService analyticsService;
+        @Autowired private AdminService adminService;
         @Autowired private AccountRepository accountRepository;
         @Autowired private OrderRepository orderRepository;
         @Autowired private OrderService orderService;
@@ -137,16 +143,28 @@ class JwtRoleAuthorizationTest {
 
         mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
-                        .content("{}")
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}")
                         .with(jwtWithRole("CLIENT")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
+        void anonymousCannotCreateAdminWhenBootstrapIsDisabled() throws Exception {
+                mockMvc.perform(post("/api/admins")
+                                                .contentType("application/json")
+                                                .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}"))
+                                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
     void adminCanUseAdminApiButCannotSubmitTrades() throws Exception {
+        when(adminService.createAdmin(any(CreateAdminRequest.class))).thenReturn(new Admin(
+                UUID.randomUUID(), "Root", "Admin", "root@example.test", "hashed", AdminRole.ADMIN,
+                java.time.OffsetDateTime.now()));
+
         mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
-                        .content("{}")
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}")
                         .with(jwtWithRole("ADMIN")))
                 .andExpect(status().isCreated());
 

@@ -56,6 +56,7 @@ public class JwtSecurityConfig {
             http.addFilterAfter(new SessionValidationFilter(authService.getObject()),
                 BearerTokenAuthenticationFilter.class);
         }
+        boolean bootstrapEnabled = adminBootstrapEnabled;
 
         http
             // Allow browser preflight requests before JWT authentication.
@@ -69,10 +70,12 @@ public class JwtSecurityConfig {
                     SessionCreationPolicy.STATELESS
                 )
             )
+            .authorizeHttpRequests(auth -> {
+                if (bootstrapEnabled) {
+                    auth.requestMatchers(HttpMethod.POST, "/api/admins").permitAll();
+                }
 
-            .authorizeHttpRequests(auth -> auth
-
-                // Client endpoints
+                auth
                 .requestMatchers(
                     "/actuator/health",
                     "/actuator/health/**"
@@ -144,8 +147,8 @@ public class JwtSecurityConfig {
                     .hasAnyRole("CLIENT", "ADMIN")
 
                 // Deny all unspecified routes.
-                .anyRequest().denyAll()
-            )
+                .anyRequest().denyAll();
+            })
 
             // JWT authentication
             .oauth2ResourceServer(oauth ->
@@ -196,6 +199,9 @@ public class JwtSecurityConfig {
 
         return source;
     }
+
+    @Value("${app.admin-bootstrap.enabled:false}")
+    private boolean adminBootstrapEnabled;
 
     // JWT decoder using RSA public key.
     @Bean

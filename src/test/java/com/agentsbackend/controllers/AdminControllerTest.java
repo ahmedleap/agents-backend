@@ -1,6 +1,9 @@
 package com.agentsbackend.controllers;
 
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
+import com.agentsbackend.DTO.response.AdminResponse;
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.enums.AdminRole;
 import com.agentsbackend.services.AdminService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +43,22 @@ class AdminControllerTest {
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertSame(request, response.getBody());
+        verify(adminService).createAdmin(request);
+    }
+
+    @Test
+    void createAdminRequestReturnsSafeResponse() {
+        CreateAdminRequest request = new CreateAdminRequest(
+                "First", "Last", "admin@example.test", "correct horse battery staple", AdminRole.ADMIN);
+        Admin created = new Admin(UUID.randomUUID(), "First", "Last", "admin@example.test",
+                "{bcrypt}hash", AdminRole.ADMIN, java.time.OffsetDateTime.now());
+        when(adminService.createAdmin(request)).thenReturn(created);
+
+        ResponseEntity<AdminResponse> response = adminController.createAdmin(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(created.getAdminId(), response.getBody().adminId());
+        assertEquals(created.getEmail(), response.getBody().email());
         verify(adminService).createAdmin(request);
     }
 }
