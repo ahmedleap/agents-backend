@@ -240,7 +240,7 @@ class AnalyticsControllerTest {
     void testGetIntradayVolume() throws Exception {
         LocalDate date = LocalDate.of(2026, 10, 20);
         List<IntradayVolumeResponse> volume = Arrays.asList(
-            new IntradayVolumeResponse(java.time.LocalDateTime.of(2026, 10, 20, 10, 0),
+            new IntradayVolumeResponse(java.time.OffsetDateTime.parse("2026-10-20T10:00:00Z"),
                 120L, 25000.0, 4L, 3L, 1L));
         when(analyticsService.getIntradayVolume(date, "hour")).thenReturn(volume);
 

@@ -393,7 +393,7 @@ public interface AnalyticsRepository {
      * Get intraday trading volume grouped into time buckets for one date.
      */
     @Select("SELECT " +
-            "DATE_TRUNC(#{interval}, fo.created_at) as bucket_start, " +
+            "DATE_TRUNC('hour', fo.created_at) as bucket_start, " +
             "COALESCE(SUM(fo.quantity), 0) as total_quantity_traded, " +
             "COALESCE(SUM(fo.quantity * COALESCE(fo.filled_price, fo.limit_price)), 0) as total_value_traded, " +
             "COUNT(*) as trade_count, " +
@@ -401,7 +401,7 @@ public interface AnalyticsRepository {
             "COUNT(CASE WHEN fo.order_type = 'SELL' THEN 1 END) as sell_count " +
             "FROM fact_orders fo " +
             "WHERE fo.status = 'FILLED' AND DATE(fo.created_at) = #{date} " +
-            "GROUP BY DATE_TRUNC(#{interval}, fo.created_at) " +
+            "GROUP BY DATE_TRUNC('hour', fo.created_at) " +
             "ORDER BY bucket_start ASC")
     List<IntradayVolumeResponse> getIntradayVolume(
             @Param("date") LocalDate date,

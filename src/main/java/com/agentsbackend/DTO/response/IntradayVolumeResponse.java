@@ -1,12 +1,12 @@
 package com.agentsbackend.DTO.response;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * One time bucket of trading volume for the intraday dashboard chart.
  */
 public class IntradayVolumeResponse {
-    private LocalDateTime bucketStart;
+    private OffsetDateTime bucketStart;
     private Long totalQuantityTraded;
     private Double totalValueTraded;
     private Long tradeCount;
@@ -16,7 +16,7 @@ public class IntradayVolumeResponse {
     public IntradayVolumeResponse() {
     }
 
-    public IntradayVolumeResponse(LocalDateTime bucketStart, Long totalQuantityTraded,
+    public IntradayVolumeResponse(OffsetDateTime bucketStart, Long totalQuantityTraded,
                                   Double totalValueTraded, Long tradeCount,
                                   Long buyCount, Long sellCount) {
         this.bucketStart = bucketStart;
@@ -27,11 +27,11 @@ public class IntradayVolumeResponse {
         this.sellCount = sellCount;
     }
 
-    public LocalDateTime getBucketStart() {
+    public OffsetDateTime getBucketStart() {
         return bucketStart;
     }
 
-    public void setBucketStart(LocalDateTime bucketStart) {
+    public void setBucketStart(OffsetDateTime bucketStart) {
         this.bucketStart = bucketStart;
     }
 

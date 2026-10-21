@@ -373,7 +373,7 @@ class AnalyticsServiceImplTest {
     void testGetIntradayVolume() {
         LocalDate date = LocalDate.now();
         List<IntradayVolumeResponse> volume = Arrays.asList(
-            new IntradayVolumeResponse(java.time.LocalDateTime.of(2026, 10, 20, 10, 0),
+            new IntradayVolumeResponse(java.time.OffsetDateTime.parse("2026-10-20T10:00:00Z"),
                 120L, 25000.0, 4L, 3L, 1L));
         when(analyticsRepository.getIntradayVolume(date, "hour")).thenReturn(volume);
 
