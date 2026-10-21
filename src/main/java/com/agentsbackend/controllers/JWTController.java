@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +28,8 @@ import java.util.Map;
 /** Authenticated diagnostic endpoints for Bruno/JWT signature testing. */
 @RestController
 @RequestMapping("/api/jwt")
+@Tag(name = "Authentication", description = "JWT verification endpoints; login is handled by the external identity provider")
+@SecurityRequirement(name = "bearerAuth")
 public class JWTController {
     private final JwtSignatureVerifier jwtSignatureVerifier;
 
@@ -32,8 +42,19 @@ public class JWTController {
      * and the same token in the body (explicit JwtSignatureVerifier verification).
      */
     @PostMapping("/verify")
+    @Operation(summary = "Verify a JWT", description = "Verifies that the bearer token and request-body token match and that the JWT signature and claims are valid.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Token verified"),
+        @ApiResponse(responseCode = "400", description = "Missing token or token mismatch"),
+        @ApiResponse(responseCode = "401", description = "Token signature or claims are invalid")
+    })
     public ResponseEntity<VerifyTokenResponse> verifyToken(
+            @Parameter(description = "Bearer token used for resource-server authentication", required = true)
             @RequestHeader(value = "Authorization", required = false) String authorization,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "JWT to verify; must match the Authorization bearer token",
+                content = @Content(schema = @Schema(implementation = VerifyTokenRequest.class))
+            )
             @RequestBody(required = false) VerifyTokenRequest request) {
         String headerToken = bearerToken(authorization);
         String bodyToken = request == null ? null : request.getToken();
@@ -49,7 +70,14 @@ public class JWTController {
 
     /** Verify the JWT already authenticated from the Authorization header. */
     @GetMapping("/verify-header")
+    @Operation(summary = "Verify the authenticated JWT", description = "Verifies the JWT supplied in the Authorization bearer header.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Token verified"),
+        @ApiResponse(responseCode = "400", description = "Missing or malformed bearer token"),
+        @ApiResponse(responseCode = "401", description = "Token signature or claims are invalid")
+    })
     public ResponseEntity<VerifyTokenResponse> verifyTokenFromHeader(
+            @Parameter(description = "Bearer token to verify", required = true)
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         String token = bearerToken(authorization);
         if (token == null) {

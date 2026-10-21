@@ -61,6 +61,19 @@ class InstrumentServiceImplTest {
     // ============================================================
 
     @Test
+    @DisplayName("getAllInstruments - should return all instruments with identifiers")
+    void getAllInstruments_ReturnsAllResults() {
+        when(instrumentRepository.findAll()).thenReturn(Arrays.asList(mockInstrument));
+
+        InstrumentResponse.SearchResultWrapper results = service.getAllInstruments();
+
+        assertEquals(1, results.getResults().size());
+        assertEquals(instrumentId, results.getResults().get(0).getInstrumentId());
+        assertEquals("TECH", results.getResults().get(0).getTicker());
+        verify(instrumentRepository).findAll();
+    }
+
+    @Test
     @DisplayName("searchInstruments - should return results for valid query")
     void searchInstruments_ValidQuery_ReturnsResults() {
         // Arrange
@@ -74,6 +87,7 @@ class InstrumentServiceImplTest {
         // Assert
         assertNotNull(results);
         assertEquals(1, results.getResults().size());
+        assertEquals(mockInstrument.getInstrumentId(), results.getResults().get(0).getInstrumentId());
         assertEquals("TECH", results.getResults().get(0).getTicker());
         assertEquals("Technology Stock", results.getResults().get(0).getName());
         assertEquals("STOCK", results.getResults().get(0).getAssetClass());

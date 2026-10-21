@@ -58,7 +58,7 @@ public class JwtSecurityConfig {
         }
 
         http
-            // Allow Angular frontend CORS requests.
+            // Allow browser preflight requests before JWT authentication.
             .cors(Customizer.withDefaults())
 
             // Preserve existing stateless JWT security.
@@ -73,6 +73,11 @@ public class JwtSecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
                 // Client endpoints
+                .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/health/**"
+                ).permitAll()
+
                 .requestMatchers(
                     "/api/accounts/**",
                     "/api/watchlists/**"
@@ -97,8 +102,15 @@ public class JwtSecurityConfig {
 
                 // Portfolio and holdings
                 .requestMatchers(
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+
+                .requestMatchers(
                     "/api/portfolio/**",
-                    "/api/holding/**"
+                    "/api/holding/**",
+                    "/api/client/**"
                 ).hasRole("CLIENT")
 
                 // Dashboard
