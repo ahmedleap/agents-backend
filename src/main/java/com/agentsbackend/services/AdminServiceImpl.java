@@ -1,6 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
 import com.agentsbackend.DTO.response.AdminAccountResponse;
 import com.agentsbackend.DTO.response.AdminAuditResponse;
 import com.agentsbackend.DTO.response.AdminClientResponse;
@@ -13,6 +14,8 @@ import com.agentsbackend.exceptions.OrderNotFoundException;
 import com.agentsbackend.repos.transactional.AdminRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -24,9 +27,18 @@ import java.util.List;
 public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
+    private final PasswordEncoder passwordEncoder;
 
+    @Autowired
+    public AdminServiceImpl(AdminRepository adminRepository, PasswordEncoder passwordEncoder) {
+        this.adminRepository = adminRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    // Kept for the existing unit tests and callers that construct this service directly.
     public AdminServiceImpl(AdminRepository adminRepository) {
         this.adminRepository = adminRepository;
+        this.passwordEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(12);
     }
     
     // Creates a new admin with auto-generated UUID and current timestamp if not provided
@@ -40,6 +52,21 @@ public class AdminServiceImpl implements AdminService {
         }
         adminRepository.createAdmin(admin);
         return admin;
+    }
+
+    @Override
+    public Admin createAdmin(CreateAdminRequest request) {
+        if (adminRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("An admin with this email already exists.");
+        }
+
+        Admin admin = new Admin();
+        admin.setFirstName(request.getFirstName());
+        admin.setLastName(request.getLastName());
+        admin.setEmail(request.getEmail());
+        admin.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        admin.setRole(request.getRole());
+        return createAdmin(admin);
     }
 
     @Override

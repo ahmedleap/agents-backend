@@ -1,6 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
 import com.agentsbackend.DTO.response.AdminAccountResponse;
 import com.agentsbackend.DTO.response.AdminAuditResponse;
 import com.agentsbackend.DTO.response.AdminClientResponse;
@@ -14,6 +15,9 @@ import java.util.UUID;
 public interface AdminService {
     // Creates and persists a new admin record
     Admin createAdmin(Admin admin);
+
+    // Creates an admin from an API request, hashing the supplied password.
+    Admin createAdmin(CreateAdminRequest request);
 
     List<AdminClientResponse> getClients();
 

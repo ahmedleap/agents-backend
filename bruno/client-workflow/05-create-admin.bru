@@ -1,0 +1,30 @@
+meta {
+  name: Create admin
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{apiUrl}}/api/admins
+  body: json
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "firstName": "Bruno",
+    "lastName": "Administrator",
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}",
+    "role": "ADMIN"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("adminId", res.body.adminId);
+  }
+}

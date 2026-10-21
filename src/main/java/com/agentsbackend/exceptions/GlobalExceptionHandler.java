@@ -46,8 +46,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(Map.of("error", "Invalid UUID format: " + ex.getMessage()));
+        HttpStatus status = ex.getMessage() != null && ex.getMessage().contains("admin with this email")
+                ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(DuplicateKeyException.class)

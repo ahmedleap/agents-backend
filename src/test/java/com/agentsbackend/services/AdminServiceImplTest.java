@@ -1,6 +1,8 @@
 package com.agentsbackend.services;
 
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
 import com.agentsbackend.entities.Admin;
+import com.agentsbackend.enums.AdminRole;
 import com.agentsbackend.DTO.response.AdminAccountResponse;
 import com.agentsbackend.DTO.response.AdminAuditResponse;
 import com.agentsbackend.DTO.response.AdminClientResponse;
@@ -42,6 +44,35 @@ class AdminServiceImplTest {
     }
 
     // ==================== createAdmin Tests ====================
+
+        @Test
+        @DisplayName("Should hash the request password and map all admin fields")
+        void testCreateAdminRequestHashesPassword() {
+        CreateAdminRequest request = new CreateAdminRequest(
+            "First", "Last", "admin@example.test", "plain-text-password", AdminRole.ADMIN);
+
+        Admin result = adminService.createAdmin(request);
+
+        assertEquals("First", result.getFirstName());
+        assertEquals("Last", result.getLastName());
+        assertEquals("admin@example.test", result.getEmail());
+        assertEquals(AdminRole.ADMIN, result.getRole());
+        assertNotEquals(request.getPassword(), result.getPasswordHash());
+        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+            .matches(request.getPassword(), result.getPasswordHash()));
+        verify(adminRepository).createAdmin(result);
+        }
+
+        @Test
+        @DisplayName("Should reject an existing admin email")
+        void testCreateAdminRequestRejectsDuplicateEmail() {
+        CreateAdminRequest request = new CreateAdminRequest(
+            "First", "Last", "admin@example.test", "plain-text-password", AdminRole.ADMIN);
+        when(adminRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(new Admin()));
+
+        assertThrows(IllegalArgumentException.class, () -> adminService.createAdmin(request));
+        verify(adminRepository, never()).createAdmin(any());
+        }
 
     @Test
     @DisplayName("Should create admin with provided adminId and createdAt")

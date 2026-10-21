@@ -1,0 +1,29 @@
+meta {
+  name: Create another admin
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{apiUrl}}/api/admins
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "firstName": "Second",
+    "lastName": "Administrator",
+    "email": "bruno.admin2@example.test",
+    "password": "AdminPassword123!",
+    "role": "ADMIN"
+  }
+}
