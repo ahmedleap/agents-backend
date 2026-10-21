@@ -11,6 +11,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 
@@ -24,6 +32,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/client/v1")
+@Tag(name = "Clients", description = "Client profile for the settings page")
+@SecurityRequirement(name = "bearerAuth")
 public class ClientController {
     private final ClientService clientService;
     private final MissionAuthorizationService authorizationService;
@@ -42,8 +52,15 @@ public class ClientController {
      * @param clientId the client ID to retrieve (must be the logged-in client)
      * @return the client's profile (name, email, risk tolerance, portfolio size range)
      */
+    @Operation(summary = "Get a client profile", description = "Returns the logged-in client's profile for the settings page.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Client profile returned"),
+        @ApiResponse(responseCode = "403", description = "Client ID is not the logged-in client"),
+        @ApiResponse(responseCode = "404", description = "Client not found")
+    })
     public ResponseEntity<ClientResponseDTO> getClient(
             @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Client identifier (must be the logged-in client)", required = true)
             @PathVariable("clientId") UUID clientId) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         ClientResponseDTO response = clientService.getClient(clientId);
@@ -59,9 +76,22 @@ public class ClientController {
      * @param request the fields to update; at least one is required
      * @return the client's profile after the update
      */
+    @Operation(summary = "Update a client profile", description = "Updates one or more profile fields. Fields left out are not changed; send \"\" for middleName to clear it.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Client profile updated"),
+        @ApiResponse(responseCode = "400", description = "Invalid profile update or no fields sent"),
+        @ApiResponse(responseCode = "403", description = "Client ID is not the logged-in client"),
+        @ApiResponse(responseCode = "404", description = "Client not found")
+    })
     public ResponseEntity<ClientResponseDTO> updateClient(
             @AuthenticationPrincipal Jwt jwt,
+            @Parameter(description = "Client identifier (must be the logged-in client)", required = true)
             @PathVariable("clientId") UUID clientId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Profile fields to update (one or more)",
+                required = true,
+                content = @Content(schema = @Schema(implementation = UpdateClientRequestDTO.class))
+            )
             @Valid @RequestBody UpdateClientRequestDTO request) {
         authorizationService.requireOwnClient(authorizationService.clientId(jwt), clientId);
         ClientResponseDTO response = clientService.updateClient(clientId, request);
