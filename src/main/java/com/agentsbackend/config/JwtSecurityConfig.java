@@ -66,6 +66,11 @@ public class JwtSecurityConfig {
                 ).permitAll()
 
                 .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/health/**"
+                ).permitAll()
+
+                .requestMatchers(
                     "/api/accounts/**",
                     "/api/watchlists/**"
                 ).hasRole("CLIENT")
@@ -91,7 +96,8 @@ public class JwtSecurityConfig {
 
                 .requestMatchers(
                     "/api/portfolio/**",
-                    "/api/holding/**"
+                    "/api/holding/**",
+                    "/api/client/**"
                 ).hasRole("CLIENT")
 
                 .requestMatchers("/dashboard")

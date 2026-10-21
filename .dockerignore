@@ -1,0 +1,21 @@
+# Secrets and local config: never send these to the build context
+backend.env
+*.env
+public_key.pem
+*.pem
+
+# Build output and VCS
+target/
+.git/
+.gitignore
+
+# Not needed to build the image
+Jenkinsfile
+README.md
+bruno/
+*.sql
+*.txt
+*.ps1
+*.json
+.idea/
+.vscode/
