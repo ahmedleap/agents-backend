@@ -60,6 +60,10 @@ CREATE DATABASE agents_of_leap;
 For an existing database created before authentication was added, apply the additive,
 rerunnable migration with `\i auth_schema.sql` after `schema.sql`.
 
+If your middleware issues staff (ADMIN/ANALYST) tokens from the `admin` table,
+also apply `\i auth_sessions_staff_identity_migration.sql` once to remove the
+client-only foreign key on `auth_sessions.client_id`.
+
 #### Verify Schema
 ```sql
 \dt  -- Should show: admin, accounts, clients, orders, holdings, instruments, transactions, etc.
@@ -105,40 +109,38 @@ spring.datasource.warehouse.password=your_warehouse_password
 
 ### JWT-protected Mission API
 
+Spring Security is the single JWT decoding and signature-verification path. The `/api/jwt/verify` and `/api/jwt/verify-header` diagnostic endpoints report the already-authenticated principal; they do not decode the token again. The POST endpoint still requires its body token to match the authenticated bearer token. Session/revocation validation remains a separate check and is unchanged by this cleanup. Session ownership is validated against the JWT `sub` claim for all roles (CLIENT, ADMIN, ANALYST), so staff sessions are enforced with the same revocation/expiry/inactivity checks.
+
 This Spring Boot application validates RS256 JWT signatures using a statically supplied RSA public PEM, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
 
 `GET /api/missions` does not exist in this project. Existing protected endpoints include `GET /api/accounts`, `GET /users/me`, and order routes under `/api/v1/orders`. `/users/me` needs a matching client row in PostgreSQL; account listing returns accounts scoped to the JWT subject.
 
-### Local development JWT issuer (no virtual environment)
+### Local JWT verification with the middleware public key
 
-The repository includes `issuer.py`, a **local-only development helper**, not an authentication service and not production code. It generates a fresh RSA key pair in memory each time it starts, serves only the public key via JWKS, and requires `JWT_DEV_MODE=true` with a non-production `APP_ENV`. It binds to `127.0.0.1:3000`; no private key is written to disk. No virtual environment is needed: run it with system Python. Flask, cryptography, and PyJWT must be installed in that interpreter; `requirements-dev-issuer.txt` lists them if missing.
+Obtain the existing RSA public key from the middleware that signs access tokens. Use an X.509 PEM with `BEGIN PUBLIC KEY` / `END PUBLIC KEY` headers and at least 2048 bits. Do not generate an unrelated backend key pair or copy the middleware's private signing key into this backend.
 
-In PowerShell, start the issuer in terminal 1 from the repository root:
+Spring imports the optional ignored root `.env` as a properties file. Set the public-key path there (use forward slashes on Windows and no surrounding quotes):
 
-```powershell
-$env:JWT_DEV_MODE = "true"
-$env:APP_ENV = "development"
-py issuer.py
+```properties
+JWT_PUBLIC_KEY_FILE=C:/path/to/middleware/public_key.pem
+AUTH_JWT_ISSUER=agents-middleware
+AUTH_JWT_AUDIENCE=agents-backend
 ```
 
-To test the local `issuer.py` (which creates its own temporary signing key), start Spring in terminal 2 from the same root. Clear the static NestJS PEM setting so Spring uses this local issuer's JWKS instead. Spring imports the optional ignored root `.env`; process environment variables override it. Stop any old Spring process using port 8083 before restarting:
+The file setting defaults to `public_key.pem` relative to the process working directory. An absolute path avoids working-directory differences. Both `.env` and PEM files are git-ignored; keep local settings untracked. Process environment variables override `.env`, so remove stale JWT overrides from the terminal used to launch Spring:
 
 ```powershell
-$env:AUTH_JWT_JWKS_URI = "http://127.0.0.1:3000/.well-known/jwks.json"
-$env:AUTH_JWT_ISSUER = "agents-middleware"
-$env:AUTH_JWT_AUDIENCE = "agents-backend"
-$env:JWT_PUBLIC_KEY_FILE = ""
-$env:JWT_PUBLIC_KEY = ""
+Remove-Item Env:JWT_PUBLIC_KEY_FILE, Env:JWT_PUBLIC_KEY -ErrorAction SilentlyContinue
 mvn spring-boot:run
 ```
 
-For NestJS tokens, Spring uses only the RSA public key for RS256 verification, never the private key. Configure issuer and audience as `agents-middleware` and `agents-backend`, or override them to match NestJS's exact `iss` and `aud` claims. The local `issuer.py` workflow is obsolete for backend validation because access tokens are validated only with the statically supplied public key.
+Alternatively, set `JWT_PUBLIC_KEY` to the Base64 encoding of the complete public PEM text and explicitly leave `JWT_PUBLIC_KEY_FILE` blank in `.env`. The file setting takes precedence; a nonblank but unreadable file does not fall back to the inline key. Never leave both key settings blank: startup intentionally fails rather than skipping signature verification.
+
+The decoder supports only a static public key, not JWKS discovery. Older instructions using `AUTH_JWT_JWKS_URI` and the temporary Python issuer no longer apply. Match issuer and audience to the middleware's exact `iss` and `aud` claims using `AUTH_JWT_ISSUER` and `AUTH_JWT_AUDIENCE`. RS256 signature, required claims, issuer, audience, time, role, and live-session checks remain enforced.
 
 For a paired-token login response, use Bruno `POST http://127.0.0.1:3000/auth/login`, header `Content-Type: application/json`, body `{"email":"alex@example.com","password":"ClientTest123!"}`. The response contains camelCase `accessToken`, `refreshToken`, `expiresIn` (300 seconds), and a `user` object with `clientId`, `email`, `firstName`, `lastName`, and `role`. Keep the tokens in Bruno's private/local environment; do not paste them in chat or commit them. Use `accessToken` as Bearer auth for protected Spring requests. To rotate the refresh token, call `POST http://127.0.0.1:3000/auth/refresh` with `{"refreshToken":"{{refreshToken}}"}`; each refresh token is single-use and the replacement token must be saved.
 
-For access-only role and negative-case tests, use Bruno `POST http://127.0.0.1:3000/dev/token` with `{"role":"CLIENT","case":"valid"}`. This endpoint returns snake_case `access_token`, `token_type`, and `expires_in`. The local test subject is `11111111-1111-4111-8111-111111111111`. The protected endpoint should authenticate as CLIENT; whether it returns account data depends on the database containing accounts for that subject.
-
-The local issuer can create negative test tokens by setting `case` to `wrong-signature`, `wrong-issuer`, `wrong-audience`, `expired`, or `invalid-subject`. Spring should reject them with 401. This issuer is unsuitable for production: its key changes on restart, users/credentials are simulated, and its token endpoint is intentionally only for local development.
+Use real middleware access tokens for manual verification, with matching client and live session records in the database. The old temporary issuer's tokens do not match this static key or establish live middleware sessions. Automated JWT validation tests use isolated test keys and cover signature, issuer, audience, and time rejection without replacing runtime keys.
 
 #### Test NestJS access tokens and client isolation in Bruno
 

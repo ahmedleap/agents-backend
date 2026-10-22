@@ -2,11 +2,10 @@ package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.VerifyTokenRequest;
 import com.agentsbackend.DTO.VerifyTokenResponse;
-import com.agentsbackend.services.JwtSignatureVerifier;
-import com.agentsbackend.services.TokenVerificationException;
-import io.jsonwebtoken.Claims;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.time.Instant;
+import java.util.Date;
 
 /** Authenticated diagnostic endpoints for Bruno/JWT signature testing. */
 @RestController
@@ -31,15 +32,9 @@ import java.util.Map;
 @Tag(name = "Authentication", description = "JWT verification endpoints; login is handled by the external identity provider")
 @SecurityRequirement(name = "bearerAuth")
 public class JWTController {
-    private final JwtSignatureVerifier jwtSignatureVerifier;
-
-    public JWTController(JwtSignatureVerifier jwtSignatureVerifier) {
-        this.jwtSignatureVerifier = jwtSignatureVerifier;
-    }
-
     /**
-     * Requires Bearer auth in the Authorization header (Spring resource-server verification)
-     * and the same token in the body (explicit JwtSignatureVerifier verification).
+     * Reports claims already verified by Spring Security. The body must contain
+     * the same token as the authenticated principal; it is never decoded again.
      */
     @PostMapping("/verify")
     @Operation(summary = "Verify a JWT", description = "Verifies that the bearer token and request-body token match and that the JWT signature and claims are valid.")
@@ -49,6 +44,7 @@ public class JWTController {
         @ApiResponse(responseCode = "401", description = "Token signature or claims are invalid")
     })
     public ResponseEntity<VerifyTokenResponse> verifyToken(
+            @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Bearer token used for resource-server authentication", required = true)
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -56,16 +52,20 @@ public class JWTController {
                 content = @Content(schema = @Schema(implementation = VerifyTokenRequest.class))
             )
             @RequestBody(required = false) VerifyTokenRequest request) {
+        if (jwt == null) {
+            return unauthorized();
+        }
         String headerToken = bearerToken(authorization);
         String bodyToken = request == null ? null : request.getToken();
         if (bodyToken == null || bodyToken.isBlank()) {
             return ResponseEntity.badRequest().body(failure("MISSING_TOKEN", "Token is required"));
         }
-        if (headerToken == null || !headerToken.equals(bodyToken.trim())) {
+        if (headerToken == null || !jwt.getTokenValue().equals(headerToken)
+            || !jwt.getTokenValue().equals(bodyToken.trim())) {
             return ResponseEntity.badRequest().body(failure(
                     "TOKEN_MISMATCH", "Body token must match the Authorization Bearer token"));
         }
-        return verify(headerToken);
+        return verifiedResponse(jwt);
     }
 
     /** Verify the JWT already authenticated from the Authorization header. */
@@ -77,25 +77,34 @@ public class JWTController {
         @ApiResponse(responseCode = "401", description = "Token signature or claims are invalid")
     })
     public ResponseEntity<VerifyTokenResponse> verifyTokenFromHeader(
+            @AuthenticationPrincipal Jwt jwt,
             @Parameter(description = "Bearer token to verify", required = true)
             @RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (jwt == null) {
+            return unauthorized();
+        }
         String token = bearerToken(authorization);
         if (token == null) {
             return ResponseEntity.badRequest().body(failure(
                     "MISSING_TOKEN", "Authorization header must use Bearer <token> format"));
         }
-        return verify(token);
+        if (!jwt.getTokenValue().equals(token)) {
+            return ResponseEntity.badRequest().body(failure(
+                    "TOKEN_MISMATCH", "Header token must match the authenticated token"));
+        }
+        return verifiedResponse(jwt);
     }
 
-    private ResponseEntity<VerifyTokenResponse> verify(String token) {
-        try {
-            Claims claims = jwtSignatureVerifier.verify(token);
+    private ResponseEntity<VerifyTokenResponse> verifiedResponse(Jwt jwt) {
+            Map<String, Object> claims = jwt.getClaims();
             Map<String, Object> safeClaims = new HashMap<>();
             for (String name : new String[]{"iss", "aud", "sub", "email", "jti", "role", "roles", "iat", "nbf", "exp"}) {
                 Object value = claims.get(name);
+                // Preserve the existing diagnostic response's date serialization.
+                if (value instanceof Instant instant) value = Date.from(instant);
                 if (value != null) safeClaims.put(name, value);
             }
-            String role = claims.get("role", String.class);
+            String role = jwt.getClaimAsString("role");
             if (role == null && claims.get("roles") instanceof Iterable<?> roles) {
                 for (Object value : roles) {
                     if (value instanceof String roleValue) {
@@ -106,11 +115,12 @@ public class JWTController {
             }
             return ResponseEntity.ok(new VerifyTokenResponse(
                     true, "RS256 signature and token claims verified.", safeClaims,
-                    claims.getSubject(), claims.get("email", String.class), role));
-        } catch (TokenVerificationException exception) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(failure(exception.getCode(), exception.getMessage()));
-        }
+                    jwt.getSubject(), jwt.getClaimAsString("email"), role));
+    }
+
+    private ResponseEntity<VerifyTokenResponse> unauthorized() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(failure("MISSING_AUTHENTICATION", "A verified JWT is required"));
     }
 
     private VerifyTokenResponse failure(String code, String message) {

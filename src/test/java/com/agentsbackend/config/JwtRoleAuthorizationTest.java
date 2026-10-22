@@ -3,6 +3,7 @@ package com.agentsbackend.config;
 import com.agentsbackend.controllers.AccountController;
 import com.agentsbackend.controllers.AdminController;
 import com.agentsbackend.controllers.AdminReadController;
+import com.agentsbackend.controllers.AnalyticsController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
 import com.agentsbackend.DTO.requests.CreateAdminRequest;
@@ -12,6 +13,8 @@ import com.agentsbackend.repos.transactional.AccountRepository;
 import com.agentsbackend.repos.transactional.OrderRepository;
 import com.agentsbackend.services.AccountService;
 import com.agentsbackend.services.AdminService;
+import com.agentsbackend.services.AnalyticsService;
+import com.agentsbackend.services.AuthService;
 import com.agentsbackend.services.OrderService;
 import com.agentsbackend.services.MissionAuthorizationService;
 import com.agentsbackend.services.TransactionsService;
@@ -56,7 +59,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "auth.jwt.public-key-base64=LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2ZkJDaDB5cTlWOGVzZ0xxSVBxK0dMM3JYczlUU3BHb3MrUHRKQzl1aWs5dEIzdnMzRGlTM2JTYlJQa1JWUllaVHBBN3gxdzZ3WTZzQWZrUHM0QjREcEFud2tIR2I1TmFWaXZkVDdHaTJHNlRQZ3dYaUJ1Z0ZEQklrMXZGWFBIcUR3bEwzY0VVYkw5ZmptMm5rbjkrdTBjZE5jNmUvYzFZOHZCWmt4bVFNNXRnTWZsT2RYVDgzUFBxSGlOY0w0eXdVakNKaWQwdFJzRGQ2SlNseWd1Qk1ENFNmb0pUMGgxRDF2RzBPNUtiQ2FHN25GNWtnWnFkK09EQzJnMHE2RlQwNGhyby9kdUVnL1pteUdXV1hBem5vQnBFSUxBU294NC9Cc2FvWWtrOHY1SStsZ2hrYWxwekJ1WEdSbE1wSlRmZ2VBU1B5cURRMVdwZmFnamVDeFJweXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
         "auth.jwt.issuer=agents-middleware",
-        "auth.jwt.audience=agents-backend"
+        "auth.jwt.audience=agents-backend",
+        "app.admin-bootstrap.enabled=false",
+        "auth.session-validation.enabled=false"
 })
 class JwtRoleAuthorizationTest {
         private static final UUID CLIENT_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");
@@ -66,6 +71,7 @@ class JwtRoleAuthorizationTest {
 
     @Autowired private WebApplicationContext applicationContext;
     @Autowired private AccountService accountService;
+        @Autowired private AnalyticsService analyticsService;
         @Autowired private AdminService adminService;
         @Autowired private AccountRepository accountRepository;
         @Autowired private OrderRepository orderRepository;
@@ -143,6 +149,14 @@ class JwtRoleAuthorizationTest {
     }
 
     @Test
+        void anonymousCannotCreateAdminWhenBootstrapIsDisabled() throws Exception {
+                mockMvc.perform(post("/api/admins")
+                                                .contentType("application/json")
+                                                .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}"))
+                                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
     void adminCanUseAdminApiButCannotSubmitTrades() throws Exception {
         when(adminService.createAdmin(any(CreateAdminRequest.class))).thenReturn(new Admin(
                 UUID.randomUUID(), "Root", "Admin", "root@example.test", "hashed", AdminRole.ADMIN,
@@ -176,11 +190,17 @@ class JwtRoleAuthorizationTest {
     }
 
     @Test
-    void analystCanReadButCannotCreateOrders() throws Exception {
+        void analystCanReadAggregateAnalyticsButNotClientOrders() throws Exception {
+                when(analyticsService.getDailyTotalTrades(org.mockito.ArgumentMatchers.any()))
+                        .thenReturn(new com.agentsbackend.DTO.response.TotalTradesResponse());
+                mockMvc.perform(get("/api/v1/analytics/dashboard/total-trades")
+                                                .with(jwtWithRole("ANALYST")))
+                                .andExpect(status().isOk());
+
         mockMvc.perform(get("/api/v1/orders")
                         .param("accountId", "11111111-1111-4111-8111-111111111111")
                         .with(jwtWithRole("ANALYST")))
-                .andExpect(status().isOk());
+                                .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/v1/orders")
                         .contentType("application/json")
@@ -265,10 +285,12 @@ class JwtRoleAuthorizationTest {
     @EnableWebMvc
     @EnableWebSecurity
         @Import({JwtSecurityConfig.class, AccountController.class, AdminController.class,
-                AdminReadController.class, OrderController.class, WatchlistController.class})
+                AdminReadController.class, AnalyticsController.class, OrderController.class, WatchlistController.class})
     static class TestApplication {
         @Bean AccountService accountService() { return mock(AccountService.class); }
         @Bean AdminService adminService() { return mock(AdminService.class); }
+        @Bean AuthService authService() { return mock(AuthService.class); }
+        @Bean AnalyticsService analyticsService() { return mock(AnalyticsService.class); }
         @Bean OrderService orderService() { return mock(OrderService.class); }
         @Bean TransactionsService transactionsService() { return mock(TransactionsService.class); }
         @Bean WatchlistService watchlistService() { return mock(WatchlistService.class); }

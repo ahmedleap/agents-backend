@@ -1,19 +1,23 @@
 
 package com.agentsbackend.config;
 
-import java.util.Collection;
-import java.util.Base64;
-import java.util.List;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.IOException;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
+import com.agentsbackend.services.AuthService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,21 +38,33 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
 public class JwtSecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            ObjectProvider<AuthService> authService,
+            @Value("${auth.session-validation.enabled:true}") boolean sessionValidation)
             throws Exception {
 
+        if (sessionValidation) {
+            http.addFilterAfter(new SessionValidationFilter(authService.getObject()),
+                BearerTokenAuthenticationFilter.class);
+        }
         boolean bootstrapEnabled = adminBootstrapEnabled;
 
         http
-            // Use the CorsConfig rules so browser preflight (OPTIONS) requests aren't rejected before auth
+            // Allow browser preflight requests before JWT authentication.
             .cors(Customizer.withDefaults())
+
+            // Preserve existing stateless JWT security.
             .csrf(csrf -> csrf.disable())
+
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
                     SessionCreationPolicy.STATELESS
@@ -61,11 +77,6 @@ public class JwtSecurityConfig {
 
                 auth
                 .requestMatchers(
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**"
-                ).permitAll()
-
-                .requestMatchers(
                     "/actuator/health",
                     "/actuator/health/**"
                 ).permitAll()
@@ -76,8 +87,11 @@ public class JwtSecurityConfig {
                     "/api/news/**"
                 ).hasRole("CLIENT")
 
-                .requestMatchers("/api/jwt/**").authenticated()
+                // JWT protected endpoints
+                .requestMatchers("/api/jwt/**")
+                    .hasAnyRole("CLIENT", "ADMIN")
 
+                // Administrator endpoints
                 .requestMatchers("/api/admins/**")
                     .hasRole("ADMIN")
 
@@ -86,9 +100,11 @@ public class JwtSecurityConfig {
                     "/api/v1/admin/**"
                 ).hasRole("ADMIN")
 
+                // Analytics endpoints
                 .requestMatchers("/api/v1/analytics/**")
                     .hasRole("ANALYST")
 
+                // Portfolio and holdings
                 .requestMatchers(
                     "/swagger-ui.html",
                     "/swagger-ui/**",
@@ -101,34 +117,41 @@ public class JwtSecurityConfig {
                     "/api/client/**"
                 ).hasRole("CLIENT")
 
+                // Dashboard
                 .requestMatchers("/dashboard")
                     .hasRole("CLIENT")
 
+                // Order creation
                 .requestMatchers(
                     HttpMethod.POST,
                     "/api/v1/orders/**"
                 ).hasRole("CLIENT")
 
+                // Order deletion
                 .requestMatchers(
                     HttpMethod.DELETE,
                     "/api/v1/orders/**"
                 ).hasRole("CLIENT")
 
+                // Order retrieval
                 .requestMatchers(
                     HttpMethod.GET,
                     "/api/v1/orders/**"
-                ).hasAnyRole("CLIENT", "ADMIN", "ANALYST")
+                ).hasAnyRole("CLIENT", "ADMIN")
 
-                // All remaining API and user routes require a JWT.
+                // User endpoints
                 .requestMatchers("/users/**")
                     .hasRole("CLIENT")
 
+                // Remaining API endpoints require JWT.
                 .requestMatchers("/api/**")
-                    .authenticated()
+                    .hasAnyRole("CLIENT", "ADMIN")
 
-                // Public endpoints must be explicitly reviewed.
+                // Deny all unspecified routes.
                 .anyRequest().denyAll();
             })
+
+            // JWT authentication
             .oauth2ResourceServer(oauth ->
                 oauth.jwt(jwt ->
                     jwt.jwtAuthenticationConverter(
@@ -140,9 +163,48 @@ public class JwtSecurityConfig {
         return http.build();
     }
 
+    // CORS configuration for Angular frontend.
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(
+            List.of("http://localhost:4200")
+        );
+
+        config.setAllowedMethods(
+            List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+            )
+        );
+
+        config.setAllowedHeaders(
+            List.of(
+                "Authorization",
+                "Content-Type"
+            )
+        );
+
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
     @Value("${app.admin-bootstrap.enabled:false}")
     private boolean adminBootstrapEnabled;
 
+    // JWT decoder using RSA public key.
     @Bean
     public JwtDecoder jwtDecoder(
             @Value("${auth.jwt.public-key-file:}") String publicKeyFile,
@@ -151,38 +213,60 @@ public class JwtSecurityConfig {
             @Value("${auth.jwt.audience}") String audience) {
 
         NimbusJwtDecoder decoder;
+
         if (publicKeyFile != null && !publicKeyFile.isBlank()) {
+
             decoder = NimbusJwtDecoder
                 .withPublicKey(readRsaPublicKey(publicKeyFile))
                 .signatureAlgorithm(SignatureAlgorithm.RS256)
                 .build();
-        } else if (publicKeyBase64 != null && !publicKeyBase64.isBlank()) {
+
+        } else if (publicKeyBase64 != null
+                && !publicKeyBase64.isBlank()) {
+
             decoder = NimbusJwtDecoder
                 .withPublicKey(decodeRsaPublicKey(publicKeyBase64))
                 .signatureAlgorithm(SignatureAlgorithm.RS256)
                 .build();
+
         } else {
+
             throw new IllegalStateException(
-                "A static RSA public key is required via auth.jwt.public-key-file or " +
+                "A static RSA public key is required via " +
+                "auth.jwt.public-key-file or " +
                 "auth.jwt.public-key-base64"
             );
         }
 
+        // Validate issuer and standard time claims.
         OAuth2TokenValidator<Jwt> issuerAndTime =
             JwtValidators.createDefaultWithIssuer(issuer);
 
+        // Validate intended audience.
         OAuth2TokenValidator<Jwt> audienceValidator = jwt ->
-            jwt.getAudience() != null && jwt.getAudience().contains(audience)
+            jwt.getAudience() != null
+                && jwt.getAudience().contains(audience)
                 ? OAuth2TokenValidatorResult.success()
                 : OAuth2TokenValidatorResult.failure(
-                    new OAuth2Error("invalid_token", "Required audience is missing", null)
+                    new OAuth2Error(
+                        "invalid_token",
+                        "Required audience is missing",
+                        null
+                    )
                 );
 
+        // Preserve required JWT claim validation.
         OAuth2TokenValidator<Jwt> requiredClaimsValidator = jwt -> {
-            boolean hasRole = jwt.getClaimAsString("role") != null
-                || (jwt.getClaimAsStringList("roles") != null
-                    && !jwt.getClaimAsStringList("roles").isEmpty());
-            boolean valid = jwt.getSubject() != null
+
+            boolean hasRole =
+                jwt.getClaimAsString("role") != null
+                || (
+                    jwt.getClaimAsStringList("roles") != null
+                    && !jwt.getClaimAsStringList("roles").isEmpty()
+                );
+
+            boolean valid =
+                jwt.getSubject() != null
                 && !jwt.getSubject().isBlank()
                 && jwt.getClaimAsString("email") != null
                 && !jwt.getClaimAsString("email").isBlank()
@@ -214,40 +298,75 @@ public class JwtSecurityConfig {
         return decoder;
     }
 
+    // Load RSA public key from file.
     private RSAPublicKey readRsaPublicKey(String publicKeyFile) {
+
         try {
-            return decodeRsaPublicKey(Files.readString(Path.of(publicKeyFile)));
+            return decodeRsaPublicKey(
+                Files.readString(Path.of(publicKeyFile))
+            );
+
         } catch (IOException | RuntimeException exception) {
+
             throw new IllegalStateException(
-                "Could not load RSA public key from auth.jwt.public-key-file: " + publicKeyFile,
+                "Could not load RSA public key from " +
+                "auth.jwt.public-key-file: " + publicKeyFile,
                 exception
             );
         }
     }
 
+    // Decode and validate RSA public key.
     private RSAPublicKey decodeRsaPublicKey(String configuredKey) {
+
         try {
             String keyText = configuredKey.trim();
+
             if (!keyText.startsWith("-----BEGIN")) {
-                keyText = new String(Base64.getDecoder().decode(keyText), StandardCharsets.UTF_8).trim();
+
+                keyText = new String(
+                    Base64.getDecoder().decode(keyText),
+                    StandardCharsets.UTF_8
+                ).trim();
             }
 
             String encodedDer = keyText
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
-            byte[] der = Base64.getDecoder().decode(encodedDer);
-            RSAPublicKey publicKey = (RSAPublicKey) KeyFactory.getInstance("RSA")
-                .generatePublic(new X509EncodedKeySpec(der));
+
+            byte[] der =
+                Base64.getDecoder().decode(encodedDer);
+
+            RSAPublicKey publicKey =
+                (RSAPublicKey) KeyFactory.getInstance("RSA")
+                    .generatePublic(
+                        new X509EncodedKeySpec(der)
+                    );
+
             if (publicKey.getModulus().bitLength() < 2048) {
-                throw new IllegalStateException("JWT RSA public key must be at least 2048 bits");
+
+                throw new IllegalStateException(
+                    "JWT RSA public key must be at least 2048 bits"
+                );
             }
+
             return publicKey;
-        } catch (IllegalArgumentException | GeneralSecurityException exception) {
-            throw new IllegalStateException("auth.jwt.public-key-base64 must contain a Base64-encoded PEM RSA public key", exception);
+
+        } catch (
+            IllegalArgumentException |
+            GeneralSecurityException exception
+        ) {
+
+            throw new IllegalStateException(
+                "auth.jwt.public-key-base64 must contain " +
+                "a Base64-encoded PEM RSA public key",
+                exception
+            );
         }
     }
 
+    // Convert JWT roles into Spring Security authorities.
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
 
@@ -260,6 +379,7 @@ public class JwtSecurityConfig {
                 jwt.getClaimAsStringList("roles");
 
             if (roles == null || roles.isEmpty()) {
+
                 String singleRole =
                     jwt.getClaimAsString("role");
 
@@ -270,8 +390,14 @@ public class JwtSecurityConfig {
 
             return roles.stream()
                 .filter(role -> role != null)
-                .map(role -> role.trim().toUpperCase(java.util.Locale.ROOT))
-                .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
+                .map(role ->
+                    role.trim().toUpperCase(Locale.ROOT)
+                )
+                .map(role ->
+                    role.startsWith("ROLE_")
+                        ? role.substring(5)
+                        : role
+                )
                 .filter(role ->
                     List.of(
                         "CLIENT",

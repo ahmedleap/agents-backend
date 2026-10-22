@@ -353,8 +353,8 @@ CREATE INDEX idx_instrument_prices_instrument_as_of ON instrument_prices (instru
 
 CREATE TABLE auth_sessions (
     session_id          UUID PRIMARY KEY,
-    client_id           UUID NOT NULL REFERENCES clients (client_id) ON DELETE CASCADE,
-    access_token_hash   CHAR(64) NOT NULL UNIQUE,
+    client_id           UUID NOT NULL,
+    access_token_hash   CHAR(64) UNIQUE,
     refresh_token_hash  CHAR(64) NOT NULL UNIQUE,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_active         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
