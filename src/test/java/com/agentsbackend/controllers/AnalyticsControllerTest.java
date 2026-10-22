@@ -236,6 +236,26 @@ class AnalyticsControllerTest {
     }
 
     @Test
+    @DisplayName("GET /dashboard/intraday-volume - should return hourly volume")
+    void testGetIntradayVolume() throws Exception {
+        LocalDate date = LocalDate.of(2026, 10, 20);
+        List<IntradayVolumeResponse> volume = Arrays.asList(
+            new IntradayVolumeResponse(java.time.OffsetDateTime.parse("2026-10-20T10:00:00Z"),
+                120L, 25000.0, 4L, 3L, 1L));
+        when(analyticsService.getIntradayVolume(date, "hour")).thenReturn(volume);
+
+        mockMvc.perform(get("/api/v1/analytics/dashboard/intraday-volume")
+                .param("date", date.toString())
+                .param("interval", "hour")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].tradeCount").value(4))
+            .andExpect(jsonPath("$[0].buyCount").value(3));
+
+        verify(analyticsService).getIntradayVolume(date, "hour");
+    }
+
+    @Test
     @DisplayName("GET /dashboard/instrument-trend - should return instrument trend")
     void testGetInstrumentTrend() throws Exception {
         // Arrange

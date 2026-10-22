@@ -210,6 +210,13 @@ public class InstrumentServiceImpl implements InstrumentService {
         
         BigDecimal startPrice = bars.isEmpty() ? BigDecimal.ZERO : bars.get(bars.size() - 1).getOpen();
         BigDecimal endPrice = bars.isEmpty() ? BigDecimal.ZERO : bars.get(0).getClose();
+
+        if ("1D".equalsIgnoreCase(period)) {
+            BigDecimal eodClose = priceHistoryRepository.findLatestEodClose(instrument.getInstrumentId());
+            startPrice = eodClose != null ? eodClose : startPrice;
+            endPrice = getLastPrice(instrument);
+        }
+
         BigDecimal change = endPrice.subtract(startPrice);
         BigDecimal changePercent = startPrice.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO :
             change.divide(startPrice, 4, java.math.RoundingMode.HALF_UP).multiply(new BigDecimal("100"));

@@ -63,6 +63,12 @@ public class OrderFulfillmentService {
         
         for (Order order : pendingOrders) {
             try {
+                Order currentOrder = orderRepository.findById(order.getOrderId());
+                if (currentOrder != null && currentOrder.getStatus() == OrderStatus.CANCELLED) {
+                    orderQueue.remove(order);
+                    logger.info("Cancelled order {} removed from queue without processing", order.getOrderId());
+                    continue;
+                }
                 if (tryFillOrder(order)) {
                     orderQueue.remove(order);
                     logger.info("Order {} filled and removed from queue", order.getOrderId());

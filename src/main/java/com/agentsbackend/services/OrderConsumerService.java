@@ -59,6 +59,10 @@ public class OrderConsumerService {
     public void processOrder(Order order) {
         try {
             logger.info("Received order {} from Kafka", order.getOrderId());
+            if (isCancelled(order)) {
+                logger.info("Skipping cancelled order {} received from Kafka", order.getOrderId());
+                return;
+            }
             if (attemptFill(order)) {
                 logger.info("Order {} filled successfully", order.getOrderId());
             } else {
@@ -76,7 +80,16 @@ public class OrderConsumerService {
      * Shared fill-attempt entrypoint for both main and retry consumers.
      */
     public boolean attemptFill(Order order) {
+        if (isCancelled(order)) {
+            logger.info("Skipping fill attempt for cancelled order {}", order.getOrderId());
+            return false;
+        }
         return tryFillOrder(order);
+    }
+
+    public boolean isCancelled(Order order) {
+        Order currentOrder = orderRepository.findById(order.getOrderId());
+        return currentOrder != null && currentOrder.getStatus() == OrderStatus.CANCELLED;
     }
     
     /**

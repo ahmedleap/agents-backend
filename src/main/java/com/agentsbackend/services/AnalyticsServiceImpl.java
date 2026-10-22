@@ -16,6 +16,7 @@ import com.agentsbackend.DTO.response.TotalVolumeResponse;
 import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
+import com.agentsbackend.DTO.response.IntradayVolumeResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
@@ -177,6 +178,20 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         }
         
         return analyticsRepository.getVolumeTrend(startDate, endDate);
+    }
+
+    @Override
+    public List<IntradayVolumeResponse> getIntradayVolume(LocalDate date, String interval) {
+        logger.info("Fetching intraday volume for {} using {} buckets", date, interval);
+
+        if (date == null) {
+            throw new IllegalArgumentException("Date is required");
+        }
+        if (interval == null || !interval.equalsIgnoreCase("hour")) {
+            throw new IllegalArgumentException("Interval must be hour");
+        }
+
+        return analyticsRepository.getIntradayVolume(date, "hour");
     }
 
     @Override

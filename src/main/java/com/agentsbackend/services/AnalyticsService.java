@@ -9,6 +9,7 @@ import com.agentsbackend.DTO.response.TotalVolumeResponse;
 import com.agentsbackend.DTO.response.TotalTradesResponse;
 import com.agentsbackend.DTO.response.ActiveClientsResponse;
 import com.agentsbackend.DTO.response.VolumeTrendResponse;
+import com.agentsbackend.DTO.response.IntradayVolumeResponse;
 import com.agentsbackend.DTO.response.InstrumentTrendResponse;
 import com.agentsbackend.DTO.response.InstrumentAnalysisResponse;
 import com.agentsbackend.DTO.response.SegmentTrendResponse;
@@ -156,6 +157,13 @@ public interface AnalyticsService {
      * @return List of daily volume data points
      */
     List<VolumeTrendResponse> getVolumeTrend(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Get intraday volume buckets for one date.
+     * @param date Date to analyze
+     * @param interval Supported bucket interval, currently hour
+     */
+    List<IntradayVolumeResponse> getIntradayVolume(LocalDate date, String interval);
 
     /**
      * Get top instruments trading activity trend over a date range.
