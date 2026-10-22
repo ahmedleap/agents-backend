@@ -60,8 +60,9 @@ pipeline {
 
         stage('Verify Image') {
             steps {
-                echo "Verifying Docker image runs without errors..."
-                sh "docker run --rm ${DOCKER_TAG} java -version"
+                echo "Verifying Docker image runtime..."
+                sh "docker run --rm --entrypoint java ${DOCKER_TAG} -version"
+                sh "docker image inspect ${DOCKER_TAG} --format '{{.Config.User}} {{.Config.ExposedPorts}}'"
             }
         }
 

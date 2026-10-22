@@ -1,0 +1,28 @@
+meta {
+  name: get client test
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{apiUrl}}/api/client/v1/{{clientId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("returns 200 with the profile", () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.clientId).to.equal(bru.getEnvVar("clientId"));
+  });
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

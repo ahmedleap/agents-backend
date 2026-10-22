@@ -5,6 +5,9 @@ import com.agentsbackend.controllers.AdminController;
 import com.agentsbackend.controllers.AdminReadController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
+import com.agentsbackend.DTO.requests.CreateAdminRequest;
+import com.agentsbackend.entities.Admin;
+import com.agentsbackend.enums.AdminRole;
 import com.agentsbackend.repos.transactional.AccountRepository;
 import com.agentsbackend.repos.transactional.OrderRepository;
 import com.agentsbackend.services.AccountService;
@@ -37,6 +40,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,6 +66,7 @@ class JwtRoleAuthorizationTest {
 
     @Autowired private WebApplicationContext applicationContext;
     @Autowired private AccountService accountService;
+        @Autowired private AdminService adminService;
         @Autowired private AccountRepository accountRepository;
         @Autowired private OrderRepository orderRepository;
         @Autowired private OrderService orderService;
@@ -132,16 +137,20 @@ class JwtRoleAuthorizationTest {
 
         mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
-                        .content("{}")
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}")
                         .with(jwtWithRole("CLIENT")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void adminCanUseAdminApiButCannotSubmitTrades() throws Exception {
+        when(adminService.createAdmin(any(CreateAdminRequest.class))).thenReturn(new Admin(
+                UUID.randomUUID(), "Root", "Admin", "root@example.test", "hashed", AdminRole.ADMIN,
+                java.time.OffsetDateTime.now()));
+
         mockMvc.perform(post("/api/admins")
                         .contentType("application/json")
-                        .content("{}")
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\",\"email\":\"root@example.test\",\"password\":\"correct-horse\",\"role\":\"ADMIN\"}")
                         .with(jwtWithRole("ADMIN")))
                 .andExpect(status().isCreated());
 
