@@ -3,6 +3,8 @@ package com.agentsbackend.services;
 import com.agentsbackend.DTO.response.InstrumentResponse;
 import com.agentsbackend.entities.Instrument;
 import com.agentsbackend.entities.InstrumentPriceHistory;
+import com.agentsbackend.entities.MarketMover;
+import com.agentsbackend.repos.transactional.MarketMoverRepository;
 import com.agentsbackend.enums.AssetClass;
 import com.agentsbackend.repos.transactional.InstrumentRepository;
 import com.agentsbackend.repos.transactional.InstrumentPriceHistoryRepository;
@@ -35,13 +37,16 @@ class InstrumentServiceImplTest {
     @Mock
     private InstrumentPriceHistoryRepository priceHistoryRepository;
 
+    @Mock
+    private MarketMoverRepository marketMoverRepository;
+
     private UUID instrumentId;
     private Instrument mockInstrument;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new InstrumentServiceImpl(instrumentRepository, priceHistoryRepository);
+        service = new InstrumentServiceImpl(instrumentRepository, priceHistoryRepository, marketMoverRepository);
 
         // Setup common test data
         instrumentId = UUID.randomUUID();
@@ -54,6 +59,52 @@ class InstrumentServiceImplTest {
         mockInstrument.setBid(new BigDecimal("249.50"));
         mockInstrument.setAsk(new BigDecimal("250.75"));
         mockInstrument.setPriceUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    @Test
+    void marketMoversPreservesStoredValuesAndOrdering() {
+        MarketMover loser = new MarketMover();
+        loser.setTicker("BTC");
+        loser.setPrice(new BigDecimal("100.123456789"));
+        loser.setChangePercent(new BigDecimal("-9.5"));
+        loser.setSourceAsOf(OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(10));
+        loser.setRefreshedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        MarketMover gainer = new MarketMover();
+        gainer.setTicker("AAPL");
+        gainer.setPrice(new BigDecimal("200.25"));
+        gainer.setChangePercent(new BigDecimal("5"));
+        gainer.setSourceAsOf(OffsetDateTime.now(ZoneOffset.UTC));
+        gainer.setRefreshedAt(loser.getRefreshedAt());
+        when(marketMoverRepository.findLatest()).thenReturn(Arrays.asList(loser, gainer));
+
+        var response = service.getMarketMovers();
+
+        assertEquals("BTC", response.getMarketMovers().get(0).getTicker());
+        assertEquals(new BigDecimal("-9.5"), response.getMarketMovers().get(0).getChangePercent());
+        assertEquals(new BigDecimal("100.123456789"), response.getMarketMovers().get(0).getPrice());
+        assertEquals(loser.getSourceAsOf(), response.getAsOf());
+        assertFalse(response.isStale());
+        verifyNoInteractions(instrumentRepository, priceHistoryRepository);
+    }
+
+    @Test
+    void marketMoversReturnsEmptyStaleResponseBeforeFirstSnapshot() {
+        when(marketMoverRepository.findLatest()).thenReturn(Collections.emptyList());
+        var response = service.getMarketMovers();
+        assertTrue(response.getMarketMovers().isEmpty());
+        assertNull(response.getAsOf());
+        assertNull(response.getRefreshedAt());
+        assertTrue(response.isStale());
+    }
+
+    @Test
+    void marketMoversMarksOldProviderDataStaleEvenAfterSuccessfulRefresh() {
+        MarketMover mover = new MarketMover();
+        mover.setTicker("AAPL");
+        mover.setSourceAsOf(OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(5));
+        mover.setRefreshedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        when(marketMoverRepository.findLatest()).thenReturn(Collections.singletonList(mover));
+        assertTrue(service.getMarketMovers().isStale());
     }
 
     // ============================================================

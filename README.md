@@ -10,6 +10,54 @@ A high-performance Java backend for a trading/investment platform using Spring B
 - **PostgreSQL 42.6.0** (Database driver)
 - **Maven 3.9.9** (Build tool)
 
+## Market Movers API
+
+Authenticated `GET /api/instruments/market-movers` reads the shared PostgreSQL
+snapshot published by ticker_service. The backend never calls Alpaca or
+calculates price changes for this endpoint. It returns up to five database-tracked
+stock/crypto movers in persisted rank order; forex is excluded. Provider filtering
+can yield fewer than five items and is not an exhaustive ranking of tracked symbols.
+
+Before deploying, manually execute ticker_service's
+`migrations/003_add_market_movers.sql` in pgAdmin against the shared primary
+database, then start the ticker producer and backend. The backend database role
+needs SELECT access to `market_movers` and `instruments`. No schema creation
+occurs in this backend. Do not rerun the full legacy schema for this feature.
+
+Response example:
+
+```json
+{
+  "marketMovers": [{"ticker": "BTC", "price": 65000.25, "changePercent": -2.5}],
+  "asOf": "2026-10-22T14:00:00Z",
+  "refreshedAt": "2026-10-22T14:00:05Z",
+  "isStale": false
+}
+```
+
+`changePercent` is signed percentage points, not a fractional return. `asOf` is
+the oldest selected provider timestamp; `refreshedAt` is publication time. Either
+timestamp older than 60 seconds marks the response stale. Empty/uninitialized
+snapshots return 200 with an empty array, null timestamps, and `isStale: true`.
+Database failures return 503 and anonymous requests return 401.
+
+Ticker refresh runs every ten seconds only on weekdays 09:30-16:00 ET, including
+for crypto. Outside that window the prior snapshot remains. The existing hours
+guard does not handle holidays or early closes. Alpaca provides the price and
+percentage using each market's own daily-reset semantics. The producer preserves
+the last snapshot if a required provider request or write fails.
+
+Basic PowerShell smoke checks on port 8081 (set your access token locally):
+
+```powershell
+curl.exe -i --max-time 10 http://localhost:8081/actuator/health
+curl.exe -i --max-time 10 http://localhost:8081/api/instruments/market-movers
+curl.exe -i --max-time 10 http://localhost:8081/api/instruments/market-movers -H "Authorization: Bearer $env:ACCESS_TOKEN"
+```
+
+The frontend should consume `marketMovers` from this endpoint. The legacy
+dashboard query remains unchanged; frontend E2E testing is manual.
+
 ## Prerequisites
 
 ### System Requirements

@@ -1,6 +1,9 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
+import com.agentsbackend.DTO.response.MarketMoversResponse;
+import com.agentsbackend.entities.MarketMover;
+import com.agentsbackend.repos.transactional.MarketMoverRepository;
 import com.agentsbackend.repos.transactional.InstrumentRepository;
 import com.agentsbackend.repos.transactional.InstrumentPriceHistoryRepository;
 import com.agentsbackend.entities.Instrument;
@@ -31,12 +34,33 @@ public class InstrumentServiceImpl implements InstrumentService {
 
     private final InstrumentRepository instrumentRepository;
     private final InstrumentPriceHistoryRepository priceHistoryRepository;
+    private final MarketMoverRepository marketMoverRepository;
     // AlpacaClient will be injected after Phase 5 is created
 
     public InstrumentServiceImpl(InstrumentRepository instrumentRepository,
-                               InstrumentPriceHistoryRepository priceHistoryRepository) {
+                               InstrumentPriceHistoryRepository priceHistoryRepository,
+                               MarketMoverRepository marketMoverRepository) {
         this.instrumentRepository = instrumentRepository;
         this.priceHistoryRepository = priceHistoryRepository;
+        this.marketMoverRepository = marketMoverRepository;
+    }
+
+    @Override
+    public MarketMoversResponse getMarketMovers() {
+        List<MarketMover> movers = marketMoverRepository.findLatest();
+        if (movers.isEmpty()) {
+            return new MarketMoversResponse(List.of(), null, null, true);
+        }
+        OffsetDateTime asOf = movers.stream().map(MarketMover::getSourceAsOf)
+            .min(OffsetDateTime.timeLineOrder()).orElseThrow().withOffsetSameInstant(ZoneOffset.UTC);
+        OffsetDateTime refreshedAt = movers.stream().map(MarketMover::getRefreshedAt)
+            .min(OffsetDateTime.timeLineOrder()).orElseThrow().withOffsetSameInstant(ZoneOffset.UTC);
+        OffsetDateTime cutoff = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(60);
+        List<MarketMoversResponse.Item> items = movers.stream()
+            .map(mover -> new MarketMoversResponse.Item(mover.getTicker(), mover.getPrice(), mover.getChangePercent()))
+            .toList();
+        return new MarketMoversResponse(items, asOf, refreshedAt,
+            refreshedAt.isBefore(cutoff) || asOf.isBefore(cutoff));
     }
 
     /**

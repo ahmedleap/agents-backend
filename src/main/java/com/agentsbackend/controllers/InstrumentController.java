@@ -1,6 +1,8 @@
 package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
+import com.agentsbackend.DTO.response.MarketMoversResponse;
+import org.springframework.dao.DataAccessException;
 import com.agentsbackend.services.InstrumentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,22 @@ public class InstrumentController {
 
     public InstrumentController(InstrumentService instrumentService) {
         this.instrumentService = instrumentService;
+    }
+
+    @GetMapping("/market-movers")
+    @Operation(summary = "Get market movers", description = "Returns up to five database-tracked stock and crypto movers published by the ticker service. changePercent is signed percentage points. Cached snapshots remain available outside market hours.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Stored movers, or an empty list before publication"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "503", description = "Market movers database unavailable")
+    })
+    public ResponseEntity<MarketMoversResponse> getMarketMovers() {
+        try {
+            return ResponseEntity.ok(instrumentService.getMarketMovers());
+        } catch (DataAccessException exception) {
+            log.error("Unable to read market movers snapshot", exception);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
     }
 
     /**

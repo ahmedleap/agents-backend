@@ -1,6 +1,8 @@
 package com.agentsbackend.controllers;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
+import com.agentsbackend.DTO.response.MarketMoversResponse;
+import org.springframework.dao.DataAccessResourceFailureException;
 import com.agentsbackend.services.InstrumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,21 @@ class InstrumentControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         controller = new InstrumentController(instrumentService);
+    }
+
+    @Test
+    void marketMoversReturnsStoredSnapshot() {
+        MarketMoversResponse snapshot = new MarketMoversResponse(Collections.emptyList(), null, null, true);
+        when(instrumentService.getMarketMovers()).thenReturn(snapshot);
+        var response = controller.getMarketMovers();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertSame(snapshot, response.getBody());
+    }
+
+    @Test
+    void marketMoversReturns503OnDatabaseFailure() {
+        when(instrumentService.getMarketMovers()).thenThrow(new DataAccessResourceFailureException("unavailable"));
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, controller.getMarketMovers().getStatusCode());
     }
 
     // ============================================================

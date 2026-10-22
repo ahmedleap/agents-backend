@@ -1,6 +1,7 @@
 package com.agentsbackend.services;
 
 import com.agentsbackend.DTO.response.InstrumentResponse;
+import com.agentsbackend.DTO.response.MarketMoversResponse;
 import java.util.List;
 
 /**
@@ -15,6 +16,8 @@ import java.util.List;
  * - Historical prices: NOT cached (data is static, user requests variable ranges)
  */
 public interface InstrumentService {
+
+    MarketMoversResponse getMarketMovers();
 
     /**
      * Search for instruments by ticker or name.

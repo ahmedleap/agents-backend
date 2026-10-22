@@ -5,6 +5,10 @@ import com.agentsbackend.controllers.AdminController;
 import com.agentsbackend.controllers.AdminReadController;
 import com.agentsbackend.controllers.OrderController;
 import com.agentsbackend.controllers.WatchlistController;
+import com.agentsbackend.controllers.InstrumentController;
+import com.agentsbackend.DTO.response.MarketMoversResponse;
+import com.agentsbackend.services.InstrumentService;
+import org.springframework.dao.DataAccessResourceFailureException;
 import com.agentsbackend.DTO.requests.CreateAdminRequest;
 import com.agentsbackend.entities.Admin;
 import com.agentsbackend.enums.AdminRole;
@@ -49,6 +53,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
@@ -66,6 +71,7 @@ class JwtRoleAuthorizationTest {
 
     @Autowired private WebApplicationContext applicationContext;
     @Autowired private AccountService accountService;
+        @Autowired private InstrumentService instrumentService;
         @Autowired private AdminService adminService;
         @Autowired private AccountRepository accountRepository;
         @Autowired private OrderRepository orderRepository;
@@ -80,8 +86,43 @@ class JwtRoleAuthorizationTest {
                 .build();
     }
 
-    @Test
-    void convertsNestRolesClaimToSpringAuthorities() {
+        @Test
+        void marketMoversRequiresAuthentication() throws Exception {
+                mockMvc.perform(get("/api/instruments/market-movers"))
+                                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void marketMoversSerializesSignedDecimalsAndUtcMetadata() throws Exception {
+                var timestamp = java.time.OffsetDateTime.parse("2026-10-22T14:00:00Z");
+                var snapshot = new MarketMoversResponse(List.of(new MarketMoversResponse.Item(
+                                "BTC", new java.math.BigDecimal("100.123456789"), new java.math.BigDecimal("-9.5"))),
+                                timestamp, timestamp, false);
+                when(instrumentService.getMarketMovers()).thenReturn(snapshot);
+
+                mockMvc.perform(get("/api/instruments/market-movers").with(jwtWithRole("CLIENT")))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.marketMovers[0].ticker").value("BTC"))
+                                .andExpect(jsonPath("$.marketMovers[0].price").value(100.123456789))
+                                .andExpect(jsonPath("$.marketMovers[0].changePercent").value(-9.5))
+                                .andExpect(jsonPath("$.asOf").value("2026-10-22T14:00:00Z"))
+                                .andExpect(jsonPath("$.refreshedAt").value("2026-10-22T14:00:00Z"))
+                                .andExpect(jsonPath("$.isStale").value(false));
+        }
+
+        @Test
+        void marketMoversDatabaseFailureReturns503() throws Exception {
+                when(instrumentService.getMarketMovers()).thenThrow(new DataAccessResourceFailureException("unavailable"));
+                try {
+                        mockMvc.perform(get("/api/instruments/market-movers").with(jwtWithRole("CLIENT")))
+                                        .andExpect(status().isServiceUnavailable());
+                } finally {
+                        org.mockito.Mockito.reset(instrumentService);
+                }
+        }
+
+        @Test
+        void convertsNestRolesClaimToSpringAuthorities() {
         var token = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("synthetic-only")
                 .header("alg", "RS256")
                 .subject("11111111-1111-4111-8111-111111111111")
@@ -265,9 +306,10 @@ class JwtRoleAuthorizationTest {
     @EnableWebMvc
     @EnableWebSecurity
         @Import({JwtSecurityConfig.class, AccountController.class, AdminController.class,
-                AdminReadController.class, OrderController.class, WatchlistController.class})
+                AdminReadController.class, OrderController.class, WatchlistController.class, InstrumentController.class})
     static class TestApplication {
         @Bean AccountService accountService() { return mock(AccountService.class); }
+        @Bean InstrumentService instrumentService() { return mock(InstrumentService.class); }
         @Bean AdminService adminService() { return mock(AdminService.class); }
         @Bean OrderService orderService() { return mock(OrderService.class); }
         @Bean TransactionsService transactionsService() { return mock(TransactionsService.class); }
