@@ -55,7 +55,8 @@ public class JwtSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/accounts/**",
-                    "/api/watchlists/**"
+                    "/api/watchlists/**",
+                    "/api/news/**"
                 ).hasRole("CLIENT")
 
                 .requestMatchers("/api/jwt/**").authenticated()
