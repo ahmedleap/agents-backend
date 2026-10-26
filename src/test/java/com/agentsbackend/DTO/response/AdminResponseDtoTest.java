@@ -32,12 +32,14 @@ class AdminResponseDtoTest {
         response.setJoinDate(OffsetDateTime.parse("2026-01-01T00:00:00Z"));
         response.setPortfolioSizeRange(PortfolioSizeRange.BETWEEN_50K_100K);
         response.setRiskTolerance(RiskTolerance.MODERATE);
+        response.setPortfolioValue(new BigDecimal("12500.50"));
 
         assertEquals(id, response.getClientId());
         assertEquals("First Middle Last", response.getClientName());
         assertEquals("First", response.getFirstName());
         assertEquals("Middle", response.getMiddleName());
         assertEquals("Last", response.getLastName());
+        assertEquals(new BigDecimal("12500.50"), response.getPortfolioValue());
         assertEquals("client@example.test", response.getEmail());
         assertEquals("1234", response.getSsnLast4());
         assertEquals(LocalDate.of(1990, 1, 2), response.getDateOfBirth());
@@ -154,7 +156,7 @@ class AdminResponseDtoTest {
 
         AdminClientResponse client = new AdminClientResponse(id, "First Middle Last", "First", "Middle", "Last",
             "client@example.test", LocalDate.of(1990, 1, 2), timestamp, "1234",
-            PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE);
+            PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE, new BigDecimal("1500.25"));
         AdminAccountResponse account = new AdminAccountResponse(id, id, "Client Name", "Account",
             new BigDecimal("10"), AccountStatus.ACTIVE, timestamp);
         AdminOrderResponse order = new AdminOrderResponse(id, id, id, "Client Name", id, "TEST", "Test",
@@ -181,7 +183,7 @@ class AdminResponseDtoTest {
 
         assertEquals(client, new AdminClientResponse(id, "First Middle Last", "First", "Middle", "Last",
             "client@example.test", LocalDate.of(1990, 1, 2), timestamp, "1234",
-            PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE));
+            PortfolioSizeRange.UNDER_50K, RiskTolerance.CONSERVATIVE, new BigDecimal("1500.25")));
         assertEquals(account, new AdminAccountResponse(id, id, "Client Name", "Account", new BigDecimal("10"),
             AccountStatus.ACTIVE, timestamp));
         assertEquals(order, new AdminOrderResponse(id, id, id, "Client Name", id, "TEST", "Test", OrderType.BUY,
