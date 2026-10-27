@@ -21,14 +21,28 @@ public interface AdminRepository {
         "first_name AS \"firstName\", middle_name AS \"middleName\", " +
         "last_name AS \"lastName\", email, date_of_birth AS \"dateOfBirth\", join_date AS \"joinDate\", " +
         "ssn_last4 AS \"ssnLast4\", portfolio_size_range AS \"portfolioSizeRange\", " +
-        "risk_tolerance AS \"riskTolerance\" FROM clients ORDER BY join_date DESC")
+        "risk_tolerance AS \"riskTolerance\", " +
+        "(SELECT COALESCE(SUM(a.cash_balance), 0) FROM accounts a " +
+        " WHERE a.client_id = clients.client_id AND a.status = 'ACTIVE') + " +
+        "(SELECT COALESCE(SUM(h.quantity * COALESCE(i.mid_price, 0)), 0) FROM holdings h " +
+        " JOIN accounts a ON a.account_id = h.account_id " +
+        " JOIN instruments i ON i.instrument_id = h.instrument_id " +
+        " WHERE a.client_id = clients.client_id AND a.status = 'ACTIVE') AS \"portfolioValue\" " +
+        "FROM clients ORDER BY join_date DESC")
     List<AdminClientResponse> findAllClients();
 
     @Select("SELECT client_id AS \"clientId\", CONCAT_WS(' ', first_name, middle_name, last_name) AS \"clientName\", " +
         "first_name AS \"firstName\", middle_name AS \"middleName\", " +
         "last_name AS \"lastName\", email, date_of_birth AS \"dateOfBirth\", join_date AS \"joinDate\", " +
         "ssn_last4 AS \"ssnLast4\", portfolio_size_range AS \"portfolioSizeRange\", " +
-        "risk_tolerance AS \"riskTolerance\" FROM clients WHERE client_id = #{clientId}")
+        "risk_tolerance AS \"riskTolerance\", " +
+        "(SELECT COALESCE(SUM(a.cash_balance), 0) FROM accounts a " +
+        " WHERE a.client_id = clients.client_id AND a.status = 'ACTIVE') + " +
+        "(SELECT COALESCE(SUM(h.quantity * COALESCE(i.mid_price, 0)), 0) FROM holdings h " +
+        " JOIN accounts a ON a.account_id = h.account_id " +
+        " JOIN instruments i ON i.instrument_id = h.instrument_id " +
+        " WHERE a.client_id = clients.client_id AND a.status = 'ACTIVE') AS \"portfolioValue\" " +
+        "FROM clients WHERE client_id = #{clientId}")
     Optional<AdminClientResponse> findClientById(@Param("clientId") UUID clientId);
 
     @Select("SELECT a.account_id AS \"accountId\", a.client_id AS \"clientId\", " +

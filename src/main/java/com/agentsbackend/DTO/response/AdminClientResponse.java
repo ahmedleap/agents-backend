@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -25,4 +26,6 @@ public class AdminClientResponse {
     private String ssnLast4;
     private PortfolioSizeRange portfolioSizeRange;
     private RiskTolerance riskTolerance;
+    /** Cash plus holdings at current prices, across the client's active accounts */
+    private BigDecimal portfolioValue;
 }
