@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping({"/admin", "/api/v1/admin"})
+@RequestMapping("/api/v1/admin")
 public class AdminReadController {
 
     private final AdminService adminService;

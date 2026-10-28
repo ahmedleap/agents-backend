@@ -81,10 +81,8 @@ public class JwtSecurityConfig {
                 .requestMatchers("/api/admins/**")
                     .hasRole("ADMIN")
 
-                .requestMatchers(
-                    "/admin/**",
-                    "/api/v1/admin/**"
-                ).hasRole("ADMIN")
+                .requestMatchers("/api/v1/admin/**")
+                    .hasRole("ADMIN")
 
                 .requestMatchers("/api/v1/analytics/**")
                     .hasRole("ANALYST")
@@ -101,7 +99,7 @@ public class JwtSecurityConfig {
                     "/api/client/**"
                 ).hasRole("CLIENT")
 
-                .requestMatchers("/dashboard")
+                .requestMatchers("/api/dashboard")
                     .hasRole("CLIENT")
 
                 .requestMatchers(
@@ -120,7 +118,7 @@ public class JwtSecurityConfig {
                 ).hasAnyRole("CLIENT", "ADMIN", "ANALYST")
 
                 // All remaining API and user routes require a JWT.
-                .requestMatchers("/users/**")
+                .requestMatchers("/api/users/**")
                     .hasRole("CLIENT")
 
                 .requestMatchers("/api/**")

@@ -33,7 +33,7 @@ catch {
     Fail-Test "ClientId is not a valid UUID: $ClientId"
 }
 
-$endpoint = "$ApiUrl/dashboard?clientId=$ClientId&period=$Period"
+$endpoint = "$ApiUrl/api/dashboard?clientId=$ClientId&period=$Period"
 Write-Host "Testing $endpoint" -ForegroundColor Cyan
 
 try {

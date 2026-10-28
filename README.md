@@ -155,7 +155,7 @@ spring.datasource.warehouse.password=your_warehouse_password
 
 This Spring Boot application validates RS256 JWT signatures using a statically supplied RSA public PEM, and checks issuer, audience, and token time claims. The signing private key stays outside Spring. `/users/me` and protected `/api/**` routes require a valid JWT; role and resource-ownership rules are enforced by Spring Security and Mission service logic.
 
-`GET /api/missions` does not exist in this project. Existing protected endpoints include `GET /api/accounts`, `GET /users/me`, and order routes under `/api/v1/orders`. `/users/me` needs a matching client row in PostgreSQL; account listing returns accounts scoped to the JWT subject.
+`GET /api/missions` does not exist in this project. Existing protected endpoints include `GET /api/accounts`, `GET /api/users/me`, and order routes under `/api/v1/orders`. `/api/users/me` needs a matching client row in PostgreSQL; account listing returns accounts scoped to the JWT subject.
 
 ### Local development JWT issuer (no virtual environment)
 
@@ -282,7 +282,7 @@ The dashboard endpoint aggregates data for one client across active accounts:
 Request:
 
 ```http
-GET http://localhost:8080/dashboard?clientId={{clientId}}&period=90D
+GET http://localhost:8080/api/dashboard?clientId={{clientId}}&period=90D
 Accept: application/json
 ```
 

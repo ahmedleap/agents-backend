@@ -184,6 +184,21 @@ class JwtRoleAuthorizationTest {
     }
 
     @Test
+    void routesOutsideApiPrefixAreDenied() throws Exception {
+        // These moved under /api; the old paths must no longer be reachable
+        mockMvc.perform(get("/dashboard").with(jwtWithRole("CLIENT")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/users/me").with(jwtWithRole("CLIENT")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/admin/clients").with(jwtWithRole("ADMIN")))
+                .andExpect(status().isForbidden());
+
+        // The admin API under /api still requires the ADMIN role
+        mockMvc.perform(get("/api/v1/admin/clients").with(jwtWithRole("CLIENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void adminCanUseAdminApiButCannotSubmitTrades() throws Exception {
         when(adminService.createAdmin(any(CreateAdminRequest.class))).thenReturn(new Admin(
                 UUID.randomUUID(), "Root", "Admin", "root@example.test", "hashed", AdminRole.ADMIN,

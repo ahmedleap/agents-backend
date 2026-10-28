@@ -188,8 +188,8 @@ finally {
 Write-Host "[PASS] Fixture inserted for client $clientId" -ForegroundColor Green
 
 # CLIENT: personal resources work, staff resources are denied.
-Assert-Status (Invoke-Backend GET "/users/me" $clientToken) 200 "client current user"
-Assert-Status (Invoke-Backend GET "/dashboard?clientId=$clientId&period=30D" $clientToken) 200 "client dashboard"
+Assert-Status (Invoke-Backend GET "/api/users/me" $clientToken) 200 "client current user"
+Assert-Status (Invoke-Backend GET "/api/dashboard?clientId=$clientId&period=30D" $clientToken) 200 "client dashboard"
 Assert-Status (Invoke-Backend GET "/api/accounts" $clientToken) 200 "client account list"
 Assert-Status (Invoke-Backend GET "/api/accounts/$accountOne" $clientToken) 200 "client account detail"
 Assert-Status (Invoke-Backend GET "/api/accounts/$accountOne/summary" $clientToken) 200 "client account summary"
