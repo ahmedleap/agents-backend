@@ -14,7 +14,7 @@ import com.agentsbackend.services.MissionAuthorizationService;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/dashboard")
+@RequestMapping("/api/dashboard")
 public class DashboardController {
 
     private final DashboardService dashboardService;

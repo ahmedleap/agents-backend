@@ -71,7 +71,7 @@ class DashboardControllerTest {
         when(dashboardService.getDashboard(clientId, "90D"))
                 .thenReturn(new DashboardResponse(List.of(), List.of(), List.of(), List.of(), List.of()));
 
-        mockMvc.perform(get("/dashboard")
+        mockMvc.perform(get("/api/dashboard")
                         .param("clientId", clientId.toString())
                         .param("period", "90D"))
                 .andExpect(status().isOk());

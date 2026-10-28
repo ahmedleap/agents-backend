@@ -46,7 +46,7 @@ class AdminReadControllerTest {
         client.setEmail("client@example.com");
         when(adminService.getClients()).thenReturn(List.of(client));
 
-        mockMvc.perform(get("/admin/clients"))
+        mockMvc.perform(get("/api/v1/admin/clients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].clientId").value(clientId.toString()))
                 .andExpect(jsonPath("$[0].clientName").value("First Middle Last"))
@@ -106,7 +106,7 @@ class AdminReadControllerTest {
         account.setAccountId(accountId);
         when(adminService.getAccount(accountId)).thenReturn(account);
 
-        mockMvc.perform(get("/admin/accounts/{accountId}", accountId))
+        mockMvc.perform(get("/api/v1/admin/accounts/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(accountId.toString()));
 
@@ -152,7 +152,7 @@ class AdminReadControllerTest {
         audit.setClientName("First Last");
         when(adminService.getTradeAudit(tradeId)).thenReturn(List.of(audit));
 
-        mockMvc.perform(get("/admin/trades/{tradeId}/audit", tradeId))
+        mockMvc.perform(get("/api/v1/admin/trades/{tradeId}/audit", tradeId))
                 .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].orderId").value(tradeId.toString()))
                 .andExpect(jsonPath("$[0].clientName").value("First Last"));
@@ -181,7 +181,7 @@ class AdminReadControllerTest {
                 3L, 4L, 5L, 2L, new BigDecimal("99.25"));
         when(adminService.getInsights()).thenReturn(insights);
 
-        mockMvc.perform(get("/admin/insights"))
+        mockMvc.perform(get("/api/v1/admin/insights"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clientCount").value(3))
                 .andExpect(jsonPath("$.accountCount").value(4))

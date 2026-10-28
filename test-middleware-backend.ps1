@@ -200,8 +200,8 @@ try {
     [void](Test-ClientEndpoint -Name "Account holdings" -Url "$BackendUrl/api/holding/v1/$accountId" -Headers $headers)
     $instrumentsResponse = Test-ClientEndpoint -Name "Client instruments" -Url "$BackendUrl/api/instruments" -Headers $headers
     $quotesResponse = Test-ClientEndpoint -Name "Client instruments with quotes" -Url "$BackendUrl/api/instruments/with-quotes" -Headers $headers
-    [void](Test-ClientEndpoint -Name "Client dashboard" -Url "$BackendUrl/dashboard?clientId=$clientId&period=30D" -Headers $headers)
-    [void](Test-ClientEndpoint -Name "Client user profile" -Url "$BackendUrl/users/me" -Headers $headers)
+    [void](Test-ClientEndpoint -Name "Client dashboard" -Url "$BackendUrl/api/dashboard?clientId=$clientId&period=30D" -Headers $headers)
+    [void](Test-ClientEndpoint -Name "Client user profile" -Url "$BackendUrl/api/users/me" -Headers $headers)
 
     $instrumentId = $instrumentsResponse.Body.results[0].instrumentId
     if ([string]::IsNullOrWhiteSpace($instrumentId)) {
